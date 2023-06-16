@@ -726,22 +726,22 @@ public class DtvkitEpgSync extends EpgSyncJobService {
             int parentalRatingContentIndex = parentalRating / 16;
             int parentalRatingAge = parentalRating % 16;
             String[] ISDB_RatingContent = {"Drugs", "Violence", "Violence and Drugs", "Sex", "Sex and Drugs", "Violence and Sex", "Violence, Sex and Drugs"};
-            String[] ISDB_RatingAge = {"ISDB_10", "ISDB_12", "ISDB_14", "ISDB_16", "ISDB_18"};
+            String[] ISDB_RatingAge = {"ISDB_L", "ISDB_10", "ISDB_12", "ISDB_14", "ISDB_16", "ISDB_18"};
             TvContentRating rating;
             if (parentalRatingContentIndex > 0) {
-                if (parentalRatingAge >= 2 && parentalRatingAge <= 6) {
-                    rating = TvContentRating.createRating(ratingDomain, ratingSystemDefinition, ISDB_RatingContent[parentalRatingContentIndex - 1] + "/" + ISDB_RatingAge[parentalRatingAge - 2] , (String) null);
+                if (parentalRatingAge > 0 && parentalRatingAge <= 6) {
+                    rating = TvContentRating.createRating(ratingDomain, ratingSystemDefinition, ISDB_RatingContent[parentalRatingContentIndex - 1] + "/" + ISDB_RatingAge[parentalRatingAge - 1] , (String) null);
                 } else {
                     rating = TvContentRating.createRating(ratingDomain, ratingSystemDefinition, ISDB_RatingContent[parentalRatingContentIndex - 1], (String) null);
                 }
-            } else if (parentalRatingAge >= 2 && parentalRatingAge <= 6) {
-                rating = TvContentRating.createRating(ratingDomain, ratingSystemDefinition, ISDB_RatingAge[parentalRatingAge - 2], (String) null);
+            } else if (parentalRatingAge > 0 && parentalRatingAge <= 6) {
+                rating = TvContentRating.createRating(ratingDomain, ratingSystemDefinition, ISDB_RatingAge[parentalRatingAge - 1], (String) null);
             } else {
                 rating = null;
             }
             if (rating != null) {
                 ratings_array[0] = rating;
-                Log.d(TAG, "parse ratings add rating:" + rating.flattenToString() + ", title = " + title);
+                Log.d(TAG, "parse ratings add rating:" + rating.flattenToString() + ", title = " + title + " ,parentalRating = " + parentalRating);
             } else {
                 ratings_array = null;
             }
