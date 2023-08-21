@@ -166,6 +166,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
     // Mutex for all mutable shared state.
     private final Object mLock = new Object();
+    private final Object mRecordingLock = new Object();
 
     private HashMap<Long, String> mCachedRecordingsPrograms = new HashMap<>();
 
@@ -781,8 +782,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 }
                 case MSG_HANDLE_RECORDING_FROM_DTVKIT: {
                     JSONArray data = (JSONArray) msg.obj;
-                    if (syncRecordingProgramsWithDtvkit(data) == 0) {
-                        mCachedRecordingsPrograms.clear();
+                    synchronized (mRecordingLock) {
+                        if (syncRecordingProgramsWithDtvkit(data) == 0) {
+                            mCachedRecordingsPrograms.clear();
+                        }
                     }
                     break;
                 }
@@ -2188,7 +2191,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 mRecordingStarted = true;
                 recordingUri = recordingResponse.toString();
                 Log.i(TAG, "Recording started:" + recordingUri);
-                updateRecordProgramInfo(recordingUri);
+                synchronized (mRecordingLock) {
+                    if (getRecordProgram(recordingUri) == null) {
+                        insertNewRecording(recordingUri);
+                    }
+                }
+                updateRecordProgramInfo();
             }
             recordingPending = false;
         }
@@ -2248,58 +2256,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             if (program == null) {
                 program = getCurrentStreamProgram(mChannelUri, PropSettingManager.getCurrentStreamTime(true));
             }
-            if (insert) {
-                if (program == null) {
-                    long id = -1;
-                    if (channel != null) {
-                        id = channel.getId();
-                    }
-                    builder = new RecordedProgram.Builder()
-                            .setChannelId(id)
-                            .setTitle(channel != null ? channel.getDisplayName() : null)
-                            .setStartTimeUtcMillis(startRecordTimeMillis)
-                            .setEndTimeUtcMillis(startRecordTimeMillis + recordingDurationMillis/*endRecordTimeMillis*/);//stream card may playback
-                } else {
-                    builder = new RecordedProgram.Builder(program);
-                    String name = getRecordName(channel, program);
-                    builder.setTitle(name);
-                    renameRecord(name, recordingUri);
-                    builder.setStartTimeUtcMillis(startRecordTimeMillis);
-                }
-                data = new InternalProviderData();
-                String currentPath = mDataManager.getStringParameters(DataManager.KEY_PVR_RECORD_PATH);
-                int pathExist = 0;
-                if (mSysSettingManager.isDeviceExist(currentPath)) {
-                    pathExist = 1;
-                }
-                if (SysSettingManager.isMediaPath(currentPath)) {
-                    currentPath = SysSettingManager.convertMediaPathToMountedPath(currentPath);
-                }
-                try {
-                    data.put(RecordedProgram.RECORD_FILE_PATH, currentPath);
-                    data.put(RecordedProgram.RECORD_STORAGE_EXIST, pathExist);
-                    data.put(RecordedProgram.RECORD_SERVICE_TYPE,
-                            channel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO) ? TvContract.Channels.SERVICE_TYPE_AUDIO : TvContract.Channels.SERVICE_TYPE_AUDIO_VIDEO);
-
-                } catch (Exception e) {
-                    Log.e(TAG, "updateRecordingToDb update InternalProviderData Exception = " + e.getMessage());
-                }
-            }
-            if (insert) {
-                Log.i(TAG, "updateRecordingToDb insert");
-                RecordedProgram recording = builder.setInputId(mInputId)
-                        .setRecordingDataUri(recordingUri)
-                        .setRecordingDataBytes(1024 * 1024l)
-                        .setRecordingDurationMillis(recordingDurationMillis > 0 ? recordingDurationMillis : -1)
-                        .setInternalProviderData(data)
-                        .build();
-                mRecordedProgramUri = mContext.getContentResolver().insert(TvContract.RecordedPrograms.CONTENT_URI,
-                        recording.toContentValues());
-                Bundle event = new Bundle();
-                event.putString(ConstantManager.EVENT_RECORD_DATA_URI, recordingUri != null ? recordingUri : null);
-                event.putString(ConstantManager.EVENT_RECORD_PROGRAM_URI, mRecordedProgramUri != null ? mRecordedProgramUri.toString() : null);
-                notifySessionEvent(ConstantManager.EVENT_RECORD_PROGRAM_URI, event);
-            } else {
+            if (!insert) {
                 Log.i(TAG, "updateRecordingToDb update");
                 if (mRecordedProgramUri != null) {
                     ContentValues values = new ContentValues();
@@ -2500,27 +2457,70 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             return program;
         }
 
-        private void updateRecordProgramInfo(String recordDataUri) {
-            RecordedProgram searchedRecordedProgram = getRecordProgram(recordDataUri);
+        private void insertNewRecording(String recordDataUri) {
+            Program program = mProgram;
+            Channel channel = mChannel;
+            if (program == null) {
+                program = getCurrentStreamProgram(mChannelUri, PropSettingManager.getCurrentStreamTime(true));
+            }
+            RecordedProgram.Builder builder;
+            if (program == null) {
+                long id = -1;
+                if (channel != null) {
+                    id = channel.getId();
+                }
+                builder = new RecordedProgram.Builder()
+                        .setChannelId(id)
+                        .setTitle(channel != null ? channel.getDisplayName() : null)
+                        .setStartTimeUtcMillis(startRecordTimeMillis)
+                        .setEndTimeUtcMillis(startRecordTimeMillis);
+            } else {
+                builder = new RecordedProgram.Builder(program);
+                String name = getRecordName(channel, program);
+                builder.setTitle(name);
+                renameRecord(name, recordingUri);
+                builder.setStartTimeUtcMillis(startRecordTimeMillis);
+            }
+            InternalProviderData data = new InternalProviderData();
+            String currentPath = mDataManager.getStringParameters(DataManager.KEY_PVR_RECORD_PATH);
+            int pathExist = 0;
+            if (mSysSettingManager.isDeviceExist(currentPath)) {
+                pathExist = 1;
+            }
+            if (SysSettingManager.isMediaPath(currentPath)) {
+                currentPath = SysSettingManager.convertMediaPathToMountedPath(currentPath);
+            }
+            try {
+                data.put(RecordedProgram.RECORD_FILE_PATH, currentPath);
+                data.put(RecordedProgram.RECORD_STORAGE_EXIST, pathExist);
+                data.put(RecordedProgram.RECORD_SERVICE_TYPE,
+                        channel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO) ? TvContract.Channels.SERVICE_TYPE_AUDIO : TvContract.Channels.SERVICE_TYPE_AUDIO_VIDEO);
+            } catch (Exception e) {
+                Log.e(TAG, "insertNewRecording Exception = " + e.getMessage());
+            }
+            RecordedProgram recording = builder.setInputId(mInputId)
+                .setRecordingDataUri(recordDataUri)
+                .setRecordingDataBytes(1024 * 1024l)
+                .setRecordingDurationMillis(-1)
+                .setInternalProviderData(data)
+                .build();
+            mRecordedProgramUri = mContext.getContentResolver().insert(TvContract.RecordedPrograms.CONTENT_URI,
+                    recording.toContentValues());
+            Log.d(TAG, "insertNewRecording insert " + mRecordedProgramUri);
+            Bundle event = new Bundle();
+            event.putString(ConstantManager.EVENT_RECORD_DATA_URI, recordDataUri != null ? recordDataUri : null);
+            event.putString(ConstantManager.EVENT_RECORD_PROGRAM_URI, mRecordedProgramUri != null ? mRecordedProgramUri.toString() : null);
+            notifySessionEvent(ConstantManager.EVENT_RECORD_PROGRAM_URI, event);
+
+        }
+
+        private void updateRecordProgramInfo() {
             if (mRecordingProcessHandler != null) {
                 mRecordingProcessHandler.removeMessages(MSG_RECORD_UPDATE_RECORDING);
-                int arg1 = 0;
-                int arg2 = 0;
-                if (searchedRecordedProgram != null) {
-                    Log.d(TAG, "updateRecordProgramInfo update " + recordDataUri);
-                    arg1 = 0;
-                    arg2 = 1;
-                } else {
-                    Log.d(TAG, "updateRecordProgramInfo insert " + recordDataUri);
-                    arg1 = 1;
-                    arg2 = 1;
-                }
+                Log.d(TAG, "updateRecordProgramInfo update");
                 Message msg = mRecordingProcessHandler.obtainMessage(MSG_RECORD_UPDATE_RECORDING,
-                        arg1, arg2, searchedRecordedProgram);
-                boolean result = mRecordingProcessHandler.sendMessage(msg);
-                Log.d(TAG, "updateRecordProgramInfo " + ", index = " + mCurrentRecordIndex);
-            } else {
-                Log.e(TAG, "updateRecordProgramInfo RecordingProcessHandler is null, index = " + mCurrentRecordIndex);
+                        0, 1, null);
+                mRecordingProcessHandler.sendMessageDelayed(msg, 1000);
             }
         }
 
