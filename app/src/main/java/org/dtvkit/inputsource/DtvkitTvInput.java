@@ -2724,6 +2724,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     mPipTvInputInfo, mHardwareCallback);
             if (hardware == null) {
                 Log.e(TAG, "Failed to acquire TvHardware:" + HARDWARE_PIP_DEVICE_ID);
+            } else {
+                hardware.setStreamVolume(1.0f);
             }
             mPipHardware = hardware;
         }
@@ -2822,6 +2824,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     mTvInputInfo, mHardwareCallback);
             if (hardware == null) {
                 Log.e(TAG, "Failed to acquire TvHardware:" + HARDWARE_MAIN_DEVICE_ID);
+            } else {
+                hardware.setStreamVolume(1.0f);
             }
             mMainHardware = hardware;
         }
