@@ -563,10 +563,12 @@ void DTVKitClientJni::notify(const parcel_t &parcel) {
         sp<SubtitleMessageHandler> subtitleHandler = new SubtitleMessageHandler();
         subtitleHandler->setParcelData(parcel);
         if (gLooper.get() != nullptr) {
+            ALOGD("SUB_SERVER_DRAW funname:%d", parcel.funname);
             gLooper->sendMessage(subtitleHandler, Message(parcel.funname));
+        } else {
+            ALOGE("looper error %d", parcel.funname);
         }
     }
-
 }
 
 void DTVKitClientJni::notifyServerState(int diedOrReconnected) {

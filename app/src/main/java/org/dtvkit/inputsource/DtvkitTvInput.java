@@ -755,7 +755,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         Log.i(TAG, "initInputThreadHandler，initDtvkitTvInput");
                         mContentRatingsManager.update();
                         updateParentalControl();
-                        initDtvkitTvInput(true);
+                        initDtvkitTvInput();
                     }
                     break;
                 }
@@ -921,15 +921,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
     }
 
-    private synchronized void initDtvkitTvInput(boolean isCreateSession) {
-        int subFlg = getSubtitleFlag();
+    private synchronized void initDtvkitTvInput() {
         boolean hasInitFont = false;
-        Log.d(TAG, "initDtvkitTvInput already isCreateSession:" + isCreateSession);
-        if (isCreateSession) {
-            DtvkitGlueClient.getInstance().destroySubtitleCtl();
-            DtvkitGlueClient.getInstance().attachSubtitleCtl(subFlg & 0xFF);
-        }
         if (mIsInited) {
+            Log.d(TAG, "initDtvkitTvInput already");
             return;
         }
         Log.d(TAG, "initDtvkitTvInput start");
@@ -955,8 +950,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         sendEmptyMessageToInputThreadHandler(MSG_UPDATE_DTVKIT_DATABASE);
         sendDelayedEmptyMessageToInputThreadHandler(MSG_CHECK_CHANNEL_SEARCH_STATUS, 1000);
         resetRecordingPath();
+
+        int subFlg = getSubtitleFlag();
         if (subFlg >= SUBTITLE_CTL_HK_DVB_SUB) {
-            DtvkitGlueClient.getInstance().attachSubtitleCtl(subFlg & 0xFF);
             if ((subFlg & SUBTITLE_CTL_HK_CC) == SUBTITLE_CTL_HK_CC) {
                 CustomerFont.initFontInTread(getApplicationContext());
                 hasInitFont = true;
@@ -1167,13 +1163,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     public final Session onCreateSession(String inputId) {
         Log.i(TAG, "onCreateSession " + inputId);
         DtvkitTvInputSession session = null;
+        initDtvkitTvInput();
         if (inputId.contains(String.valueOf(HARDWARE_PIP_DEVICE_ID))) {
             if (FeatureUtil.getFeatureSupportPip()) {
-                initDtvkitTvInput(false);
                 session = new DtvkitPipTvSession(this);
             }
         } else {
-            initDtvkitTvInput(true);
             session = new DtvkitMainTvSession(this);
         }
         setCIPlusServiceReady();
@@ -1914,7 +1909,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     @Override
     public RecordingSession onCreateRecordingSession(String inputId) {
         Log.d(TAG, "onCreateRecordingSession initDtvkitTvInput");
-        initDtvkitTvInput(false);
+        initDtvkitTvInput();
         mDtvkitRecordingSessionCount++;
         mRecordingSession = new DtvkitRecordingSession(this, inputId);
         return mRecordingSession;
@@ -2740,7 +2735,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
 
         @Override
-        protected void initSurface() {
+        protected void preFirstTune() {
             setSurfaceTunnelId(INDEX_FOR_PIP, 2);
         }
 
@@ -2840,10 +2835,13 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
 
         @Override
-        protected void initSurface() {
+        protected void preFirstTune() {
             setSurfaceTunnelId(INDEX_FOR_MAIN, 1);
             int aspect_mode = mSystemControlManager.GetDisplayMode(SystemControlManager.SourceInput.DTV.toInt());
             setTVAspectMode(aspect_mode == DISPLAY_MODE_NORMAL ? ASPECT_MODE_AUTO : ASPECT_MODE_CUSTOM);
+            int subFlg = getSubtitleFlag();
+            DtvkitGlueClient.getInstance().destroySubtitleCtl();
+            DtvkitGlueClient.getInstance().attachSubtitleCtl(subFlg & 0xFF);
         }
 
         @Override
@@ -3570,9 +3568,13 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         protected void acquireTvHardware() {}
 
         @MainThread
-        protected void releaseTvHardware() {}
+        protected void releaseTvHardware() {
+            mCanPlay = false;
+        }
 
-        protected void initSurface() {}
+        protected void preFirstTune() {
+            Log.d(TAG, "preFirstTune");
+        }
 
         protected void tunePendingIfNeeded() {
             if (mPendingTuneUri != null) {
@@ -5932,8 +5934,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                         }
                         if (set) {
-                            mHandlerThreadHandle.post(() -> initSurface());
-                            mCanPlay = true;
+                            if (!mCanPlay) {
+                                mHandlerThreadHandle.post(DtvkitTvInputSession.this::preFirstTune);
+                                mCanPlay = true;
+                            }
                             if (mSurface != null) {
                                 tunePendingIfNeeded();
                             }
