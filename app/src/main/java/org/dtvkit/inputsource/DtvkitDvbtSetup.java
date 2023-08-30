@@ -8,6 +8,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.tv.TvInputInfo;
+import android.media.tv.TvInputService;
+import android.media.tv.tuner.Tuner;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -56,7 +58,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
-
+import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
+import droidlogic.dtvkit.tuner.TunerAdapter;
 
 public class DtvkitDvbtSetup extends Activity {
     private static final String TAG = "DtvkitDvbtSetup";
@@ -96,6 +99,7 @@ public class DtvkitDvbtSetup extends Activity {
     private JSONArray mChannelFreqTable = null;
     private int isFrequencyMode = 0;
     private boolean mUpdateSearchFlag = false;
+    private TunerAdapter mTunerAdapter = null;
 
     private final DtvkitGlueClient.SignalHandler mHandler = new DtvkitGlueClient.SignalHandler() {
         @Override
@@ -160,6 +164,10 @@ public class DtvkitDvbtSetup extends Activity {
         } else {
             inputId = null;
             pvrStatus = null;
+        }
+        if (FeatureUtil.getFeatureSupportTunerFramework()) {
+            Tuner tuner = new Tuner(this, null, TvInputService.PRIORITY_HINT_USE_CASE_TYPE_SCAN);
+            mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_SCAN);
         }
         mParameterManager = new ParameterManager(this, DtvkitGlueClient.getInstance());
         final Button optionSet = findViewById(R.id.option_set_btn);
@@ -289,6 +297,10 @@ public class DtvkitDvbtSetup extends Activity {
             setResult(RESULT_CANCELED, mSyncFinish ? intent : null);
         }
         sendScanFinishBroadcast();
+        if (null != mTunerAdapter) {
+            mTunerAdapter.release();
+            mTunerAdapter = null;
+        }
         super.finish();
     }
 
@@ -304,9 +316,6 @@ public class DtvkitDvbtSetup extends Activity {
             //stopSearch();
             sendStopSearch();
         }
-        if (null != mDtvKitScanSignalPresenter) {
-            mDtvKitScanSignalPresenter.releaseSignalCheckResource();
-        }
     }
 
     @Override
@@ -316,6 +325,9 @@ public class DtvkitDvbtSetup extends Activity {
         releaseHandler();
         stopMonitoringSearch();
         stopMonitoringSync();
+        if (null != mDtvKitScanSignalPresenter) {
+            mDtvKitScanSignalPresenter.releaseSignalCheckResource();
+        }
     }
 
     private void initHandler() {

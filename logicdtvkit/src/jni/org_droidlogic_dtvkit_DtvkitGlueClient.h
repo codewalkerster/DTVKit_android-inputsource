@@ -18,7 +18,12 @@
 #define __ORG_DTVKIT_INPUTSOURCE_CLIENT_H__
 #include <jni.h>
 #include <utils/Log.h>
+#ifdef SUPPORT_TUNER_FRAMEWORK
+#include "glue_client.h"
+#include <utils/RefBase.h>
+#else
 #include "DTVKitHidlClient.h"
+#endif
 #include "SubtitleServerClient.h"
 using namespace android;
 using ::android::hardware::hidl_memory;
@@ -69,26 +74,89 @@ typedef struct dvb_param_s {
     int id;
 }dvb_param_t;
 
-class DTVKitClientJni : public DTVKitListener {
+#ifdef SUPPORT_TUNER_FRAMEWORK
+typedef struct s_dvb_subt_info
+{
+   int cpage;
+   int apage;
+} dvb_subtitle_info_t;
+
+typedef struct s_teletext_subt
+{
+   int magazine;
+   int page;
+} teletext_info_t;
+
+typedef struct parcel_s {
+    int msgType;
+    std::vector<int> bodyInt;
+    std::vector<std::string> bodyString;
+    hidl_memory mem;
+
+    //to subtitleserver subtitle info
+    int funname;
+    int is_dvb_subt;
+    int pid;
+    int subt_type;//1:dvb; 2: teletext; 3:scte27
+    int demux_num;
+    dvb_subtitle_info_t subt;
+    teletext_info_t ttxt;
+    int event_type; // teletext event type;
+} parcel_t;
+#endif
+
+class DTVKitClientJni : virtual public RefBase{
 public:
     DTVKitClientJni();
     ~DTVKitClientJni();
-    virtual void notify(const parcel_t &parcel);
-    virtual void notifyServerState(int diedOrReconnected);
+
+    virtual std::string request(const std::string& resource, const std::string& json) = 0;
+    virtual void setAfd(int player, int afd) = 0;
+    virtual void setSubtitleFlag(int flag) = 0;
+//    virtual MessageQueueSync* getQueue() = 0;
 
     static DTVKitClientJni *GetInstance();
-    std::string request(const std::string& resource, const std::string& json);
-    void setAfd(int player, int afd);
-    void setSubtitleFlag(int flag);
-    MessageQueueSync* getQueue();
-
-private:
-    static void  once_run(void);
+    static void once_run(void);
     static void* pid_run(void *arg);
-    sp<DTVKitHidlClient> mDkSession;
-    mutable Mutex mLock;
+protected:
+    //static void  once_run(void);
+    //static void* pid_run(void *arg);
+    //sp<DTVKitHidlClient> mDkSession;
+    //mutable Mutex mLock;
     static DTVKitClientJni *mInstance;
 };
+
+#ifdef SUPPORT_TUNER_FRAMEWORK
+class DTVKitTunerClientJni : public DTVKitClientJni {
+public:
+    DTVKitTunerClientJni();
+    ~DTVKitTunerClientJni();
+
+    virtual std::string request(const std::string& resource, const std::string& json);
+    virtual void setAfd(int player, int afd);
+    virtual void setSubtitleFlag(int flag);
+private:
+    static void signalCallback(const std::string &signal, const std::string &data, int id);
+    Glue_client *mClueClient = NULL;
+};
+#else
+class DTVKitServerClientJni : public DTVKitClientJni, public DTVKitListener{
+public:
+    DTVKitServerClientJni();
+    ~DTVKitServerClientJni();
+
+    virtual std::string request(const std::string& resource, const std::string& json);
+    virtual void setAfd(int player, int afd);
+    virtual void setSubtitleFlag(int flag);
+    virtual MessageQueueSync* getQueue();
+
+    virtual void notify(const parcel_t &parcel);
+    virtual void notifyServerState(int diedOrReconnected);
+private:
+    mutable Mutex mLock;
+    sp<DTVKitHidlClient> mDkSession;
+};
+#endif
 
 class SubtitleDataListenerImpl : public SubtitleListener {
     public:

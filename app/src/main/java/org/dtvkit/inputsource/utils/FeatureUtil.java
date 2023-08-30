@@ -90,4 +90,9 @@ public class FeatureUtil {
         Log.d(TAG, "getFeatureSupportFvp: " + isSupport);
         return isSupport;
     }
+    public static boolean getFeatureSupportTunerFramework() {
+        boolean isSupport = PropSettingManager.getBoolean("vendor.tv.dtv.tuner.framework.enable", false);
+        Log.d(TAG, "getFeatureSupportTunerFramework: " + isSupport);
+        return isSupport;
+    }
 }

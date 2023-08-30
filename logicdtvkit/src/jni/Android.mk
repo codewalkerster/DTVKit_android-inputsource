@@ -21,19 +21,27 @@ LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
 LOCAL_LICENSE_CONDITIONS := notice
 LOCAL_MULTILIB := 32
 LOCAL_HEADER_LIBRARIES := jni_headers
-LOCAL_SHARED_LIBRARIES :=  \
-    vendor.amlogic.hardware.dtvkitserver@1.0 \
-    vendor.amlogic.hardware.subtitleserver@1.0 \
+
+LOCAL_SHARED_LIBRARIES := \
     android.hidl.memory@1.0 \
+    vendor.amlogic.hardware.subtitleserver@1.0 \
     libbase \
-    libhidlbase \
-    libhidltransport \
-    libhidlmemory \
     libcutils \
     libutils \
     liblog \
     libhardware \
+    libhidlbase \
+    libhidltransport \
+    libhidlmemory \
+
+ifeq ($(PRODUCT_SUPPORT_TUNER_FRAMEWORK), true)
+    LOCAL_SHARED_LIBRARIES += libdtvkitserver
+    LOCAL_CFLAGS += -DSUPPORT_TUNER_FRAMEWORK
+else
+    LOCAL_SHARED_LIBRARIES += \
+    vendor.amlogic.hardware.dtvkitserver@1.0 \
     libdtvkithidlclient
+endif
 
 LOCAL_LDLIBS := -lfmq_vendor
 

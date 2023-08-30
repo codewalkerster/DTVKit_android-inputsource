@@ -1,0 +1,17 @@
+LOCAL_PATH := $(call my-dir)
+
+ifeq (1, $(strip $(shell expr $(PLATFORM_VERSION) \< 13)))
+include $(CLEAR_VARS)
+LOCAL_MODULE := android_t_tv
+LOCAL_MODULE_CLASS := JAVA_LIBRARIES
+LOCAL_SRC_FILES := android_t_tv.jar
+LOCAL_MODULE_SUFFIX := $(COMMON_JAVA_PACKAGE_SUFFIX)
+LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
+LOCAL_LICENSE_CONDITIONS := notice
+LOCAL_DEX_PREOPT := false
+LOCAL_UNINSTALLABLE_MODULE := true
+LOCAL_VENDOR_MODULE := true
+include $(BUILD_PREBUILT)
+endif
+
+

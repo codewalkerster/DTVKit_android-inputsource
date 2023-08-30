@@ -313,14 +313,33 @@ static void postDvbParam(const std::string& resource, const std::string json, in
 }
 pthread_once_t once = PTHREAD_ONCE_INIT;
 pthread_t pid_thread;
+static uint8_t data[FMQ_QUEUE_SIZE] = {0};
+DTVKitClientJni *DTVKitClientJni::mInstance = NULL;
+
+DTVKitClientJni *DTVKitClientJni::GetInstance() {
+    pthread_once(&once, once_run);
+    pthread_create(&pid_thread, NULL, pid_run, NULL);
+    return mInstance;
+}
 
 void  DTVKitClientJni::once_run(void)
 {
-    if (NULL == mInstance)
-         mInstance = new DTVKitClientJni();
+    if (NULL == mInstance) {
+#ifdef SUPPORT_TUNER_FRAMEWORK
+        ALOGD("Support tuner framework");
+        mInstance = new DTVKitTunerClientJni();
+#else
+        ALOGD("Support dtvkit server");
+        mInstance = new DTVKitServerClientJni();
+#endif
+    }
 }
 
-static uint8_t data[FMQ_QUEUE_SIZE] = {0};
+#ifdef SUPPORT_TUNER_FRAMEWORK
+void*  DTVKitClientJni::pid_run(void *arg) {
+    return NULL;
+}
+#else
 void*  DTVKitClientJni::pid_run(void *arg)
 {
     ALOGD("Enter pid_run");
@@ -330,7 +349,8 @@ void*  DTVKitClientJni::pid_run(void *arg)
         return NULL;
     }
 
-    MessageQueueSync* fmq = mInstance->getQueue();
+    DTVKitServerClientJni* client = static_cast<DTVKitServerClientJni *>(mInstance);
+    MessageQueueSync* fmq = client->getQueue();
     if (NULL == fmq) {
         ALOGE("get fmq null");
         return NULL;
@@ -383,42 +403,137 @@ void*  DTVKitClientJni::pid_run(void *arg)
                 usleep(100*1000);//100ms
            }
     }
-
 }
-
+#endif
 
 DTVKitClientJni::DTVKitClientJni()  {
-    mDkSession = DTVKitHidlClient::connect(DTVKitHidlClient::CONNECT_TYPE_HAL);
-    mDkSession->setListener(this);
-}
 
-DTVKitClientJni *DTVKitClientJni::mInstance = NULL;
-DTVKitClientJni *DTVKitClientJni::GetInstance() {
-    pthread_once(&once, once_run);
-    pthread_create(&pid_thread, NULL, pid_run, NULL);
-    return mInstance;
 }
 
 DTVKitClientJni::~DTVKitClientJni()  {
 
 }
+#ifdef SUPPORT_TUNER_FRAMEWORK
+DTVKitTunerClientJni::DTVKitTunerClientJni() {
+    mClueClient = Glue_client::getInstance();
+    mClueClient->addInterface();
+    mClueClient->setSignalCallback(signalCallback);
+}
 
-std::string DTVKitClientJni::request(const std::string& resource, const std::string& json) {
+DTVKitTunerClientJni::~DTVKitTunerClientJni()  {
+
+}
+
+std::string DTVKitTunerClientJni::request(const std::string& resource, const std::string& json) {
+    return mClueClient->request(resource, json);
+}
+
+void DTVKitTunerClientJni::setAfd(int player, int afd) {
+    mClueClient->setAfd(player, afd);
+}
+
+void DTVKitTunerClientJni::setSubtitleFlag(int flag) {
+    ALOGD("DTVKitTunerClientJni setSubtitleFlag Method not implemented ");
+}
+
+void DTVKitTunerClientJni::signalCallback(const std::string &signal, const std::string &data, int id) {
+    ALOGD("-signalCallback signal:%s (%d), data:%s", signal.c_str(), id, data.c_str());
+    postDvbParam(signal, data, id);
+}
+
+#else
+DTVKitServerClientJni::DTVKitServerClientJni()  {
+    mDkSession = DTVKitHidlClient::connect(DTVKitHidlClient::CONNECT_TYPE_HAL);
+    mDkSession->setListener(this);
+}
+
+DTVKitServerClientJni::~DTVKitServerClientJni()  {
+
+}
+
+std::string DTVKitServerClientJni::request(const std::string& resource, const std::string& json) {
     return mDkSession->request(resource, json);
 }
 
-void DTVKitClientJni::setAfd(int player, int afd) {
+void DTVKitServerClientJni::setAfd(int player, int afd) {
     mDkSession->setAfd(player, afd);
 }
 
-void DTVKitClientJni::setSubtitleFlag(int flag) {
+void DTVKitServerClientJni::setSubtitleFlag(int flag) {
     mDkSession->setSubtitleFlag(flag);
 }
 
-MessageQueueSync* DTVKitClientJni::getQueue() {
+MessageQueueSync* DTVKitServerClientJni::getQueue() {
     ALOGD("Enter getQueue");
     return mDkSession->getQueue();
 }
+
+void DTVKitServerClientJni::notify(const parcel_t &parcel) {
+    AutoMutex _l(mLock);
+
+    ALOGD("notify msgType = %d  this:%p", parcel.msgType, this);
+    if (!gJNIReady) {
+        ALOGE("notify gJNIReady false");
+        return;
+    }
+    if (parcel.msgType == DTVKIT_DRAW) {
+        datablock_t datablock;
+        datablock.width      = parcel.bodyInt[0];
+        datablock.height     = parcel.bodyInt[1];
+        datablock.dst_x      = parcel.bodyInt[2];
+        datablock.dst_y      = parcel.bodyInt[3];
+        datablock.dst_width  = parcel.bodyInt[4];
+        datablock.dst_height = parcel.bodyInt[5];
+
+        if (datablock.width != 0 || datablock.height != 0) {
+            sp<IMemory> memory = mapMemory(parcel.mem);
+            if (memory == nullptr) {
+                ALOGE("[%s] memory map is null", __FUNCTION__);
+                return;
+            }
+            uint8_t *data = static_cast<uint8_t*>(static_cast<void*>(memory->getPointer()));
+            memory->read();
+            memory->commit();
+            //int size = memory->getSize();
+
+            postSubtitleData(datablock.width, datablock.height, datablock.dst_x, datablock.dst_y,
+            datablock.dst_width, datablock.dst_height, data);
+        } else {
+            postSubtitleData(datablock.width, datablock.height, datablock.dst_x, datablock.dst_y,
+            datablock.dst_width, datablock.dst_height, NULL);
+        }
+    }
+
+    if (parcel.msgType == REQUEST) {
+        dvb_param_t dvb_param;
+        dvb_param.resource = parcel.bodyString[0];
+        dvb_param.json     = parcel.bodyString[1];
+        dvb_param.id       = parcel.bodyInt[0];
+        postDvbParam(dvb_param.resource, dvb_param.json, dvb_param.id);
+    }
+
+    if (parcel.msgType == SUB_SERVER_DRAW) {
+        sp<SubtitleMessageHandler> subtitleHandler = new SubtitleMessageHandler();
+        subtitleHandler->setParcelData(parcel);
+        if (gLooper.get() != nullptr) {
+            gLooper->sendMessage(subtitleHandler, Message(parcel.funname));
+        }
+    }
+
+}
+
+void DTVKitServerClientJni::notifyServerState(int diedOrReconnected) {
+    bool attached = false;
+    JNIEnv *env = getJniEnv(&attached);
+
+    if (env != NULL) {
+        env->CallVoidMethod(DtvkitObject, notifyServerStateCallback, diedOrReconnected);
+    }
+    if (attached) {
+        DetachJniEnv();
+    }
+}
+#endif
 
 void SubtitleMessageHandler::setParcelData(parcel_t parcel) {
     this->parcel = parcel;
@@ -512,74 +627,6 @@ void SubtitleMessageHandler::handleMessage(const Message & message) {
         default:
             ALOGD("get funname = %d", parcel.funname);
             break;
-    }
-}
-
-void DTVKitClientJni::notify(const parcel_t &parcel) {
-    AutoMutex _l(mLock);
-
-    ALOGD("notify msgType = %d  this:%p", parcel.msgType, this);
-    if (!gJNIReady) {
-        ALOGE("notify gJNIReady false");
-        return;
-    }
-    if (parcel.msgType == DTVKIT_DRAW) {
-        datablock_t datablock;
-        datablock.width      = parcel.bodyInt[0];
-        datablock.height     = parcel.bodyInt[1];
-        datablock.dst_x      = parcel.bodyInt[2];
-        datablock.dst_y      = parcel.bodyInt[3];
-        datablock.dst_width  = parcel.bodyInt[4];
-        datablock.dst_height = parcel.bodyInt[5];
-
-        if (datablock.width != 0 || datablock.height != 0) {
-            sp<IMemory> memory = mapMemory(parcel.mem);
-            if (memory == nullptr) {
-                ALOGE("[%s] memory map is null", __FUNCTION__);
-                return;
-            }
-            uint8_t *data = static_cast<uint8_t*>(static_cast<void*>(memory->getPointer()));
-            memory->read();
-            memory->commit();
-            //int size = memory->getSize();
-
-            postSubtitleData(datablock.width, datablock.height, datablock.dst_x, datablock.dst_y,
-            datablock.dst_width, datablock.dst_height, data);
-        } else {
-            postSubtitleData(datablock.width, datablock.height, datablock.dst_x, datablock.dst_y,
-            datablock.dst_width, datablock.dst_height, NULL);
-        }
-    }
-
-    if (parcel.msgType == REQUEST) {
-        dvb_param_t dvb_param;
-        dvb_param.resource = parcel.bodyString[0];
-        dvb_param.json     = parcel.bodyString[1];
-        dvb_param.id       = parcel.bodyInt[0];
-        postDvbParam(dvb_param.resource, dvb_param.json, dvb_param.id);
-    }
-
-    if (parcel.msgType == SUB_SERVER_DRAW) {
-        sp<SubtitleMessageHandler> subtitleHandler = new SubtitleMessageHandler();
-        subtitleHandler->setParcelData(parcel);
-        if (gLooper.get() != nullptr) {
-            ALOGD("SUB_SERVER_DRAW funname:%d", parcel.funname);
-            gLooper->sendMessage(subtitleHandler, Message(parcel.funname));
-        } else {
-            ALOGE("looper error %d", parcel.funname);
-        }
-    }
-}
-
-void DTVKitClientJni::notifyServerState(int diedOrReconnected) {
-    bool attached = false;
-    JNIEnv *env = getJniEnv(&attached);
-
-    if (env != NULL) {
-        env->CallVoidMethod(DtvkitObject, notifyServerStateCallback, diedOrReconnected);
-    }
-    if (attached) {
-        DetachJniEnv();
     }
 }
 

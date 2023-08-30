@@ -5,6 +5,8 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.media.tv.TvInputService;
+import android.media.tv.tuner.Tuner;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -22,6 +24,8 @@ import com.droidlogic.dtvkit.inputsource.searchguide.SearchStageFragment;
 import com.droidlogic.dtvkit.inputsource.searchguide.SimpleListFragment;
 import com.droidlogic.fragment.DvbsParameterManager;
 import com.droidlogic.fragment.ScanDishSetupFragment;
+import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
+import droidlogic.dtvkit.tuner.TunerAdapter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,6 +42,7 @@ public class DtvkitDvbsSetup extends Activity {
     private DataPresenter mDataPresenter = null;
     private boolean manualDiseqc = false;
     private boolean manualTKGS = false;
+    private TunerAdapter mTunerAdapter = null;
     private final Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(@NonNull Message msg) {
@@ -61,12 +66,20 @@ public class DtvkitDvbsSetup extends Activity {
         if (fragment == null) {
             showFragment(DataPresenter.FRAGMENT_SEARCH_UI);
         }
+        /************For tuner framework***************/
+        if (FeatureUtil.getFeatureSupportTunerFramework()) {
+            Tuner tuner = new Tuner(this, null, TvInputService.PRIORITY_HINT_USE_CASE_TYPE_SCAN);
+            mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_SCAN);
+        }
     }
 
     @Override
     protected void onDestroy() {
         mHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
+        if (null != mTunerAdapter) {
+            mTunerAdapter.release();
+        }
     }
 
     @Override

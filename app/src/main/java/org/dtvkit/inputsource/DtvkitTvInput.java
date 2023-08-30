@@ -114,6 +114,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.Collections;
+import android.media.tv.tuner.Tuner;
+import droidlogic.dtvkit.tuner.TunerAdapter;
 
 public class DtvkitTvInput extends TvInputService implements SystemControlEvent.DisplayModeListener,
         SystemControlEvent.AudioEventListener {
@@ -1158,6 +1160,24 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         Log.i(TAG, "onSetDisplayMode " + mode);
         setTVAspectMode(mode == DISPLAY_MODE_NORMAL ? ASPECT_MODE_AUTO : ASPECT_MODE_CUSTOM);
     }
+    @Override
+    public Session onCreateSession(String inputId, String sessionId) {
+        Log.i(TAG, "onCreateSession " + inputId + " sessionId : " + sessionId);
+        DtvkitTvInputSession session = null;
+        if (inputId.contains(String.valueOf(HARDWARE_PIP_DEVICE_ID))) {
+            if (FeatureUtil.getFeatureSupportPip()) {
+                initDtvkitTvInput();
+                session = new DtvkitPipTvSession(this, sessionId);
+            }
+        } else {
+            initDtvkitTvInput();
+            session = new DtvkitMainTvSession(this, sessionId);
+        }
+        setCIPlusServiceReady();
+        addTunerSession(session);
+        createHbbTvManager();
+        return session;
+    }
 
     @Override
     public final Session onCreateSession(String inputId) {
@@ -1936,6 +1956,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         private long mCurrentRecordIndex = 0;
         private boolean mRecordStopAndSaveReceived = false;
         private boolean mIsNonAvProgram = false;
+        protected TunerAdapter mRecordTunerAdapter = null;
 
         protected static final int MSG_RECORD_ON_TUNE = 0;
         protected static final int MSG_RECORD_ON_START = 1;
@@ -1951,6 +1972,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         public DtvkitRecordingSession(Context context, String inputId) {
             super(context);
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Tuner tuner = new Tuner(context, null, PRIORITY_HINT_USE_CASE_TYPE_RECORD);
+                mRecordTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_RECORD);
+            }
             mContext = context;
             mInputId = inputId;
             mCurrentRecordIndex = mDtvkitRecordingSessionCount;
@@ -2058,6 +2083,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 Log.d(TAG, "onRelease sendMessage result " + result + ", index = " + mCurrentRecordIndex);
             } else {
                 Log.w(TAG, "onRelease null mRecordingProcessHandler" + ", index = " + mCurrentRecordIndex);
+            }
+            if (null != mRecordTunerAdapter) {
+                mRecordTunerAdapter.release();
             }
         }
 
@@ -2687,6 +2715,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     }
 
     public class DtvkitPipTvSession extends DtvkitTvInputSession {
+        DtvkitPipTvSession(DtvkitTvInput service, String sessionId) {
+            super(service, sessionId, true);
+        }
         DtvkitPipTvSession(DtvkitTvInput service) {
             super(service, true);
         }
@@ -2780,6 +2811,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         private Uri mFccNextBufferUri = null;
         private boolean isDvrSession = false;
 
+        DtvkitMainTvSession(DtvkitTvInput service, String sessionId) {
+            super(service, sessionId, false);
+            init();
+        }
         DtvkitMainTvSession(DtvkitTvInput service) {
             super(service, false);
             init();
@@ -2846,6 +2881,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         @Override
         public boolean onSetSurface(Surface surface) {
+            Log.d(TAG, "onSetSurface surface : " + surface);
             if (mTvInputInfo == null) {
                 Log.e(TAG, "resource not ready!");
                 return false;
@@ -3086,6 +3122,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             public int frequency = 0;
             public String dvbUri = "";
         }
+        protected TunerAdapter mTunerAdapter = null;
 
         private final class AvailableState {
             AvailableState() {
@@ -3126,6 +3163,17 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             }
 
             private State state;
+        }
+        DtvkitTvInputSession(DtvkitTvInput service, String sessionId, boolean isPip) {
+            this(service, isPip);
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Tuner tuner = new Tuner(service.getApplicationContext(), sessionId, PRIORITY_HINT_USE_CASE_TYPE_LIVE);
+                if (true == isPip) {
+                    mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_PIP_FCC);
+                } else {
+                    mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_DEFAULT);
+                }
+            }
         }
 
         DtvkitTvInputSession(DtvkitTvInput service, boolean isPip) {
@@ -3271,6 +3319,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         @Override
         public boolean onSetSurface(Surface surface) {
             Log.i(TAG, "onSetSurface " + surface);
+            if (null != mTunerAdapter) {
+                mTunerAdapter.setSurfaceToNative(surface);
+            }
             mSurface = surface;
             if (surface != null) {
                 Message msg =  mMainHandle.obtainMessage(MSG_SET_SURFACE);
@@ -3529,6 +3580,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             if (!isSessionAvailable()) {
                 Log.w(TAG, "Session is released!!!");
                 return;
+            }
+            if (null != mTunerAdapter) {
+                mTunerAdapter.release();
             }
             mSessionState = SessionState.RELEASING;
             exitNumberSearch();

@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.media.tv.TvContract;
 import android.media.tv.TvInputInfo;
+import android.media.tv.TvInputService;
+import android.media.tv.tuner.Tuner;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -40,7 +42,8 @@ import com.droidlogic.dtvkit.inputsource.PvrStatusConfirmManager;
 import com.droidlogic.fragment.ParameterManager;
 import com.droidlogic.settings.ConstantManager;
 import com.droidlogic.settings.PropSettingManager;
-
+import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
+import droidlogic.dtvkit.tuner.TunerAdapter;
 import org.droidlogic.dtvkit.DtvkitGlueClient;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -78,6 +81,7 @@ public class DtvkitIsdbtSetup extends Activity {
     private final JSONArray mServiceList = new JSONArray();
     private int mFoundServiceNumber = 0;
     private PvrStatusConfirmManager mPvrStatusConfirmManager = null;
+    private TunerAdapter mTunerAdapter = null;
 
     protected HandlerThread mHandlerThread = null;
     protected Handler mThreadHandler = null;
@@ -138,6 +142,11 @@ public class DtvkitIsdbtSetup extends Activity {
         setContentView(R.layout.isdb_setup);
         mIsHybridSearch = PropSettingManager.getBoolean("vendor.tv.hybrid.search", false);
         Log.i(TAG, "HybridSearch:" + mIsHybridSearch);
+        /************For tuner framework***************/
+        if (FeatureUtil.getFeatureSupportTunerFramework()) {
+            Tuner tuner = new Tuner(this, null, TvInputService.PRIORITY_HINT_USE_CASE_TYPE_SCAN);
+            mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_SCAN);
+        }
         mParameterManager = new ParameterManager(this, DtvkitGlueClient.getInstance());
         mDataManager = new DataManager(this);
         mPvrStatusConfirmManager = new PvrStatusConfirmManager(this, mDataManager);
@@ -237,6 +246,9 @@ public class DtvkitIsdbtSetup extends Activity {
         releaseHandler();
         stopMonitoringSearch();
         stopMonitoringSync();
+        if (null != mTunerAdapter) {
+            mTunerAdapter.release();
+        }
     }
 
     private void initHandler() {
