@@ -2976,7 +2976,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     Log.d(TAG, "Do Ip Channel Tune error, hbbtv not init");
                 }
             } else {
-                if (!isPipSession()) {
+                if (!isPipSession() && Channel.isATV(oldChannel) != Channel.isATV(newChannel)) {
                     mMainHardware.setSurface(mSurface, Channel.isATV(mTunedChannel) ? mMainStreamConfig[1] : mMainStreamConfig[0]);
                 }
                 if (Channel.isATV(mTunedChannel)) {
@@ -2985,6 +2985,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else {
                     playResult = playerPlay(INDEX_FOR_MAIN, dvbUri, mAudioADAutoStart,
                             mainMuteStatus, 0, previousUriStr, nextUriStr).equals("ok");
+                }
+                if (!isPipSession() && Channel.isATV(oldChannel) != Channel.isATV(newChannel)) {
+                    mSystemControlManager.SetCurrentSourceInfo(
+                            Channel.isATV(mTunedChannel) ? SystemControlManager.SourceInput.TV : SystemControlManager.SourceInput.DTV, 0, 0);
                 }
             }
             if (playResult) {
@@ -5359,6 +5363,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                         if (mMainHardware != null) {
                                             Log.i(TAG, "update mMainStreamConfig isDTv:" + mTuneInfo.isDTv);
                                             mMainHardware.setSurface(mSurface, mTuneInfo.isDTv ? mMainStreamConfig[0] : mMainStreamConfig[1]);
+                                            mSystemControlManager.SetCurrentSourceInfo(
+                                                    mTuneInfo.isDTv ? SystemControlManager.SourceInput.DTV : SystemControlManager.SourceInput.TV, 0, 0);
                                         }
                                     }
                                 });
