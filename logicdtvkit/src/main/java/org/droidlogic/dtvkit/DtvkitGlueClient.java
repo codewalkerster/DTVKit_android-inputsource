@@ -107,7 +107,7 @@ public class DtvkitGlueClient {
     }
 
     public void notifyDvbCallback(String resource, String json, int id) {
-        Log.i(TAG, "notifyDvbCallback received!!! resource" + "(" + id + ")" + ",json" + json);
+        Log.i(TAG, "notifyDvbCallback received!!! resource:" + resource + " (" + id + ")" + ",json" + json);
         JSONObject object;
         try {
             if (json.charAt(0) == '[') {

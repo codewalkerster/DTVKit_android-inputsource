@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit;
 public class DtvkitEpgSync extends EpgSyncJobService {
     private static final String TAG = "EpgSyncJobService";
     private static final Object mLock = new Object();
-    private static JSONArray mServices = null;
+    private static JSONArray mDTvServices = null;
+    private static JSONArray mATvServices = null;
 
     public static final int SIGNAL_QPSK = 1; // digital satellite
     public static final int SIGNAL_COFDM = 2; // digital terrestrial
@@ -101,7 +102,13 @@ public class DtvkitEpgSync extends EpgSyncJobService {
 
     public static void setServicesToSync(JSONArray services) {
         synchronized (mLock) {
-            mServices = services;
+            mDTvServices = services;
+        }
+    }
+
+    public static void setATvServicesToSync(JSONArray services) {
+        synchronized (mLock) {
+            mATvServices = services;
         }
     }
 
@@ -127,9 +134,18 @@ public class DtvkitEpgSync extends EpgSyncJobService {
             if (channelNumber <= 0) {
                 return channels;
             }
-            JSONArray services = getAtvServicesList();
-            Log.i(TAG, "Finally getAtvChannels size=" + services.length());
-
+            JSONArray services = new JSONArray();
+            synchronized (mLock) {
+                if (mATvServices != null && channelNumber == mATvServices.length()) {
+                    for (int i = 0; i < channelNumber; i++) {
+                        services.put(mATvServices.get(i));
+                    }
+                }
+                mATvServices = null;
+            }
+            if (services.length() == 0) {
+                services = getAtvServicesList();
+            }
             for (int i = 0; i < services.length(); i++) {
                 JSONObject service = services.getJSONObject(i);
                 String ATVName = service.getString("Name");
@@ -227,12 +243,12 @@ public class DtvkitEpgSync extends EpgSyncJobService {
             }
             JSONArray services = new JSONArray();
             synchronized (mLock) {
-                if (mServices != null && channelNumber == mServices.length()) {
+                if (mDTvServices != null && channelNumber == mDTvServices.length()) {
                     for (int i = 0; i < channelNumber; i++) {
-                        services.put(mServices.get(i));
+                        services.put(mDTvServices.get(i));
                     }
                 }
-                mServices = null;
+                mDTvServices = null;
             }
             if (services.length() == 0) {
                 services = getDvbServicesList(syncCurrent ? "cur" : "all", "all");

@@ -62,7 +62,8 @@
     <string name="dvbc_search_mode">模式:</string>
     <string name="dvbt_search_symbol_rate">符号率:</string>
     <string name="public_search_mode">搜索模式:</string>
-    <string name="public_search_channel_name">Channel Name:</string>
+    <string name="public_search_channel_freq">搜台频率:</string>
+    <string name="public_search_channel_name">搜台号码:</string>
     <string name="public_dvb_search">DVB搜台</string>
     <string name="sync_tv_provider">更新数据库，请等待!</string>
     <string name="dvb_network_change">检测到码流更新, 正在重新搜索新频道!</string>

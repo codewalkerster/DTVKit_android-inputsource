@@ -292,7 +292,7 @@ static void postMixVideoEvent(int event) {
 }
 
 static void postDvbParam(const std::string& resource, const std::string json, int id) {
-    ALOGD("-callback postDvbParam resource:%s (%d), json:%s", resource.c_str(), id, json.c_str());
+    // ALOGD("-callback postDvbParam resource:%s (%d), json:%s", resource.c_str(), id, json.c_str());
     bool attached = false;
     JNIEnv *env = getJniEnv(&attached);
 

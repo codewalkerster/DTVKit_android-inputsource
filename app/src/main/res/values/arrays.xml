@@ -102,8 +102,9 @@
     </string-array>
 
     <string-array name="public_adtv_type_entries">
-        <item>ATV</item>
         <item>DTV</item>
+        <item>ATV</item>
+        <item>DTV + ATV</item>
     </string-array>
 
     <string-array name="dvbs_channel_type">

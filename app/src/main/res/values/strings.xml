@@ -89,6 +89,7 @@
     <string name="dvbc_search_mode">Mode:</string>
     <string name="dvbt_search_symbol_rate">Symbol Rate:</string>
     <string name="public_search_mode">Search Mode:</string>
+    <string name="public_search_channel_freq">Channel Frequency:</string>
     <string name="public_search_channel_name">Channel Name:</string>
     <string name="public_dvb_search">DVB SEARCH</string>
     <string name="sync_tv_provider">Updating provider, please wait!</string>

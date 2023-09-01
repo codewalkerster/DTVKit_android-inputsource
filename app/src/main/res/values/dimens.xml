@@ -9,7 +9,7 @@
     <dimen name="ut_scan_title_text_size">23sp</dimen>
     <dimen name="ut_scan_title_margin_top">178dp</dimen>
 
-    <dimen name="ut_scan_progress_width">450dp</dimen>
+    <dimen name="ut_scan_progress_width">400dp</dimen>
     <dimen name="ut_scan_progress_height">6dp</dimen>
     <dimen name="ut_scan_progress_margin_top">16dp</dimen>
 
