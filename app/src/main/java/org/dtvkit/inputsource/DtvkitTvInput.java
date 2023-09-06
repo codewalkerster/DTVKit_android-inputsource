@@ -4104,8 +4104,13 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 int version = data.getInt("ver");
                 // 108473 : audioType
                 Log.d(TAG, "do private cmd: ACTION_DTV_AUDIO_STREAM_TYPE: " + type + ", ver=" + version);
-                int index = bMainAudioOutput ? INDEX_FOR_MAIN : INDEX_FOR_PIP;
-                playerSetAudioStreamType(index, type);
+                // critical sequence
+                if (getPipTunerSession() != null) {
+                    int mutePath = bMainAudioOutput ? INDEX_FOR_PIP : INDEX_FOR_MAIN;
+                    playerSetAudioStreamType(mutePath, type);
+                }
+                int unmutePath = bMainAudioOutput ? INDEX_FOR_MAIN : INDEX_FOR_PIP;
+                playerSetAudioStreamType(unmutePath, type);
                 playerSetAdParams(true, 0);
             } else if (TextUtils.equals(DataManager.ACTION_DTV_ENABLE_AUDIO_AD, action) && data != null) {
                 mAudioADAutoStart = data.getInt(DataManager.PARA_ENABLE) == 1;
@@ -4113,8 +4118,13 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 boolean recover = type != ConstantManager.AUDIO_STREAM_TYPE.NORMAL;
                 Log.d(TAG, "do private cmd: ACTION_DTV_ENABLE_AUDIO_AD: " + mAudioADAutoStart
                         + ", type = " + type);
-                int index = bMainAudioOutput ? INDEX_FOR_MAIN : INDEX_FOR_PIP;
-                playerSetAudioDescriptionOn(index, mAudioADAutoStart);
+                // critical sequence
+                if (getPipTunerSession() != null) {
+                    int mutePath = bMainAudioOutput ? INDEX_FOR_PIP : INDEX_FOR_MAIN;
+                    playerSetAudioDescriptionOn(mutePath, mAudioADAutoStart);
+                }
+                int unmutePath = bMainAudioOutput ? INDEX_FOR_MAIN : INDEX_FOR_PIP;
+                playerSetAudioDescriptionOn(unmutePath, mAudioADAutoStart);
                 if (mHbbTvManager != null) {
                     mHbbTvManager.setAudioDescriptions();
                 }
@@ -5500,16 +5510,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 mAudioSystemCmdManager.openTvAudio(0);
                             }
                         } else {
-                            // this case handled for audio change between pip and main
                             if (msg.arg1 == 1) {
-                                // DTVKit has sequence requirement for audioStreamType set.
-                                if (mAudioADAutoStart) {
-                                    playerSetAudioStreamType(msg.arg2, playerGetAudioStreamType());
-                                    playerSetAudioDescriptionOn(msg.arg2, true);
-                                } else {
-                                    playerSetAudioDescriptionOn(msg.arg2, false);
-                                    playerSetAudioStreamType(msg.arg2, playerGetAudioStreamType());
-                                }
                                 playerSetAdParams(true, 0);
                             }
                             playerSetMute(msg.arg1 == 0, msg.arg2);
