@@ -5927,6 +5927,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 switch (msg.what) {
                     case MSG_SET_SURFACE:
                         boolean set = false;
+                        if (mCanPlay) {
+                            Log.w(TAG, "already setSurface");
+                            break;
+                        }
                         if (msg.arg1 == INDEX_FOR_MAIN) {
                             if (mMainHardware != null && mMainStreamConfig != null) {
                                 Log.i(TAG, "MSG_SET_SURFACE:" + mSurface);
@@ -5941,10 +5945,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                         }
                         if (set) {
-                            if (!mCanPlay) {
-                                mHandlerThreadHandle.post(DtvkitTvInputSession.this::preFirstTune);
-                                mCanPlay = true;
-                            }
+                            mHandlerThreadHandle.post(DtvkitTvInputSession.this::preFirstTune);
+                            mCanPlay = true;
                             if (mSurface != null) {
                                 tunePendingIfNeeded();
                             }
