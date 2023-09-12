@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.icu.text.SimpleDateFormat;
@@ -15,18 +16,22 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemProperties;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Gravity;
+import android.util.TypedValue;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.FileWriter;
 import java.util.Locale;
 
 public class SubtitleServerView extends FrameLayout {
@@ -59,48 +64,46 @@ public class SubtitleServerView extends FrameLayout {
     };
 
     private class AriBRunnable implements Runnable {
-        int[] data;
-        public void setData(int[] data) {
-            this.data = data;
+        ISdbCcImplement ccImplement;
+        String jsonText;
+        boolean updated;
+        boolean DEBUG;
+
+        public AriBRunnable() {
+            DEBUG = SystemProperties.getBoolean("vendor.dtv.subtitle_save", false);
+        }
+
+        public void setData(String data) {
+            updated = true;
+            jsonText = data;
+            // Log.d(TAG, "debug setData:" + text);
+            if (DEBUG) {
+                dumpFile(null, jsonText, getContext());
+            }
         }
         @Override
         public void run() {
-            String text = intArrayToString(data);
-            textView.setText(text);
-            textView.setBackgroundColor(
-                    TextUtils.isEmpty(text) ? Color.TRANSPARENT : Color.BLACK);
-            data = null;
-            invalidate();
-        }
-        private String intArrayToString(int[] data) {
-            if (data == null) {
-                return "";
+            if (ccImplement == null) {
+                ccImplement = new ISdbCcImplement(displayRect, DEBUG);
             }
-            byte [] bytes = new byte [data.length];
-            int numberOfValid = data.length / 4;
-            int modOfChar = data.length % 4;
-            for (int i = 0; i <= numberOfValid; i++) {
-                if (i < numberOfValid) {
-                    bytes[i*4] = (byte) (data[i] & 0xFF);
-                    bytes[i*4 + 1] = (byte) ((data[i] >> 8) & 0xFF);
-                    bytes[i*4 + 2] = (byte) ((data[i] >> 16) & 0xFF);
-                    bytes[i*4 + 3] = (byte) ((data[i] >> 24) & 0xFF);
-                } else {
-                    if (modOfChar > 0) {
-                        bytes[i*4] = (byte) (data[i] & 0xFF);
-                        modOfChar--;
-                    }
-                    if (modOfChar > 0) {
-                        bytes[i*4 + 1] = (byte) ((data[i] >> 8) & 0xFF);
-                        modOfChar--;
-                    }
-                    if (modOfChar > 0) {
-                        bytes[i*4 + 2] = (byte) ((data[i] >> 16) & 0xFF);
-                        modOfChar--;
-                    }
+            if (updated) {
+                mHandler.removeCallbacks(this);
+                try {
+                    SpannableStringBuilder ss = ccImplement.getSpannable(new JSONObject(jsonText));
+                    textView.setTranslationX(ccImplement.getDisplayPosition()[0]);
+                    textView.setTranslationY(ccImplement.getDisplayPosition()[1]);
+                    textView.setText(ss, TextView.BufferType.SPANNABLE);
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
+            } else {
+                textView.setText(ccImplement.doFlashing(), TextView.BufferType.SPANNABLE);
             }
-            return new String(bytes, StandardCharsets.UTF_8);
+            updated = false;
+            invalidate();
+            if (ccImplement.containFlashingChar()) {
+                mHandler.postDelayed(this, 500);
+            }
         }
     }
 
@@ -196,11 +199,7 @@ public class SubtitleServerView extends FrameLayout {
             if (mPauseExDraw > 0) {
                 return;
             }
-            if (parserType == SUBTITLE_SUB_TYPE_ARIB) {
-                mHandler.removeCallbacks(mAriBRunnable);
-                mHandler.post(() -> mAriBRunnable.setData(data));
-                mHandler.post(mAriBRunnable);
-            } else if (src_width == 0 || src_height == 0) {
+            if (src_width == 0 || src_height == 0) {
                 if (dst_width == 9999) {
                     /* 9999 dst_width indicates the overlay should be cleared */
                     mHandler.removeCallbacks(mClearRunnable);
@@ -209,7 +208,7 @@ public class SubtitleServerView extends FrameLayout {
             } else {
                 Bitmap bitmap = getBitmap(src_width, src_height, data);
                 if (SystemProperties.getBoolean("vendor.dtv.subtitle_save", false)) {
-                    saveBitmap(bitmap, getContext());
+                    dumpFile(bitmap, null, getContext());
                 }
                 final boolean teletextStarted = playerIsTeletextStarted();
                 mHandler.removeCallbacks(mNormalRunnable);
@@ -264,12 +263,22 @@ public class SubtitleServerView extends FrameLayout {
         }
 
         @Override
-        public void drawCC(boolean bShow, String json) {
-            Message msg = mHandler.obtainMessage();
-            msg.what = MSG_SUBTITLE_SHOW_CLOSED_CAPTION;
-            msg.obj = json;
-            msg.arg1 = !bShow ? 0 : 1;
-            mHandler.sendMessage(msg);
+        public void drawCC(boolean bShow, String json, int type) {
+            if (type == SUBTITLE_SUB_TYPE_ARIB) {
+                if (bShow) {
+                    mHandler.removeCallbacks(mAriBRunnable);
+                    mHandler.post(() -> mAriBRunnable.setData(json));
+                    mHandler.post(mAriBRunnable);
+                } else {
+                    mHandler.post(mClearRunnable);
+                }
+            } else {
+                Message msg = mHandler.obtainMessage();
+                msg.what = MSG_SUBTITLE_SHOW_CLOSED_CAPTION;
+                msg.obj = json;
+                msg.arg1 = !bShow ? 0 : 1;
+                mHandler.sendMessage(msg);
+            }
         }
 
         private int eventToMsg(int event) {
@@ -316,21 +325,12 @@ public class SubtitleServerView extends FrameLayout {
         imageView = new ImageView(context);
         addView(imageView);
         textView = new TextView(context);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, 10);
+        textView.setTypeface(Typeface.MONOSPACE);
+        textView.setLineSpacing(0f, 0.9f);
+        textView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         addView(textView);
         DtvkitGlueClient.getInstance().setSubtileListener(mSubListener);
-    }
-
-    private void initTextSubtitle() {
-        float ratio = (float) displayRect.width() / 1920; // small window
-        float xStart = (float) displayRect.width() / 8;
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-        lp.gravity = Gravity.BOTTOM;
-        lp.bottomMargin = (int) (60 * ratio);
-        textView.setLayoutParams(lp);
-        textView.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        textView.setTextColor(Color.WHITE);
-        textView.setX(xStart * ratio);
-        textView.setTextSize(32f * ratio);
     }
 
     public void showTestSubtitle() {
@@ -348,13 +348,11 @@ public class SubtitleServerView extends FrameLayout {
 
     public void setSize(int width, int height) {
         displayRect = new Rect(0, 0, width, height);
-        initTextSubtitle();
         postInvalidate();
     }
 
     public void setSize(int left, int top, int right, int bottom) {
         displayRect = new Rect(left, top, right, bottom);
-        initTextSubtitle();
         postInvalidate();
         clearSubtitle();
     }
@@ -384,23 +382,33 @@ public class SubtitleServerView extends FrameLayout {
         mHandler.removeCallbacks(mClearRunnable);
     }
 
-    private void saveBitmap(Bitmap bitmap, Context ct) {
+    private void dumpFile(Bitmap bitmap, String content, Context ct) {
         Calendar now = new GregorianCalendar();
         SimpleDateFormat simpleDate = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
-        String savePath = ct.getExternalFilesDir(null) + simpleDate.format(now.getTime()) + ".jpg";
-        File filePic = new File(savePath);
+        String savePath;
+        if (bitmap != null) {
+            savePath = ct.getExternalFilesDir(null) + "/" + simpleDate.format(now.getTime()) + ".jpg";
+        } else if (!TextUtils.isEmpty(content)) {
+            savePath = ct.getExternalFilesDir(null) + "/" + simpleDate.format(now.getTime()) + ".cc.log";
+        } else {
+            return;
+        }
         try {
-            if (!filePic.exists()) {
-                filePic.getParentFile().mkdirs();
-                filePic.createNewFile();
+            File file = new File(savePath);
+            FileOutputStream fos = new FileOutputStream(file);
+            if (bitmap != null) {
+                Log.i(TAG, "debug: dump subtitle: " + savePath);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 50, fos);
+            } else if (content != null) {
+                Log.d(TAG, "debug: dump file:" + savePath + ", size: " + content.length());
+                FileWriter fw =new FileWriter(file);
+                fw.write(content);
+                fw.close();
             }
-            Log.i(TAG, "debug: dump subtitle: " + savePath);
-            FileOutputStream fos = new FileOutputStream(filePic);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 50, fos);
             fos.flush();
             fos.close();
         } catch (Exception e) {
-            Log.e(TAG, "Failed to saveBitmap: " + e.getMessage());
+            Log.e(TAG, "Failed to Dump: " + e.getMessage());
         }
     }
 

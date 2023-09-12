@@ -200,52 +200,7 @@ static void postPidFilterData(int length, uint8_t* data)
     }
 }
 
-
-static void postSubtitleDataEx(int type, int width, int height, int dst_x, int dst_y,
-    int dst_width, int dst_height,const char *data, int size)
-{
-    //ALOGD("callback sendSubtitleData data = %p", data);
-    bool attached = false;
-    JNIEnv *env = getJniEnv(&attached);
-    bool bSubOn = getSubtitleStatus();
-    if (!bSubOn) return;
-
-    if (env != NULL) {
-        if (type == CALLBACK_SUB_TYPE_CLOSED_CAPTION) {
-            jstring jccData = env->NewStringUTF((char *)data);
-            env->CallVoidMethod(DtvkitObject, notifyCCSubtitleCallbackEx, true, jccData);
-            env->DeleteLocalRef(jccData);
-        } else {
-            if (width != 0 || height != 0) {
-                //ScopedLocalRef<jintArray> array (env, env->NewIntArray(width * height));
-                jintArray array = env->NewIntArray(width * height);
-                env->SetIntArrayRegion(array, 0, width * height, (jint*)data);
-                //env->CallVoidMethod(DtvkitObject, notifySubtitleCallbackEx, type, 0, 0, dst_x, dst_y, 9999, 0, NULL);
-                env->CallVoidMethod(DtvkitObject, notifySubtitleCallbackEx, type, width, height, dst_x, dst_y,
-                   dst_width, dst_height, array);
-                //env->CallVoidMethod(DtvkitObject, notifySubtitleCallbackEx, type, 0, 0, dst_x, dst_y, 0, 0, NULL);
-                //env->CallVoidMethod(DtvkitObject, notifySubtitleCallbackEx, type, 0, 0, dst_x, dst_y, 0, 9999, NULL);
-                env->DeleteLocalRef(array);
-            } else if (size > 0 && type == SUBTITLE_SUB_TYPE_ARIB) {
-                jintArray array = env->NewIntArray(size);
-                env->SetIntArrayRegion(array, 0, size, (jint*)data);
-                env->CallVoidMethod(DtvkitObject, notifySubtitleCallbackEx, type, width, height, dst_x, dst_y,
-                   dst_width, dst_height, array);
-                env->DeleteLocalRef(array);
-            } else {
-                env->CallVoidMethod(DtvkitObject, notifySubtitleCallbackEx, type, width, height, dst_x, dst_y,
-                   dst_width, dst_height, NULL);
-                }
-        }
-    }
-    if (attached) {
-        DetachJniEnv();
-    }
-}
-
-
-static void clearSubtitleDataEx()
-{
+static void clearSubtitleDataEx() {
     bool attached = false;
     JNIEnv *env = getJniEnv(&attached);
 
@@ -258,18 +213,57 @@ static void clearSubtitleDataEx()
     }
 }
 
-static void clearCCSubtitleData()
-{
+static void clearCCSubtitleData(int type) {
     bool attached = false;
     JNIEnv *env = getJniEnv(&attached);
     if (env != NULL) {
-        env->CallVoidMethod(DtvkitObject, notifyCCSubtitleCallbackEx, false, NULL);
+        env->CallVoidMethod(DtvkitObject, notifyCCSubtitleCallbackEx, false, NULL, type);
     }
 
     if (attached) {
         DetachJniEnv();
     }
+}
 
+static void postSubtitleDataEx(int type, int width, int height, int dst_x, int dst_y,
+    int dst_width, int dst_height,const char *data, int size)
+{
+    ALOGD("callback sendSubtitleData data = %p, size=%d", data, size);
+    bool attached = false;
+    JNIEnv *env = getJniEnv(&attached);
+    bool bSubOn = getSubtitleStatus();
+    if (!bSubOn) return;
+
+    if (env != NULL) {
+        if (type == CALLBACK_SUB_TYPE_CLOSED_CAPTION) {
+            jstring jccData = env->NewStringUTF((char *)data);
+            env->CallVoidMethod(DtvkitObject, notifyCCSubtitleCallbackEx, true, jccData, type);
+            env->DeleteLocalRef(jccData);
+        } else {
+            if (width != 0 || height != 0) {
+                jintArray array = env->NewIntArray(width * height);
+                env->SetIntArrayRegion(array, 0, width * height, (jint*) data);
+                env->CallVoidMethod(DtvkitObject, notifySubtitleCallbackEx, type, width, height, dst_x, dst_y,
+                   dst_width, dst_height, array);
+                env->DeleteLocalRef(array);
+            } else if (size > 0 && type == SUBTITLE_SUB_TYPE_ARIB) {
+                jstring jccData = env->NewStringUTF((char *)data);
+                env->CallVoidMethod(DtvkitObject, notifyCCSubtitleCallbackEx, true, jccData, type);
+                env->DeleteLocalRef(jccData);
+            } else {
+                if (type == SUBTITLE_SUB_TYPE_ARIB) {
+                    clearCCSubtitleData(type);
+                } else {
+                    env->CallVoidMethod(DtvkitObject, notifySubtitleCallbackEx, type, width, height,
+                                        dst_x, dst_y,
+                                        dst_width, dst_height, NULL);
+                }
+            }
+        }
+    }
+    if (attached) {
+        DetachJniEnv();
+    }
 }
 
 static void setAFDToDVBCore(int dec_id, uint8_t afd) {
@@ -672,9 +666,10 @@ static void setSubtitleOff()
         ALOGD("SubtitleServiceCtl:setSubtitleOff to subtitle client.");
         setSubtitleStatus(false);
         mSubContext->close();
+        ALOGD("SubtitleServiceCtl:setSubtitleOff done.");
     }
     clearSubtitleDataEx();
-    clearCCSubtitleData();
+    clearCCSubtitleData(0);
 }
 
 static void setSubtitleOn(int pid, uint16_t onid, uint16_t tsid, int type, int magazine, int page, int demuxId)
@@ -682,7 +677,7 @@ static void setSubtitleOn(int pid, uint16_t onid, uint16_t tsid, int type, int m
     if (mSubContext != nullptr) {
         setSubtitleOff();
         if (type == START_SUB_TYPE_CLOSED_CAPTION) {
-            clearCCSubtitleData();
+            clearCCSubtitleData(type);
         }
     }
     ALOGD("SubtitleServiceCtl:setSubtitleOn with.pid=(%d,%u,%u), type=%d,magazine=%d, page=%d, demuxId = %d.",
@@ -1046,7 +1041,7 @@ int register_org_droidlogic_dtvkit_DtvkitGlueClient(JNIEnv *env)
     GET_METHOD_ID(notifySubtitleCallbackEx, clazz, "notifySubtitleCallbackEx", "(IIIIIII[I)V");
     GET_METHOD_ID(notifyPidFilterData, clazz, "notifyPidFilterData", "()V");
     GET_METHOD_ID(notifySubtitleCbCtlEx, clazz, "notifySubtitleCbCtlEx", "(I)V");
-    GET_METHOD_ID(notifyCCSubtitleCallbackEx, clazz, "notifyCCSubtitleCallbackEx", "(ZLjava/lang/String;)V");
+    GET_METHOD_ID(notifyCCSubtitleCallbackEx, clazz, "notifyCCSubtitleCallbackEx", "(ZLjava/lang/String;I)V");
     GET_METHOD_ID(notifyMixVideoEventCallback, clazz, "notifyMixVideoEventCallback", "(I)V");
     GET_METHOD_ID(notifyServerStateCallback, clazz, "notifyServerStateCallback", "(I)V");
     return rc;

@@ -99,10 +99,10 @@ public class DtvkitGlueClient {
          }
     }
 
-    public void notifyCCSubtitleCallbackEx(boolean bShow, String json) {
-        Log.d(TAG, "notifyCCSubtitleCallbackEx received!!!" + json);
+    public void notifyCCSubtitleCallbackEx(boolean bShow, String json, int type) {
+        Log.d(TAG, "notifyCCSubtitleCallbackEx type=" + type +", bShow=" + bShow);
         if (mListener != null) {
-            mListener.drawCC(bShow, json);
+            mListener.drawCC(bShow, json, type);
         }
     }
 
@@ -253,7 +253,7 @@ public class DtvkitGlueClient {
     public interface SubtitleListener {
         void drawEx(int parserType, int src_width, int src_height, int dst_x, int dst_y, int dst_width, int dst_height, int[] data);
         void pauseEx(int pause);
-        void drawCC(boolean bShow, String json);
+        void drawCC(boolean bShow, String json, int type);
         void mixVideoEvent(int event);
     }
 
