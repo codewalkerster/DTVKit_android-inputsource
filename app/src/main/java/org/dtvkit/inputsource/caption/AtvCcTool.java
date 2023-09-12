@@ -23,6 +23,8 @@ public class AtvCcTool {
     private final static int SIG_FMT_NULL = 0;
     private final static int SIG_FMT_N_M = 0x601;
     private final static int SIG_FMT_N_443 = 0x602;
+    private final static int SIG_FMT_PAL_M = 0x604;
+    private final static int SIG_FMT_PAL_60 = 0x605;
     private final static int SIG_STATUS_STABLE = 4;
     private static final String ATV_CC_TRACK_INDEX = "atv_cc_index";
 
@@ -59,7 +61,10 @@ public class AtvCcTool {
 
     public List<TvTrackInfo> getAtvCcTracks() {
         List<TvTrackInfo> info = new ArrayList<>();
-        if (getAtvVideoFmt() == SIG_FMT_N_M || getAtvVideoFmt() == SIG_FMT_N_443) {
+        int fmt = getAtvVideoFmt();
+        if (fmt == SIG_FMT_N_M || fmt == SIG_FMT_N_443
+                || fmt == SIG_FMT_PAL_M
+                || fmt == SIG_FMT_PAL_60) {
             for (int i = 0;i < 8; i ++) {
                 String langPrefix = (i < 4) ? "CC" : "TX";
                 int idSuffix = (i >= 4) ? (i - 4) : i;
