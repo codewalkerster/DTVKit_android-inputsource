@@ -26,86 +26,88 @@ public class NativeScanCallback implements ScanCallback {
     private static final int SCAN_MESSAGE_SIGNAL_TYPE = 13;
     private static final int SCAN_MESSAGE_DVBT_CELL_IDS = 14;
 
+    private int mTunerClientId = 0;
     TunerAdapter mTunerAdapter;
 
-    public NativeScanCallback(TunerAdapter tunerAdapter) {
+    public NativeScanCallback(TunerAdapter tunerAdapter, int tunerClientId) {
         mTunerAdapter = tunerAdapter;
+        mTunerClientId = tunerClientId;
     }
 
     @Override
     public void onLocked() {
         Log.d(TAG, "onLocked");
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_LOCKED, null);
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_LOCKED, null);
     }
 
     @Override
     public void onUnlocked() {
         Log.d(TAG, "onUnlocked");
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_UNLOCK, null);
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_UNLOCK, null);
     }
 
     @Override
     public void onScanStopped() {
        Log.d(TAG, "onScanStopped");
-       mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_END, null);
+       mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_END, null);
     }
 
     @Override
     public void onProgress(int percent) {
         Log.d(TAG, "onProgress percent:" + percent);
         int[] value = {percent};
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_PROGRESS_PERCENT, (Object[])getIntegerArray(value));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_PROGRESS_PERCENT, (Object[])getIntegerArray(value));
     }
 
     @Override
     public void onFrequenciesReported(int[] frequency) {
         Log.d(TAG, "onFrequenciesReported");
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_FREQUENCY, (Object[])getIntegerArray(frequency));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_FREQUENCY, (Object[])getIntegerArray(frequency));
     }
 
     @Override
     public void onSymbolRatesReported(int[] rate) {
         Log.d(TAG, "onSymbolRatesReported");
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_SYMBOL_RATE, (Object[])getIntegerArray(rate));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_SYMBOL_RATE, (Object[])getIntegerArray(rate));
     }
 
     @Override
     public void onPlpIdsReported(int[] plpIds) {
         Log.d(TAG, "onPlpIdsReported");
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_PLP_IDS, (Object[])getIntegerArray(plpIds));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_PLP_IDS, (Object[])getIntegerArray(plpIds));
     }
 
     @Override
     public void onGroupIdsReported(int[] groupIds) {
         Log.d(TAG, "onGroupIdsReported");
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_GROUP_IDS, (Object[])getIntegerArray(groupIds));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_GROUP_IDS, (Object[])getIntegerArray(groupIds));
     }
 
     @Override
     public void onInputStreamIdsReported(int[] inputStreamIds) {
         Log.d(TAG, "onInputStreamIdsReported");
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_INPUT_STREAM_IDS, (Object[])getIntegerArray(inputStreamIds));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_INPUT_STREAM_IDS, (Object[])getIntegerArray(inputStreamIds));
     }
 
     @Override
     public void onDvbsStandardReported(int dvbsStandard) {
         Log.d(TAG, "onDvbsStandardReported");
         int[] value = {dvbsStandard};
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_DVBS_STANDARD, (Object[])getIntegerArray(value));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_DVBS_STANDARD, (Object[])getIntegerArray(value));
     }
 
     @Override
     public void onDvbtStandardReported(int dvbtStandard) {
         Log.d(TAG, "onDvbtStandardReported");
         int[] value = {dvbtStandard};
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_DVBT_STANDARD, (Object[])getIntegerArray(value));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_DVBT_STANDARD, (Object[])getIntegerArray(value));
     }
 
     @Override
     public void onAnalogSifStandardReported(int sif) {
         Log.d(TAG, "onAnalogSifStandardReported");
         int[] value = {sif};
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_ANALOG_TYPE, (Object[])getIntegerArray(value));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_ANALOG_TYPE, (Object[])getIntegerArray(value));
     }
 
     @Override
@@ -117,19 +119,19 @@ public class NativeScanCallback implements ScanCallback {
     public void onHierarchyReported(int hierarchy) {
         Log.d(TAG, "onHierarchyReported");
         int[] value = {hierarchy};
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_HIERARCHY, (Object[])getIntegerArray(value));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_HIERARCHY, (Object[])getIntegerArray(value));
     }
 
     @Override
     public void onSignalTypeReported(int signalType) {
         Log.d(TAG, "onSignalTypeReported");
         int[] value = {signalType};
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_SIGNAL_TYPE, (Object[])getIntegerArray(value));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_SIGNAL_TYPE, (Object[])getIntegerArray(value));
     }
 
     public void onDvbtCellIdsReported(int[] dvbtCellIds) {
         Log.d(TAG, "onDvbtCellIdsReported");
-        mTunerAdapter.nativeScanCallback(SCAN_MESSAGE_SIGNAL_TYPE, (Object[])getIntegerArray(dvbtCellIds));
+        mTunerAdapter.nativeScanCallback(mTunerClientId, SCAN_MESSAGE_SIGNAL_TYPE, (Object[])getIntegerArray(dvbtCellIds));
     }
 
     private Integer[] getIntegerArray(int[] value) {

@@ -793,8 +793,15 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     break;
                 }
                 case MSG_ADD_DTVKIT_DISK_PATH: {
-                    recordingAddDiskPath(SysSettingManager.convertStoragePathToMediaPath(
-                            (String) msg.obj) + "/" + SysSettingManager.PVR_DEFAULT_FOLDER);
+                    if (true == FeatureUtil.getFeatureSupportTunerFramework()) {
+                        if (null != msg.obj) {
+                            String mountPath = (String) msg.obj + "/" + SysSettingManager.PVR_DEFAULT_FOLDER + "/";
+                            recordingAddDiskPath(mountPath);
+                        }
+                    } else {
+                        recordingAddDiskPath(SysSettingManager.convertStoragePathToMediaPath((String) msg.obj)
+                            + "/" + SysSettingManager.PVR_DEFAULT_FOLDER);
+                    }
                     break;
                 }
                 case MSG_START_MONITOR_SYNCING: {
@@ -1166,6 +1173,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         Log.i(TAG, "onSetDisplayMode " + mode);
         setTVAspectMode(mode == DISPLAY_MODE_NORMAL ? ASPECT_MODE_AUTO : ASPECT_MODE_CUSTOM);
     }
+
     @Override
     public Session onCreateSession(String inputId, String sessionId) {
         Log.i(TAG, "onCreateSession " + inputId + " sessionId : " + sessionId);
@@ -1980,7 +1988,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             super(context);
             if (FeatureUtil.getFeatureSupportTunerFramework()) {
                 Tuner tuner = new Tuner(context, null, PRIORITY_HINT_USE_CASE_TYPE_RECORD);
-                mRecordTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_RECORD);
+                mRecordTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_DVR_RECORD);
             }
             mContext = context;
             mInputId = inputId;
@@ -2092,6 +2100,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             }
             if (null != mRecordTunerAdapter) {
                 mRecordTunerAdapter.release();
+                mRecordTunerAdapter = null;
             }
         }
 
@@ -2721,9 +2730,11 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     }
 
     public class DtvkitPipTvSession extends DtvkitTvInputSession {
+
         DtvkitPipTvSession(DtvkitTvInput service, String sessionId) {
             super(service, sessionId, true);
         }
+
         DtvkitPipTvSession(DtvkitTvInput service) {
             super(service, true);
         }
@@ -2820,6 +2831,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             super(service, sessionId, false);
             init();
         }
+
         DtvkitMainTvSession(DtvkitTvInput service) {
             super(service, false);
             init();
@@ -2887,6 +2899,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         @Override
         public boolean onSetSurface(Surface surface) {
             Log.d(TAG, "onSetSurface surface : " + surface);
+
             if (mTvInputInfo == null) {
                 Log.e(TAG, "resource not ready!");
                 return false;
@@ -3018,7 +3031,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 }
             } else {
                 if (!isPipSession() && Channel.isATV(oldChannel) != Channel.isATV(newChannel)) {
-                    mMainHardware.setSurface(mSurface, Channel.isATV(mTunedChannel) ? mMainStreamConfig[1] : mMainStreamConfig[0]);
+                    if (false == FeatureUtil.getFeatureSupportTunerFramework()) {
+                        mMainHardware.setSurface(mSurface, Channel.isATV(mTunedChannel) ? mMainStreamConfig[1] : mMainStreamConfig[0]);
+                    }
                 }
                 if (Channel.isATV(mTunedChannel)) {
                     playResult = playerPlay_ATV(mTunedChannel);
@@ -3127,6 +3142,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             public String dvbUri = "";
         }
         protected TunerAdapter mTunerAdapter = null;
+        protected TunerAdapter mDvrTimeShiftRecordTuner = null;
+        protected TunerAdapter mDvrPlaybackTuner = null;
+        protected TunerAdapter mTunerAdapterFCCNext = null;
+        protected TunerAdapter mTunerAdapterFCCPrev = null;
 
         private final class AvailableState {
             AvailableState() {
@@ -3173,9 +3192,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             if (FeatureUtil.getFeatureSupportTunerFramework()) {
                 Tuner tuner = new Tuner(service.getApplicationContext(), sessionId, PRIORITY_HINT_USE_CASE_TYPE_LIVE);
                 if (true == isPip) {
-                    mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_PIP_FCC);
+                    mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_LIVE_1);
                 } else {
-                    mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_DEFAULT);
+                    mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_LIVE_0);
+                    if (FeatureUtil.getFeatureSupportFcc()) {
+                        initFCCTuner();
+                    }
                 }
             }
         }
@@ -3323,9 +3345,15 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         @Override
         public boolean onSetSurface(Surface surface) {
             Log.i(TAG, "onSetSurface " + surface);
+
             if (null != mTunerAdapter) {
                 mTunerAdapter.setSurfaceToNative(surface);
             }
+
+            if (false == mIsPip) {
+                setFCCTunerSurface(surface);
+            }
+
             mSurface = surface;
             if (surface != null) {
                 Message msg =  mMainHandle.obtainMessage(MSG_SET_SURFACE);
@@ -3586,7 +3614,11 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             }
             if (null != mTunerAdapter) {
                 mTunerAdapter.release();
+                mTunerAdapter = null;
             }
+            releaseFCCTuner();
+            releaseDvrPlaybackTuner();
+            releaseDvrTimeshiftTuner();
             mSessionState = SessionState.RELEASING;
             exitNumberSearch();
             doDestroyOverlay();
@@ -6105,14 +6137,18 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         }
                         if (msg.arg1 == INDEX_FOR_MAIN) {
                             if (mMainHardware != null && mMainStreamConfig != null) {
-                                Log.i(TAG, "MSG_SET_SURFACE:" + mSurface);
-                                mMainHardware.setSurface(mSurface, mMainStreamConfig[0]);
-                                set = true;
+                                if (false == FeatureUtil.getFeatureSupportTunerFramework()) {
+                                    Log.i(TAG, "MSG_SET_SURFACE:" + mSurface);
+                                    mMainHardware.setSurface(mSurface, mMainStreamConfig[0]);
+                                }
+                                set = true;//ATF not need call setSurface for AudioPatch
                             }
                         }
                         if (msg.arg1 == INDEX_FOR_PIP) {
                             if (mPipHardware != null && mPipStreamConfig != null) {
-                                mPipHardware.setSurface(mSurface, mPipStreamConfig);
+                                if (false == FeatureUtil.getFeatureSupportTunerFramework()) {
+                                    mPipHardware.setSurface(mSurface, mPipStreamConfig);
+                                }
                                 set = true;
                             }
                         }
@@ -6299,6 +6335,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         private void setTimeshiftPlay(Uri uri) {
             Log.i(TAG, "setTimeshiftPlay " + uri);
+
+            initDvrPlaybackTuner();
             mSessionState = SessionState.TUNED;
             recordedProgram = getRecordedProgram(uri);
             if (recordedProgram != null) {
@@ -6313,6 +6351,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else {
                     DtvkitGlueClient.getInstance().unregisterSignalHandler(mHandler);
                     notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_UNKNOWN);
+                    releaseDvrPlaybackTuner();
                 }
             }
         }
@@ -6397,6 +6436,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         private void tryStartTimeshifting() {
             boolean success = false;
             if (FeatureUtil.getFeatureSupportTimeshifting()) {
+                initDvrTimeshiftTuner();
                 if (timeshiftRecorderState == RecorderState.STOPPED) {
                     numActiveRecordings = recordingGetNumActiveRecordings();
                     Log.i(TAG, "numActiveRecordings: " + numActiveRecordings);
@@ -6415,6 +6455,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 if (timeshiftAvailable.isAvailable()) {
                     if (timeshiftRecorderState != RecorderState.STOPPED) {
                         Log.w(TAG, "tryStartTimeshifting do nothing, timeshift is not stopped.");
+                        releaseDvrTimeshiftTuner();
                         return;
                     }
                     timeshiftRecorderState = RecorderState.STARTING;
@@ -6434,6 +6475,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             }
             if (!success) {
                 notifyTimeShiftStatusChanged(TvInputManager.TIME_SHIFT_STATUS_UNAVAILABLE);
+                releaseDvrTimeshiftTuner();
             }
         }
 
@@ -6451,6 +6493,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             Log.d(TAG, "tryStopTimeshifting fail");
                             notifyTimeShiftStatusChanged(TvInputManager.TIME_SHIFT_STATUS_UNAVAILABLE);
                         }
+                        releaseDvrTimeshiftTuner();
                     }
                 } else {
                     Log.w(TAG, "tryStopTimeshifting not available");
@@ -7017,13 +7060,108 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             }
             return true;
         }
+
+        private void initDvrPlaybackTuner() {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                if (null == mDvrPlaybackTuner) {
+                    Tuner tuner = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_PLAYBACK);
+                    mDvrPlaybackTuner = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_DVR_PLAY);
+                    mDvrPlaybackTuner.setSurfaceToNative(mSurface);//Test For Playback
+                } else {
+                    Log.i(TAG, "DvrPlaybackTuner has instance mDvrPlaybackTuner : " + mDvrPlaybackTuner);
+                }
+            }
+        }
+
+        private void releaseDvrPlaybackTuner() {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                if (null != mDvrPlaybackTuner) {
+                    mDvrPlaybackTuner.release();
+                    mDvrPlaybackTuner = null;
+                } else {
+                    Log.i(TAG, "DvrPlaybackTuner has release");
+                }
+            }
+        }
+
+        private void initDvrTimeshiftTuner () {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                //timeshift record and timeshift play need different tuner object.
+                if (null == mDvrTimeShiftRecordTuner) {
+                    Tuner timeShiftRecordTuner = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_RECORD);
+                    mDvrTimeShiftRecordTuner = new TunerAdapter(timeShiftRecordTuner, TunerAdapter.TUNER_TYPE_DVR_TIMESHIFT_RECORD);
+                } else {
+                    Log.i(TAG, "DvrTimeShiftRecordTuner has instance DvrTimeShiftRecordTuner : " + mDvrTimeShiftRecordTuner);
+                }
+                initDvrPlaybackTuner();
+            }
+        }
+
+        private void releaseDvrTimeshiftTuner() {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                if (null != mDvrTimeShiftRecordTuner) {
+                    mDvrTimeShiftRecordTuner.release();
+                    mDvrTimeShiftRecordTuner = null;
+                } else {
+                    Log.i(TAG, "DvrTimeShiftRecordTuner has release");
+                }
+                releaseDvrPlaybackTuner();
+            }
+        }
+
+        private void initFCCTuner() {
+            if (FeatureUtil.getFeatureSupportTunerFramework() && FeatureUtil.getFeatureSupportFcc()) {
+                Log.i(TAG, "initFCCTuner");
+                if ((null != mTunerAdapterFCCPrev) || (null != mTunerAdapterFCCNext)) {
+                    Log.e(TAG, "initFCCTuner error has init");
+                } else {
+                    Tuner tunerFCCPrev = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_BACKGROUND);
+                    mTunerAdapterFCCPrev = new TunerAdapter(tunerFCCPrev, TunerAdapter.TUNER_TYPE_LIVE_1);
+                    Tuner tunerFCCNext = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_BACKGROUND);
+                    mTunerAdapterFCCNext = new TunerAdapter(tunerFCCNext, TunerAdapter.TUNER_TYPE_LIVE_2);
+                }
+            }
+        }
+
+        private void releaseFCCTuner() {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.i(TAG, "releaseFCCTuner");
+                if (null != mTunerAdapterFCCPrev) {
+                    mTunerAdapterFCCPrev.release();
+                    mTunerAdapterFCCPrev = null;
+                }
+                if (null != mTunerAdapterFCCNext) {
+                    mTunerAdapterFCCNext.release();
+                    mTunerAdapterFCCNext = null;
+                }
+            }
+        }
+
+        private void setFCCTunerSurface(Surface surface) {
+            Log.d(TAG, "setFCCTunerSurface surface : " + surface);
+            if (FeatureUtil.getFeatureSupportTunerFramework() && FeatureUtil.getFeatureSupportFcc()) {
+                if (null != mTunerAdapterFCCNext) {
+                    mTunerAdapterFCCNext.setSurfaceToNative(surface);
+                }
+                if (null != mTunerAdapterFCCPrev) {
+                    mTunerAdapterFCCPrev.setSurfaceToNative(surface);
+                }
+            }
+        }
     }
 
     private boolean resetRecordingPath() {
         String newPath = mDataManager.getStringParameters(DataManager.KEY_PVR_RECORD_PATH);
         boolean changed = false;
+        String path;
 
-        String path = SysSettingManager.convertMediaPathToMountedPath(newPath);
+        if (true == FeatureUtil.getFeatureSupportTunerFramework()) {
+            path = newPath;
+        } else {
+            path = SysSettingManager.convertMediaPathToMountedPath(newPath);
+        }
+
+        Log.d(TAG, "resetRecordingPath path : " + path + " |newPath : " + newPath);
         if (!TextUtils.isEmpty(path) && !SysSettingManager.isMountedPathAvailable(path) && !FeatureUtil.getFeatureSupportNewTvApp()) {
             Log.d(TAG, "removable device has been moved and use default path");
             newPath = DataManager.PVR_DEFAULT_PATH;

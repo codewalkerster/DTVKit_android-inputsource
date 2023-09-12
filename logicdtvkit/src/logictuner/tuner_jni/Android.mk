@@ -3,6 +3,8 @@ ifeq ($(PRODUCT_SUPPORT_TUNER_FRAMEWORK), true)
 
 include $(CLEAR_VARS)
 
+$(warning "build libdtvkit_tuner_jni")
+
 LOCAL_SRC_FILES := $(call all-subdir-cpp-files)
 
 LOCAL_C_INCLUDES += frameworks/base/core/jni/include \

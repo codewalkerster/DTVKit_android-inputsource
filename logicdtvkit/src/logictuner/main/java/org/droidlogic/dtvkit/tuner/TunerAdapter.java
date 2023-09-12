@@ -36,10 +36,13 @@ public class TunerAdapter {
     private static final String TAG = "TunerAdapter";
     private static final boolean DEBUG = true;
 
-    public static int TUNER_TYPE_DEFAULT = 0;
-    public static int TUNER_TYPE_PIP_FCC = 1;
-    public static int TUNER_TYPE_RECORD  = 2;
-    public static int TUNER_TYPE_SCAN    = 3;
+    public static int TUNER_TYPE_LIVE_0              = 0;
+    public static int TUNER_TYPE_LIVE_1               = 1;
+    public static int TUNER_TYPE_DVR_RECORD           = 2;
+    public static int TUNER_TYPE_DVR_TIMESHIFT_RECORD = 3;
+    public static int TUNER_TYPE_DVR_PLAY             = 4;
+    public static int TUNER_TYPE_SCAN                 = 5;
+    public static int TUNER_TYPE_LIVE_2               = 6;
 
     private Tuner mTuner;
     private CallbackExecutor mFrontendExecutor;
@@ -51,15 +54,15 @@ public class TunerAdapter {
     private long mTuneEventListenerContext = 0;
     private long mScanCallbackConext = 0;
     private int mTunerClientId = 0;
-    private int mTunerType = TUNER_TYPE_DEFAULT;
+    private int mTunerType = TUNER_TYPE_LIVE_0;
 
     private static native void nativeInit();
     private native void nativeSetup(int tunerClientId);
     private native void nativeRelease(int tunerClientId);
-    private native void nativeTunerEventCallback(int TuneEvent);
+    private native void nativeTunerEventCallback(int tunerClientId, int TuneEvent);
     private native void nativeTunerSetSurface(Surface surface);
     private native void nativeTunerTestCase();//For JNI Testcase
-    public native void nativeScanCallback(int scanMessageType, Object[] scanMessage);
+    public native void nativeScanCallback(int tunerClientId, int scanMessageType, Object[] scanMessage);
 
     static {
         try {
@@ -83,9 +86,11 @@ public class TunerAdapter {
         Log.d(TAG, "release mTunerClientId :" + mTunerClientId);
         nativeRelease(mTunerClientId);
         releaseCallbackThread();
-        mTuner.close();
-        mTuner = null;
-        mTunerType = TUNER_TYPE_DEFAULT;
+        if (null != mTuner) {
+            mTuner.close();
+            mTuner = null;
+        }
+        mTunerType = TUNER_TYPE_LIVE_0;
         mSurface = null;
         Log.d(TAG, "release finish");
     }
@@ -112,10 +117,14 @@ public class TunerAdapter {
     }
 
     private void releaseCallbackThread() {
-        mFrontendExecutor.release();
-        mDemuxExecutor.release();
-        mFrontendExecutor = null;
-        mDemuxExecutor = null;
+        if (null != mFrontendExecutor) {
+            mFrontendExecutor.release();
+            mFrontendExecutor = null;
+        }
+        if (null != mDemuxExecutor) {
+            mDemuxExecutor.release();
+            mDemuxExecutor = null;
+        }
     }
 
     private DemuxCapabilities getDemuxCapabilities() {
@@ -168,7 +177,7 @@ public class TunerAdapter {
         }
         mScanCallbackConext = scanCallbackContext;
         if (null == mNativeScanCallback) {
-            mNativeScanCallback = new NativeScanCallback(this);
+            mNativeScanCallback = new NativeScanCallback(this, mTunerClientId);
         }
         int result = mTuner.scan(settings, scanType, mFrontendExecutor, mNativeScanCallback);
         if (DEBUG) Log.d(TAG, "scan result : " + result);
@@ -213,7 +222,7 @@ public class TunerAdapter {
         mTuneEventListenerContext = callbackContext;
         mTuner.setOnTuneEventListener(mFrontendExecutor, (int tuneEvent)->{
             if (DEBUG) Log.d(TAG, "nativeTunerEventCallback tuneEvent : " + tuneEvent + ", mTuneEventListenerContext : 0x" + Long.toHexString(mTuneEventListenerContext));
-            nativeTunerEventCallback(tuneEvent);
+            nativeTunerEventCallback(mTunerClientId, tuneEvent);
         });
     }
 
@@ -240,7 +249,7 @@ public class TunerAdapter {
             Log.d(TAG, "openFilter error not request filter");
             return null;
         }
-        FilterAdapter filterAdapter = new FilterAdapter(filter, mDemuxExecutor, callbackContext);
+        FilterAdapter filterAdapter = new FilterAdapter(filter, mDemuxExecutor, callbackContext, mTunerClientId);
         if (null != callback) {
             callback.setCallbackFilterAdapter(filterAdapter);
         }
@@ -276,7 +285,7 @@ public class TunerAdapter {
             return null;
         }
         LnbAdapter lnbAdapter = new LnbAdapter(lnb, callbackContext);
-        callback.setCallbackLnbAdapter(lnbAdapter);
+        callback.setCallbackLnbAdapter(lnbAdapter, mTunerClientId);
         if (DEBUG) Log.d(TAG, "openLnb lnbAdapter : " + lnbAdapter);
         return lnbAdapter;
     }
@@ -296,7 +305,7 @@ public class TunerAdapter {
             return null;
         }
         LnbAdapter lnbAdapter = new LnbAdapter(lnb, callbackContext);
-        callback.setCallbackLnbAdapter(lnbAdapter);
+        callback.setCallbackLnbAdapter(lnbAdapter, mTunerClientId);
         if (DEBUG) Log.d(TAG, "openLnb lnbAdapter : " + lnbAdapter);
         return lnbAdapter;
     }

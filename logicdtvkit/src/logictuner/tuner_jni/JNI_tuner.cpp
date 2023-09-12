@@ -215,6 +215,7 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
     ALOGD("start:%s, tunerType : %d", __FUNCTION__, tunerType);
     bool attached = false;
     int tunerClientId = TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID;
+    int tunerScanClientId = TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID;//For Scan switch LivePlay maybe have two tuner client
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
     if (NULL == env) {
         ReleaseEnv(attached);
@@ -226,13 +227,25 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
         jobject tuner = iter->second;
         if (NULL != tuner) {
             ALOGD("tuner :%p, type : %d", tuner, (int)env->GetIntField(tuner, gTunerFields.tunerType));
-            if (tunerType == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
-                tunerClientId = iter->first;
-                break;
+            if (TUNER_TYPE_LIVE_0 == tunerType) {
+                if (TUNER_TYPE_LIVE_0 == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
+                    tunerClientId = iter->first;
+                } else if (TUNER_TYPE_SCAN == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
+                    tunerScanClientId = iter->first;
+                }
+            } else {
+                if (tunerType == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
+                    tunerClientId = iter->first;
+                    break;
+                }
             }
         }
     }
     ReleaseEnv(attached);
+    ALOGD("tunerClientId:%d, tunerScanClientId : %d", tunerClientId, tunerScanClientId);
+    if ((TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId) && (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID != tunerScanClientId)) {
+        tunerClientId = tunerScanClientId;//under scan status only have scan type tuner.
+    }
     ALOGD("end:%s, tunerClientId:%d", __FUNCTION__, tunerClientId);
     return tunerClientId;
 }
@@ -252,7 +265,7 @@ jobject Am_tuner_getRecordTuner() {
     ALOGE("Start:%s", __FUNCTION__);
 
     bool attached = false;
-    int tunerClientId = Am_tuner_getTunerClientIdByType(TUNER_TYPE_DEFAULT);
+    int tunerClientId = Am_tuner_getTunerClientIdByType(TUNER_TYPE_LIVE_0);
     if (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId) {
         ALOGE("end:%s, not have tuner", __FUNCTION__);
         return NULL;
@@ -270,6 +283,35 @@ jobject Am_tuner_getRecordTuner() {
     ReleaseEnv(attached);
     ALOGD("end:%s, recordTuner object:%p", __FUNCTION__, recordTuner);
     return recordTuner;
+}
+
+jobject Am_tuner_getDvrTunerByType(int tunerType) {
+    ALOGD("Start:%s, tuner type : %d", __FUNCTION__, tunerType);
+
+    if ((TUNER_TYPE_DVR_RECORD > tunerType) || (TUNER_TYPE_DVR_PLAY < tunerType)) {
+        ALOGE("Error:%s, input tuner type error, tuner Type : %d", __FUNCTION__, tunerType);
+        return NULL;
+    }
+
+    bool attached = false;
+    int tunerClientId = Am_tuner_getTunerClientIdByType(tunerType);
+    if (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId) {
+        ALOGE("end:%s, not have tuner", __FUNCTION__);
+        return NULL;
+    }
+
+    JNIEnv *env = Am_tuner_getJNIEnv(&attached);
+    jobject tuner = getTuner(tunerClientId);
+
+    if ((NULL == env) || (NULL == tuner)) {
+        ReleaseEnv(attached);
+        ALOGE("%s: input parameter error", __FUNCTION__);
+        return NULL;
+    }
+    jobject dvrTuner = env->CallObjectMethod(tuner, gTunerFields.getTuenr);
+    ReleaseEnv(attached);
+    ALOGD("end:%s, dvrTuner object:%p", __FUNCTION__, dvrTuner);
+    return dvrTuner;
 }
 
 void Am_tuner_addTunerLifeCycleListener(long listenerContext) {
@@ -1045,7 +1087,7 @@ jint Am_filter_read(jobject filter, char * buffer, long offset, long size) {
 }
 
 void Am_filter_close(jobject filter) {
-    ALOGE("Start %s: ", __FUNCTION__);
+    ALOGE("Start %s: filter :%p", __FUNCTION__, filter);
 
     bool attached = false;
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -1439,8 +1481,8 @@ static void dtvkit_tuner_native_release(JNIEnv *env, jobject thiz, jint tunerCli
     ALOGD("end:%s", __FUNCTION__);
 }
 
-static void dtvkit_tuner_native_tune_callback(JNIEnv *env, jobject tuner, jint tuneEvent) {
-    ALOGD("%s start: callback tuneEvent : %d", __FUNCTION__, tuneEvent);
+static void dtvkit_tuner_native_tune_callback(JNIEnv *env, jobject tuner, jint tunerClientId, jint tuneEvent) {
+    ALOGD("%s start: callback tunerClientId : %d tuneEvent : %d", __FUNCTION__, tunerClientId, tuneEvent);
 
     jclass tunerClass;
     FIND_CLASS(tunerClass, TUNER_CLASS);
@@ -1448,7 +1490,7 @@ static void dtvkit_tuner_native_tune_callback(JNIEnv *env, jobject tuner, jint t
     long callbackContext = (long)env->GetLongField(tuner, callbackField);
     if (0 != callbackContext) {
         Am_tuner_notifyTunerEvent tunerCallback = (Am_tuner_notifyTunerEvent)callbackContext;
-        tunerCallback(tuneEvent);
+        tunerCallback(tunerClientId, tuneEvent);
     } else {
         ALOGD("not register callback");
     }
@@ -1471,15 +1513,15 @@ static void dtvkit_tuner_native_set_surface(JNIEnv *env, jobject tuner, jobject 
     ALOGD("end:%s", __FUNCTION__);
 }
 
-static void dtvkit_tuner_native_scan_callback(JNIEnv *env, jobject tuner, int scanMessageType, jobjectArray scanMessage) {
-    ALOGD("%s scan message type: %d", __FUNCTION__, scanMessageType);
+static void dtvkit_tuner_native_scan_callback(JNIEnv *env, jobject tuner, jint tunerClientId, jint scanMessageType, jobjectArray scanMessage) {
+    ALOGD("%s tunerClientId : %d scan message type: %d", __FUNCTION__, tunerClientId, scanMessageType);
     jclass tunerClass;
     FIND_CLASS(tunerClass, TUNER_CLASS);
     jfieldID callbackField = env->GetFieldID(tunerClass, "mScanCallbackConext", "J");
     long callbackContext = (long)env->GetLongField(tuner, callbackField);
     if (0 != callbackContext) {
         Am_tuner_notifyScanCallbackEvent scanCallback = (Am_tuner_notifyScanCallbackEvent)callbackContext;
-        scanCallback(scanMessageType, scanMessage);
+        scanCallback(tunerClientId, scanMessageType, scanMessage);
     } else {
         ALOGD("not register callback");
     }
@@ -1488,7 +1530,7 @@ static void dtvkit_tuner_native_scan_callback(JNIEnv *env, jobject tuner, int sc
 
 /*********FilterAdapter Native***************/
 static void dtvkit_filter_native_callback(JNIEnv *env, jobject filter, jobjectArray events, jint status) {
-    ALOGD("%s start: callback", __FUNCTION__);
+    //ALOGD("%s start: callback", __FUNCTION__);
 
     jclass filterClass;
     FIND_CLASS(filterClass, FILTER_CLASS);
@@ -1500,12 +1542,12 @@ static void dtvkit_filter_native_callback(JNIEnv *env, jobject filter, jobjectAr
     } else {
         ALOGD("not register callback");
     }
-    ALOGD("end:%s", __FUNCTION__);
+    //ALOGD("end:%s", __FUNCTION__);
 }
 
 /*********LnbAdapter Native***************/
-static void dtvkit_lnb_native_callback(JNIEnv *env, jobject lnb, jint eventType, jbyteArray diseqcMessage) {
-    ALOGD("%s start: callback", __FUNCTION__);
+static void dtvkit_lnb_native_callback(JNIEnv *env, jobject lnb, jint tunerClientId, jint eventType, jbyteArray diseqcMessage) {
+    ALOGD("%s start: callback tunerClientId:%d, eventType: %d", __FUNCTION__, tunerClientId, eventType);
 
     jclass lnbClass;
     FIND_CLASS(lnbClass, FILTER_CLASS);
@@ -1513,7 +1555,7 @@ static void dtvkit_lnb_native_callback(JNIEnv *env, jobject lnb, jint eventType,
     long callbackContext = (long)env->GetLongField(lnb, callbackField);
     if (0 != callbackContext) {
         Am_lnb_callback lnbCallback = (Am_lnb_callback)callbackContext;
-        lnbCallback(lnb, eventType, diseqcMessage);
+        lnbCallback(lnb, tunerClientId, eventType, diseqcMessage);
     } else {
         ALOGD("not register callback");
     }
@@ -1529,10 +1571,10 @@ static JNINativeMethod gTunerMethods[] = {
     {"nativeInit", "()V",  (void *)dtvkit_tuner_native_init},
     {"nativeSetup", "(I)V",  (void *)dtvkit_tuner_native_setup},
     {"nativeRelease", "(I)V",  (void *)dtvkit_tuner_native_release},
-    {"nativeTunerEventCallback", "(I)V",  (void *)dtvkit_tuner_native_tune_callback},
+    {"nativeTunerEventCallback", "(II)V",  (void *)dtvkit_tuner_native_tune_callback},
     {"nativeTunerSetSurface", "(Landroid/view/Surface;)V",  (void *)dtvkit_tuner_native_set_surface},
     {"nativeTunerTestCase", "()V",  (void *)dtvkit_tuner_native_testcase},
-    {"nativeScanCallback", "(I[Ljava/lang/Object;)V",  (void *)dtvkit_tuner_native_scan_callback},
+    {"nativeScanCallback", "(II[Ljava/lang/Object;)V",  (void *)dtvkit_tuner_native_scan_callback},
 };
 
 static JNINativeMethod gFilterMethods[] = {
@@ -1540,7 +1582,7 @@ static JNINativeMethod gFilterMethods[] = {
 };
 
 static JNINativeMethod gLnbMethods[] = {
-    {"nativeLnbCallback", "(I[B)V",  (void *)dtvkit_lnb_native_callback},
+    {"nativeLnbCallback", "(II[B)V",  (void *)dtvkit_lnb_native_callback},
 };
 
 static bool register_droidlogic_dtvkit_tuner(JNIEnv *env)

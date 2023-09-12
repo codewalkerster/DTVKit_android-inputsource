@@ -165,10 +165,13 @@ public class DtvkitDvbtSetup extends Activity {
             inputId = null;
             pvrStatus = null;
         }
+
+        /************For tuner framework***************/
         if (FeatureUtil.getFeatureSupportTunerFramework()) {
             Tuner tuner = new Tuner(this, null, TvInputService.PRIORITY_HINT_USE_CASE_TYPE_SCAN);
             mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_SCAN);
         }
+
         mParameterManager = new ParameterManager(this, DtvkitGlueClient.getInstance());
         final Button optionSet = findViewById(R.id.option_set_btn);
         optionSet.setOnClickListener(new View.OnClickListener() {

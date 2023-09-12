@@ -1,7 +1,7 @@
 ifeq ($(PRODUCT_SUPPORT_TUNER_FRAMEWORK), true)
 LOCAL_PATH := $(call my-dir)
 
-ifeq (, $(wildcard $(LOCAL_PATH)/../../../../android-rpcservice))
+ifeq (, $(wildcard $(LOCAL_PATH)/../../../../../android-rpcservice))
 
 $(warning "prebuilt libdtvkit_tuner_jni_wrapper.so")
 

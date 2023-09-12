@@ -21,7 +21,7 @@ public class LnbAdapter {
     private Lnb mLnb;
     private long mLnbCallbackContext;
 
-    private native void nativeLnbCallback(int eventType, byte[] diseqcMessage);
+    private native void nativeLnbCallback(int tunerClientId, int eventType, byte[] diseqcMessage);
 
     public LnbAdapter(Lnb lnb, long callbackContext) {
         mLnb = lnb;
@@ -96,11 +96,13 @@ public class LnbAdapter {
 
     public static class LnbNativeCallback implements LnbCallback {
         private LnbAdapter mLnbAdapter = null;
+        private int mTunerClientId = 0;
 
         public LnbNativeCallback () {}
 
-        public void setCallbackLnbAdapter(LnbAdapter lnbAdapter) {
+        public void setCallbackLnbAdapter(LnbAdapter lnbAdapter, int tunerClientId) {
             mLnbAdapter = lnbAdapter;
+            mTunerClientId = tunerClientId;
         }
 
         @Override
@@ -112,19 +114,19 @@ public class LnbAdapter {
             }
             switch (lnbEventType) {
                 case Lnb.EVENT_TYPE_DISEQC_RX_OVERFLOW: {
-                    mLnbAdapter.nativeLnbCallback(LNB_CALLBACK_DISEQC_RX_OVERFLOW, null);
+                    mLnbAdapter.nativeLnbCallback(mTunerClientId, LNB_CALLBACK_DISEQC_RX_OVERFLOW, null);
                     break;
                 }
                 case Lnb.EVENT_TYPE_DISEQC_RX_TIMEOUT: {
-                    mLnbAdapter.nativeLnbCallback(LNB_CALLBACK_DISEQC_RX_TIMEOUT, null);
+                    mLnbAdapter.nativeLnbCallback(mTunerClientId, LNB_CALLBACK_DISEQC_RX_TIMEOUT, null);
                     break;
                 }
                 case Lnb.EVENT_TYPE_DISEQC_RX_PARITY_ERROR: {
-                    mLnbAdapter.nativeLnbCallback(LNB_CALLBACK_DISEQC_RX_PARITY_ERROR, null);
+                    mLnbAdapter.nativeLnbCallback(mTunerClientId, LNB_CALLBACK_DISEQC_RX_PARITY_ERROR, null);
                     break;
                 }
                 case Lnb.EVENT_TYPE_LNB_OVERLOAD: {
-                    mLnbAdapter.nativeLnbCallback(LNB_CALLBACK_DISEQC_RX_TIMEOUT, null);
+                    mLnbAdapter.nativeLnbCallback(mTunerClientId, LNB_CALLBACK_DISEQC_RX_TIMEOUT, null);
                     break;
                 }
             }
@@ -137,7 +139,7 @@ public class LnbAdapter {
                 Log.d(TAG, "Lnb has close");
                 return;
             }
-            mLnbAdapter.nativeLnbCallback(LNB_CALLBACK_DISEQC_MESSAGE, diseqcMessage);
+            mLnbAdapter.nativeLnbCallback(mTunerClientId, LNB_CALLBACK_DISEQC_MESSAGE, diseqcMessage);
         }
     }
 }

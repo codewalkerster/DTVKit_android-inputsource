@@ -15,6 +15,7 @@ import org.json.JSONObject;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.lang.reflect.Method;
 
 
 public class DtvkitGlueClient {
@@ -58,11 +59,20 @@ public class DtvkitGlueClient {
     private native void native_nativeSubtitleSeekReset();
     private native void native_setRegionId(int regionId);
     private native void native_enablePidListener(boolean enable);
+
     static {
-        System.loadLibrary("dtvkit_jni");
+        try {
+            Log.d(TAG, "calling load dtvkit jni");
+            System.loadLibrary("dtvkit_jni");
+            if (true == getFeatureSupportTunerFramework()) {
+                System.loadLibrary("jdvrlib-jni");//workaround for vendor linker namespace,jdvrlib and dtvkit need same classloader. Can static link jdvrlib after debug
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "dtvkit_jni load error: " + e);
+        }
     }
 
-        //native callback
+    //native callback
     public void notifySubtitleCallback(int width, int height, int dst_x, int dst_y, int dst_width, int dst_height, int[] data)
     {
          Log.d(TAG, "notifySubtitleCallBack received!!! width = " + width + ", height = " + height);
@@ -412,5 +422,18 @@ public class DtvkitGlueClient {
 
     public void enablePidListener(boolean enable) {
         native_enablePidListener(enable);
+    }
+
+    private static boolean getFeatureSupportTunerFramework() {
+        boolean result = false;
+        try {
+            Class clz = Class.forName("android.os.SystemProperties");
+            Method method = clz.getMethod("getBoolean", String.class, boolean.class);
+            result = (boolean)method.invoke(clz, "vendor.tv.dtv.tuner.framework.enable", false);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.d(TAG, "getBoolean Exception = " + e.getMessage());
+        }
+        return result;
     }
 }

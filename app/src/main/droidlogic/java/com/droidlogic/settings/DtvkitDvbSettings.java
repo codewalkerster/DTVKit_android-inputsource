@@ -53,6 +53,7 @@ import android.content.ComponentName;
 import android.media.tv.TvInputInfo;
 import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
 import com.droidlogic.dtvkit.inputsource.DtvkitEpgSync;
+import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
 import com.droidlogic.dtvkit.companionlibrary.utils.TvContractUtils;
 
 import com.droidlogic.app.DataProviderManager;
@@ -120,6 +121,7 @@ public class DtvkitDvbSettings extends Activity {
                     if (msg.obj != null) {
                         String volumeId = (String)msg.obj;
                         String formattedPath = mSysSettingManager.getStorageRawPathByVolumeId(volumeId);
+                        Log.d(TAG, "formattedPath = " + formattedPath);
                         if (!TextUtils.isEmpty(formattedPath)) {
                             mParameterManager.saveStringParameters(ParameterManager.KEY_PVR_RECORD_PATH, formattedPath);
                         }
@@ -435,10 +437,18 @@ public class DtvkitDvbSettings extends Activity {
                 String saved = mParameterManager.getStringParameters(ParameterManager.KEY_PVR_RECORD_PATH);
                 String current = getCurrentStoragePath(position);
                 Log.d(TAG, "pvr_path onItemSelected previous = " + saved + ", new = " + current);
-                if (mSysSettingManager.isMediaPath(current) && !SysSettingManager.isStorageFatFormat(mSysSettingManager.getStorageFsType(current))) {
-                    Log.d(TAG, "pvr_path onItemSelected is not fat and need to be formatted");
-                    showFormatConfirmDialog(DtvkitDvbSettings.this, current);
-                    return;
+                if (true == FeatureUtil.getFeatureSupportTunerFramework()) {
+                    if (mSysSettingManager.isStoragePath(current) && !SysSettingManager.isStorageFatFormat(mSysSettingManager.getStorageFsType(current))) {
+                        Log.d(TAG, "pvr_path onItemSelected is not fat and need to be formatted");
+                        showFormatConfirmDialog(DtvkitDvbSettings.this, current);
+                        return;
+                    }
+                } else {
+                    if (mSysSettingManager.isMediaPath(current) && !SysSettingManager.isStorageFatFormat(mSysSettingManager.getStorageFsType(current))) {
+                        Log.d(TAG, "pvr_path onItemSelected is not fat and need to be formatted");
+                        showFormatConfirmDialog(DtvkitDvbSettings.this, current);
+                        return;
+                    }
                 }
                 if (TextUtils.equals(current, saved)) {
                     Log.d(TAG, "pvr_path onItemSelected same path");

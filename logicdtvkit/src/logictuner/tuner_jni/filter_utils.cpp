@@ -97,7 +97,7 @@ jobject filter_utils_getSectionTsFilterConfiguration(JNIEnv *env, TS_Filter_Conf
 }
 
 bool filter_utils_getSectionEvent(JNIEnv *env, jobject sectionEventObject, Section_Event *pSectionEvent) {
-    ALOGE("Start:%s", __FUNCTION__);
+    //ALOGE("Start:%s", __FUNCTION__);
 
     if ((NULL == env) || (NULL == sectionEventObject) || (NULL == pSectionEvent)) {
         ALOGE("input parameter error");
@@ -129,7 +129,7 @@ bool filter_utils_getSectionEvent(JNIEnv *env, jobject sectionEventObject, Secti
         pSectionEvent->dataLength = env->GetIntField(sectionEventObject, fDataLength);
     }
 
-    ALOGE("End:%s", __FUNCTION__);
+    //ALOGE("End:%s", __FUNCTION__);
     return true;
 }
 

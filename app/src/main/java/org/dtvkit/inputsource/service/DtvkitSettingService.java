@@ -30,6 +30,7 @@ import com.droidlogic.dtvkit.inputsource.DtvkitEpgSync;
 import com.droidlogic.settings.SysSettingManager;
 import com.amlogic.hbbtv.HbbTvUISetting;
 import com.droidlogic.dtvkit.inputsource.DtvKitScheduleManager;
+import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
 import com.droidlogic.dtvkit.IDtvKitCallbackListener;
 
 import java.io.File;
@@ -193,8 +194,10 @@ public class DtvkitSettingService extends Service {
         @Override
         public void setStoragePath(String path) throws RemoteException {
             Log.d(TAG, "setStoragePath = " + path);
-            if (SysSettingManager.isStoragePath(path)) {
-                path = SysSettingManager.convertStoragePathToMediaPath(path);
+            if (false == FeatureUtil.getFeatureSupportTunerFramework()) {
+                if (SysSettingManager.isStoragePath(path)) {
+                    path = SysSettingManager.convertStoragePathToMediaPath(path);
+                }
             }
             if (path != null && !path.endsWith(SysSettingManager.PVR_DEFAULT_FOLDER)) {
                 path += "/" + SysSettingManager.PVR_DEFAULT_FOLDER;

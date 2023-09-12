@@ -89,7 +89,7 @@ jobject dvb_utils_getDvbcFrontendSettingsObject(JNIEnv *env, Dvbc_Frontend_Setti
 
     if (ANDROID_SDK_R < Am_tuner_getAndroidVersion()) {
         dvbcSettingInit = env->GetMethodID(dvbcSettingClass, "<init>", "(JIJIIIIII)V");
-        dvbcSettingObject = env->NewObject(dvbcSettingClass, dvbcSettingInit, (jlong)frequency, modulation, innerFec, symbolRate,
+        dvbcSettingObject = env->NewObject(dvbcSettingClass, dvbcSettingInit, (jlong)frequency, modulation, (jlong)innerFec, symbolRate,
                                                outerFec, annex, spectralInversion, 0, 0);
 
     } else {
