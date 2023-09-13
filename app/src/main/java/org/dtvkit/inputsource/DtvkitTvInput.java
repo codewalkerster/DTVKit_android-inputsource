@@ -7572,7 +7572,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             JSONArray args = new JSONArray();
             args.put(INDEX_FOR_MAIN);
             JSONArray audioStreams = DtvkitGlueClient.getInstance().request("Player.getListOfAudioStreams", args).getJSONArray("data");
-            int undefinedIndex = 0;
             for (int i = 0; i < audioStreams.length(); i++) {
                 JSONObject audioStream = audioStreams.getJSONObject(i);
                 //Log.d(TAG, "getAudioTrackInfoList audioStream = " + audioStream.toString());
@@ -7582,8 +7581,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 if ((mCusFeatureAudioCfg & 0x04) == 0) {
                     //trunk need trans und to "undefined", qaa to "original", qad and nar to "narrative"
                     if (TextUtils.isEmpty(audioLang) || ConstantManager.CONSTANT_UND_FLAG.equals(audioLang)) {
-                        audioLang = ConstantManager.CONSTANT_UND_VALUE + ((undefinedIndex > 0) ? undefinedIndex : "");
-                        undefinedIndex++;
+                        audioLang = ConstantManager.CONSTANT_UND_VALUE;
                     } else if (ConstantManager.CONSTANT_QAA.equalsIgnoreCase(audioLang)) {
                         audioLang = ConstantManager.CONSTANT_ORIGINAL_AUDIO;
                     } else if (ConstantManager.CONSTANT_QAD.equalsIgnoreCase(audioLang)) {
@@ -7603,6 +7601,17 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 bundle.putBoolean(ConstantManager.KEY_TVINPUTINFO_AUDIO_AD_SS, audioAd && audioSS);
                 bundle.putBoolean(ConstantManager.KEY_TVINPUTINFO_AUDIO_HI, audioHi);
 
+                bundle.putInt("suffix", 0);
+                for (int k = i; k > 0; k--) {
+                    Bundle kBundle = audioTracks.get(k-1).getExtra();
+                    if (audioLang.equals(audioTracks.get(k-1).getLanguage())
+                            && (kBundle.getBoolean(ConstantManager.KEY_TVINPUTINFO_AUDIO_AD) == audioAd)
+                            && (kBundle.getBoolean(ConstantManager.KEY_TVINPUTINFO_AUDIO_SS) == audioSS)
+                            && (kBundle.getBoolean(ConstantManager.KEY_TVINPUTINFO_AUDIO_HI) == audioHi)) {
+                        bundle.putInt("suffix", kBundle.getInt("suffix") + 1);
+                        break;
+                    }
+                }
                 String codes = audioStream.optString("codec");
                 int pid = audioStream.getInt("pid");
                 if (!TextUtils.isEmpty(codes)) {
@@ -7626,19 +7635,15 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 bundle.putInt(ConstantManager.KEY_TVINPUTINFO_AUDIO_INDEX, audioStream.getInt("index"));
                 track.setExtra(bundle);
                 audioTracks.add(track.build());
+
+                if (audioStream.optBoolean("selected") && selectedTrackId == 0xFFFF) {
+                    selectedTrackId = audioStream.getInt("index");
+                    Log.i(TAG, "selectedAudioTrack index = " + selectedTrackId);
+                }
                 Log.d(TAG, "getAudioTrackInfoList track bundle = " + bundle);
             }
             ConstantManager.ascendTrackInfoOderByPid(audioTracks);
             tracks.addAll(audioTracks);
-
-            for (int i = 0; i < audioStreams.length(); i++) {
-                JSONObject audioStream = audioStreams.getJSONObject(i);
-                if (audioStream.optBoolean("selected")) {
-                    selectedTrackId = audioStream.getInt("index");
-                    Log.i(TAG, "selectedAudioTrack index = " + selectedTrackId);
-                    break;
-                }
-            }
         } catch (Exception e) {
             Log.e(TAG, "getAudioTrackInfoList Exception = " + e.getMessage());
         }
