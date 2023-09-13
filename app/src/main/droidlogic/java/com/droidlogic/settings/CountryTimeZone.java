@@ -20,7 +20,8 @@ public class CountryTimeZone {
         "irn","mar","tun","are","isr",
         "dza","jor","lby","irq","geo",
         "sau","sgp","mys","idn","tha",
-        "ind","pak",
+        "ind","pak","phi","phl","guf",
+        "tto", "pry","ury","cst",
     };
 
     String timezone[][] = {
@@ -28,7 +29,20 @@ public class CountryTimeZone {
         {"Europe/Vienna"}, //aut
         {"Europe/Brussels"}, //bel
         {"America/La_Paz"}, //bol
-        {"America/Noronha", "America/Sao_Paulo", "America/Manaus", "America/Rio_Branco",}, //bra
+        {
+            "America/Noronha",
+            "America/Sao_Paulo",
+            "America/Araguaina",
+            "America/Bahia",
+            "America/Belem",
+            "America/Recife",
+            "America/Maceio",
+            "America/Cuiaba",
+            "America/Manaus",
+            "America/Porto_Velho",
+            "America/Boa_Vista",
+            "America/Rio_Branco",
+            "America/Eirunepe",}, //bra
         {"America/Santiago"}, //chi
         {"Asia/Shanghai"}, //chn
         {"America/Bogota"}, //col
@@ -113,6 +127,13 @@ public class CountryTimeZone {
         {"Asia/Bangkok"}, //tha
         {"Asia/Kolkata"}, //ind
         {"Asia/Karachi"}, //pak
+        {"Asia/Manila"}, //phi
+        {"Asia/Manila"}, //phl
+        {"America/Cayenne"}, //guf
+        {"America/Port_of_Spain"}, //tto
+        {"America/Asuncion"}, //pry
+        {"America/Montevideo"}, //ury
+        {"America/Managua"}, //cst
 };
 
     public String[] getTimezone(String name){

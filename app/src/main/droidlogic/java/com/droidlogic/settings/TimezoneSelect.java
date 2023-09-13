@@ -7,6 +7,8 @@ import android.content.DialogInterface;
 import android.widget.Toast;
 
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 import com.droidlogic.fragment.ParameterManager;
 import org.droidlogic.dtvkit.DtvkitGlueClient;
@@ -17,6 +19,23 @@ public class TimezoneSelect {
     private AlertDialog alertDialog;
     String [] time;
     private ParameterManager mParameterManager = null;
+
+    private static final Map<String, Integer> mBrazilRegionIdMap = new HashMap<String, Integer>();
+    static {
+        mBrazilRegionIdMap.put("America/Noronha", 1);
+        mBrazilRegionIdMap.put("America/Sao_Paulo", 3);
+        mBrazilRegionIdMap.put("America/Araguaina", 3);
+        mBrazilRegionIdMap.put("America/Bahia", 3);
+        mBrazilRegionIdMap.put("America/Belem", 3);
+        mBrazilRegionIdMap.put("America/Recife", 3);
+        mBrazilRegionIdMap.put("America/Maceio", 3);
+        mBrazilRegionIdMap.put("America/Cuiaba", 5);
+        mBrazilRegionIdMap.put("America/Manaus", 5);
+        mBrazilRegionIdMap.put("America/Porto_Velho", 5);
+        mBrazilRegionIdMap.put("America/Boa_Vista", 5);
+        mBrazilRegionIdMap.put("America/Rio_Branco", 6);
+        mBrazilRegionIdMap.put("America/Eirunepe", 7);
+    }
 
     public TimezoneSelect(Context context){
         mContext = context;
@@ -86,7 +105,7 @@ public class TimezoneSelect {
             public void onClick(DialogInterface dialogInterface, int i) {
                 //Toast.makeText(mContext, items[i], Toast.LENGTH_SHORT).show();
                 setTimeZone(time[i]);
-                mParameterManager.setCountryRegionId(i + 1);
+                mParameterManager.setCountryRegionId(mBrazilRegionIdMap.get(time[i]) == null ? i + 1 : mBrazilRegionIdMap.get(time[i]));
                 alertDialog.dismiss();
             }
         });
