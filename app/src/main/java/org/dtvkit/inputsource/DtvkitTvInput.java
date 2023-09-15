@@ -917,6 +917,11 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     int timeOffset = TimeZone.getTimeZone(time[0]).getRawOffset();
                     Log.i(TAG, "country:" + iso + ", timezone:" + timeOffset / 1000);
                     mParameterManager.setTimeZone(timeOffset / 1000);
+                    if (time.length > 1) {
+                        mParameterManager.setCountryRegionId(1); // The default is 1, currently only Russia and Brazil will match
+                    }
+                    AlarmManager mAlarmManager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+                    mAlarmManager.setTimeZone(time[0]);
                 }
                 PropSettingManager.setProp(firstProp, "false");
             });
