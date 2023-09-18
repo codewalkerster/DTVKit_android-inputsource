@@ -209,6 +209,11 @@ public class DtvkitIsdbtSetup extends Activity {
             }
             boolean isMatched = UI.mSearchMode != DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL
                     || (freq != 0 && UI.mManualFrequency == freq);
+            // when search atv, return atv name or empty
+            boolean mustReturnATv = UI.mSearchTvType == SEARCH_TV_TYPE.ATV;
+            if (!curATv && mustReturnATv) {
+                continue;
+            }
             if (isMatched) {
                 if (curATv) {
                     firstServiceName = service.optString("Name");
