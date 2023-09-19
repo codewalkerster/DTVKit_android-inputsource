@@ -6,8 +6,15 @@ LOCAL_SRC_FILES := \
     org_droidlogic_fvp_signcsr_client.cpp
 
 LOCAL_C_INCLUDES += \
-    frameworks/base/core/jni/include \
+    frameworks/base/core/jni/include
+
+ifeq ($(PLATFORM_TDK_PATH),)
+LOCAL_C_INCLUDES += \
     vendor/amlogic/common/tdk_v3/ca_export_arm/include
+else
+LOCAL_C_INCLUDES += \
+    $(PLATFORM_TDK_PATH)/ca_export_arm/include
+endif
 
 LOCAL_MODULE := libfvp_signcsr_jni
 LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
