@@ -361,7 +361,7 @@ public class DtvkitIsdbtSetup extends Activity {
             } else {
                 // ATV
                 args.put(UI.mAntennaType);
-                args.put(2000000);
+                args.put(1000000);
             }
             return true;
         } else {
@@ -378,6 +378,7 @@ public class DtvkitIsdbtSetup extends Activity {
                         } else {
                             args.put(parameter); // chName
                         }
+                        args.put(1000000);
                     }
                     return parameter >= 0;
                 } else {
