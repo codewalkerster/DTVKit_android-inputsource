@@ -446,6 +446,12 @@ public class DtvkitIsdbtSetup extends Activity {
     }
 
     private void startSearch() {
+        // Increased robustness
+        if (mSearchingStage == SEARCH_STAGE.ATV_START) {
+            Log.w(TAG, mSearchingStage + " is wrong Stage");
+            sendFinishSearch();
+            return;
+        }
         UI.setSearchStatus("Searching");
         UI.setSearchProgressIndeterminate(false);
         if (mIsHybridSearch) {
@@ -455,10 +461,6 @@ public class DtvkitIsdbtSetup extends Activity {
                 clearATvServices(UI.mAntennaType == 1 ? "CABLE" : "AIR");
             } else if (mSearchingStage == SEARCH_STAGE.DTV_START) {
                 UI.setDTvProgress(100, -1);
-            } else {
-                UI.setSearchStatus("Stage is wrong");
-                Log.e(TAG, mSearchingStage + " is wrong Stage");
-                return;
             }
         }
         startMonitoringSearch();
