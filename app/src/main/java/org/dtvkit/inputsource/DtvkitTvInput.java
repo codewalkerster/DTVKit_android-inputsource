@@ -2795,7 +2795,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     true, 0, "", "").equals("ok");
             if (!playResult) {
                 mTunedChannel = null;
-                DtvkitGlueClient.getInstance().unregisterSignalHandler(mHandler);
             }
             return playResult;
         }
@@ -3040,7 +3039,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     Bundle event = new Bundle();
                     notifySessionEvent(ConstantManager.EVENT_PLAY_FAILED, event);
                 }
-                DtvkitGlueClient.getInstance().unregisterSignalHandler(mHandler);
             }
             return playResult;
         }
@@ -3517,8 +3515,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 targetChannel = firstDbValidChannel;
             }
 
-            if (targetChannel != null && mTunedChannel != null
-                && targetChannel.getId() == mTunedChannel.getId()) {
+            if (mTunedChannel != null && targetChannel.getId() == mTunedChannel.getId()) {
                 long time = SystemClock.uptimeMillis();
                 if (time - mLastTuneTime < 1000) {
                     Log.w(TAG, "duplicate tune, last tune is " + (time - mLastTuneTime) +  "ms ago, abort!");
@@ -4762,7 +4759,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                              */
                             if (mTuneInfo.update) {
                                 mTuneInfo.update = false;
-                                mTuneInfo.dvbUri = dvbUri;
                                 sendMsgTsUpdate();
                             }
                             playerState = PlayerState.PLAYING;
@@ -4834,7 +4830,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         case "audio_only_playing":
                             if (mTuneInfo.update) {
                                 mTuneInfo.update = false;
-                                mTuneInfo.dvbUri = dvbUri;
                                 sendMsgTsUpdate();
                             }
                             playerState = PlayerState.PLAYING;
@@ -4942,6 +4937,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 Log.d(TAG, "starting is_av JSONException = " + e.getMessage());
                                 return;
                             }
+                            mTuneInfo.dvbUri = dvbUri;
                             playerState = PlayerState.STARTING;
                             if (mIsPip) {
                                 Log.d(TAG, "starting no need to start mheg");
@@ -5479,6 +5475,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 mTuneInfo.update = true;
                                 mTuneInfo.frequency = freq;
                                 mTuneInfo.isDTv = status.contains("dtv");
+                                mLastTuneTime = SystemClock.uptimeMillis();
                                 runOnMainThread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -5770,6 +5767,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                         } else {
                             Log.d(TAG, "MSG_TS_UPDATE, uri:" + newUri);
+                            if (TextUtils.isEmpty(newUri)) {
+                                break;
+                            }
                             for (Channel nextChannel : channelList) {
                                 InternalProviderData data = nextChannel.getInternalProviderData();
                                 if (data == null) {
