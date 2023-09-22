@@ -159,6 +159,7 @@ public class ParameterManager {
     public static final String KEY_SET_LOCATION_CODE = "key_set_location_code";
     public static final String KEY_SET_GLOBAL_SUBTITLES_ENABLED = "key_set_global_subtitles_enabled";
     public static final String KEY_GET_GLOBAL_SUBTITLES_ENABLED = "key_get_global_subtitles_enabled";
+    public static final String KEY_SET_DTV_SYSTEM = "key_set_dtv_system";
 
     //default value that is save by index
     public static final int KEY_SATELLITE_DEFAULT_VALUE_INDEX = 0;
@@ -2280,6 +2281,10 @@ public class ParameterManager {
             case KEY_SET_GLOBAL_SUBTITLES_ENABLED:
                 enableGlobalSubtitle(Boolean.valueOf(newJsonValues));
                 break;
+            case KEY_SET_DTV_SYSTEM:
+                setDtvSystem(newJsonValues);
+                PropSettingManager.setProp("persist.vendor.tv.first_search", "true");
+                break;
             default:
                 break;
         }
@@ -3145,6 +3150,19 @@ public class ParameterManager {
             DtvkitGlueClient.getInstance().request("Player.setAudioStreamType", args);
         } catch (Exception e) {
             Log.e(TAG, "setAudioType = " + e.getMessage());
+        }
+    }
+
+    private void setDtvSystem(String system) {
+        try {
+            JSONArray array = new JSONArray();
+            array.put(system);
+            JSONObject obj = DtvkitGlueClient.getInstance().request("Dvb.setDtvSystem", array);
+            if (obj != null) {
+                Log.d(TAG, obj.toString());
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "setDtvSystem = " + e.getMessage());
         }
     }
 }
