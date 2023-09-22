@@ -137,7 +137,7 @@ public:
     virtual void setSubtitleFlag(int flag);
 private:
     static void signalCallback(const std::string &signal, const std::string &data, int id);
-    Glue_client *mClueClient = NULL;
+    Glue_client *mGlueClient = NULL;
 };
 #else
 class DTVKitServerClientJni : public DTVKitClientJni, public DTVKitListener{

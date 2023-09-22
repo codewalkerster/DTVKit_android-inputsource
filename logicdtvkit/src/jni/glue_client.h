@@ -10,7 +10,7 @@ typedef void  (*DISPATCHDRAW_CB)(int32_t src_width, int32_t src_height, int32_t 
  * @param   pid
  * @param   type in subtitle, teletext subtitle, scte27
  */
-typedef void (*F_SubtitleCtrlStart)(int pid, int type, int magazine, int page, int demux_id);
+typedef void (*F_SubtitleCtrlStart)(int pid, int onid, int type, int magazine, int page, int demux_id);
 typedef void (*F_SubtitleCtrlVoid)(void);
 typedef void (*F_NotifyTeletextEvent)(int eventType);
 typedef void (*F_SubtitleTune)(int type, int param1, int param2, int param3);

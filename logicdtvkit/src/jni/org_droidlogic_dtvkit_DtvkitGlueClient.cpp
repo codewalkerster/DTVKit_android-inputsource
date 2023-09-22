@@ -408,26 +408,120 @@ DTVKitClientJni::~DTVKitClientJni()  {
 
 }
 #ifdef SUPPORT_TUNER_FRAMEWORK
+static void subFunStart(int pid, int onid, int type, int magazine, int page, int demux_id) {
+    parcel_t p;
+    p.msgType = SUB_SERVER_DRAW;
+    p.funname = SUBTITLE_START;
+    p.pid = pid;
+    p.subt_type = type;
+    p.subt.cpage = magazine;
+    p.subt.apage = page;
+    p.ttxt.magazine = magazine;
+    p.ttxt.page = page;
+    p.demux_num = demux_id;
+    p.bodyInt.resize(2);
+    p.bodyInt[0] = onid;
+    p.bodyInt[1] = onid;
+
+    sp<SubtitleMessageHandler> subtitleHandler = new SubtitleMessageHandler();
+    subtitleHandler->setParcelData(p);
+    if (gLooper.get() != nullptr) {
+       ALOGD("SUB_SERVER_DRAW funname:%d", p.funname);
+       gLooper->sendMessage(subtitleHandler, Message(p.funname));
+    } else {
+       ALOGE("looper error %d", p.funname);
+    }
+}
+
+static void loopFunc(int type) {
+    sp<SubtitleMessageHandler> subtitleHandler = new SubtitleMessageHandler();
+    if (gLooper.get() != nullptr) {
+       ALOGD("SUB_SERVER_DRAW funname:%d", type);
+       gLooper->sendMessage(subtitleHandler, Message(type));
+    } else {
+       ALOGE("looper error %d", type);
+    }
+}
+static void subFuncStop() {
+    loopFunc(SUBTITLE_STOP);
+}
+
+static void subFuncPause() {
+    loopFunc(SUBTITLE_PAUSE);
+}
+
+static void subFuncResume() {
+    loopFunc(SUBTITLE_RESUME);
+}
+
+static void subFuncTeletextEvent(int eventType) {
+    parcel_t p;
+    p.msgType = SUB_SERVER_DRAW;
+    p.funname = TELETEXT_EVENT;
+    p.event_type = eventType;
+
+    sp<SubtitleMessageHandler> subtitleHandler = new SubtitleMessageHandler();
+    subtitleHandler->setParcelData(p);
+    if (gLooper.get() != nullptr) {
+       ALOGD("SUB_SERVER_DRAW funname:%d", p.funname);
+       gLooper->sendMessage(subtitleHandler, Message(p.funname));
+    } else {
+       ALOGE("looper error %d", p.funname);
+    }
+}
+
+static void subFuncTune(int type, int param1, int param2, int param3) {
+    parcel_t p;
+    p.msgType = SUB_SERVER_DRAW;
+    p.funname = SUBTITLE_TUNE;
+    p.bodyInt.resize(4);
+    p.bodyInt[0] = type;
+    p.bodyInt[1] = param1;
+    p.bodyInt[2] = param2;
+    p.bodyInt[3] = param3;
+
+    sp<SubtitleMessageHandler> subtitleHandler = new SubtitleMessageHandler();
+    subtitleHandler->setParcelData(p);
+    if (gLooper.get() != nullptr) {
+       ALOGD("SUB_SERVER_DRAW funname:%d", p.funname);
+       gLooper->sendMessage(subtitleHandler, Message(p.funname));
+    } else {
+       ALOGE("looper error %d", p.funname);
+    }
+}
+
 DTVKitTunerClientJni::DTVKitTunerClientJni() {
-    mClueClient = Glue_client::getInstance();
-    mClueClient->addInterface();
-    mClueClient->setSignalCallback(signalCallback);
+    mGlueClient = Glue_client::getInstance();
+    mGlueClient->addInterface();
+    mGlueClient->setSignalCallback(signalCallback);
+    mGlueClient->setDisPatchDrawCallback((DISPATCHDRAW_CB)postSubtitleData);
 }
 
 DTVKitTunerClientJni::~DTVKitTunerClientJni()  {
-
+   Glue_client::getInstance()->setDisPatchDrawCallback(NULL);
 }
 
 std::string DTVKitTunerClientJni::request(const std::string& resource, const std::string& json) {
-    return mClueClient->request(resource, json);
+    return mGlueClient->request(resource, json);
 }
 
 void DTVKitTunerClientJni::setAfd(int player, int afd) {
-    mClueClient->setAfd(player, afd);
+    mGlueClient->setAfd(player, afd);
 }
 
 void DTVKitTunerClientJni::setSubtitleFlag(int flag) {
-    ALOGD("DTVKitTunerClientJni setSubtitleFlag Method not implemented ");
+    if (flag) {
+        S_CUS_SUB_CTRL_T f;
+        f.start = (F_SubtitleCtrlStart)subFunStart;
+        f.stop = (F_SubtitleCtrlVoid)subFuncStop;
+        f.pause = (F_SubtitleCtrlVoid)subFuncPause;
+        f.resume = (F_SubtitleCtrlVoid)subFuncResume;
+        f.notifyTeletextEvent = (F_NotifyTeletextEvent)subFuncTeletextEvent;
+        f.tune = (F_SubtitleTune)subFuncTune;
+        Glue_client::getInstance()->RegisterCusSubCtl(&f, flag);
+    } else {
+        Glue_client::getInstance()->UnRegisterCusSubCtl();
+    }
 }
 
 void DTVKitTunerClientJni::signalCallback(const std::string &signal, const std::string &data, int id) {
@@ -605,10 +699,10 @@ void SubtitleMessageHandler::handleMessage(const Message & message) {
             mSubContext = nullptr;
             break;
         case SUBTITLE_CTL_OPEN_USERDATA:
-            mSubContext->userDataOpen();
+            //mSubContext->userDataOpen();
             break;
         case SUBTITLE_CTL_CLOSE_USERDATA:
-            mSubContext->userDataClose();
+            //mSubContext->userDataClose();
             break;
         case SUBTITLE_CTL_SET_REGION_ID:
             ALOGD("set region Id:%d", param);
