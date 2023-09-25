@@ -4342,9 +4342,19 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             } else if (TextUtils.equals("pvr_seek_information", action)) {
                 long seekTime = data.getLong("pvr_seek_time");
                 playerSeekTo(seekTime / 1000);
-            } else if ("action_atv_set_output_mode".equals(action) && data != null) {
+            } else if (ConstantManager.ACTION_ATV_SET_MTS_OUTPUT_MODE.equals(action) && data != null) {
                 int value = data.getInt("mts_output_mode", 0);
                 DataProviderManager.putIntValue(mContext, ConstantManager.ACTION_ATV_SET_MTS_MODE, value);
+                setATVMtsMode(mContext);
+            } else if (ConstantManager.ACTION_ATV_GET_MTS_INPUT_MODE.equals(action)) {
+                int value = TvMTSSetting.getInstance().getAtvMTSInModeValue();
+                DataProviderManager.putIntValue(mContext, action, value);
+            } else if (ConstantManager.ACTION_ATV_GET_MTS_INPUT_STD.equals(action)) {
+                int value = TvMTSSetting.getInstance().getAtvMTSInSTDValue();
+                DataProviderManager.putIntValue(mContext, action, value);
+            } else if (ConstantManager.ACTION_ATV_GET_MTS_OUTPUT_MODE.equals(action)) {
+                int value = TvMTSSetting.getInstance().getAtvMTSOutModeValue();
+                DataProviderManager.putIntValue(mContext, action, value);
             } else if (TextUtils.equals("tvscan_number_search", action)) {
                 int number = Integer.parseInt(data.getString("number_search_number"));
                 enterNumberSearch();

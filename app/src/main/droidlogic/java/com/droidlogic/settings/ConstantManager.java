@@ -192,6 +192,10 @@ public class ConstantManager {
 
     //add define for atv
     public static final String ACTION_ATV_SET_MTS_MODE = "action_atv_set_mts_mode";
+    public static final String ACTION_ATV_SET_MTS_OUTPUT_MODE = "action_atv_set_output_mode";
+    public static final String ACTION_ATV_GET_MTS_OUTPUT_MODE = "action_atv_get_output_mode";
+    public static final String ACTION_ATV_GET_MTS_INPUT_STD   = "action_atv_get_mts_input_std";
+    public static final String ACTION_ATV_GET_MTS_INPUT_MODE  = "action_atv_get_mts_input_mode";
     //add dtvkit satellite
     public static final String DTVKIT_SATELLITE_DATA = "/mnt/vendor/odm_ext/etc/tvconfig/dtvkit/satellite.json";
     public static final String DTVKIT_LNBS_DATA = "/mnt/vendor/odm_ext/etc/tvconfig/dtvkit/lnb.json";
