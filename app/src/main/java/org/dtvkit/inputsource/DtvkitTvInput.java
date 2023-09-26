@@ -4988,6 +4988,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             Log.i(TAG, "** not_running **");
                             notifySessionEvent("signal_invalid_service", null);
                             break;
+                        case "nodata":
+                            notifySessionEvent("signal_no_data", null);
+                            break;
                         default:
                             Log.i(TAG, "Unhandled state: " + state);
                             break;
