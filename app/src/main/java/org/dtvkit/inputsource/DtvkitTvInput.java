@@ -5220,7 +5220,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else if (signal.equals("DvbUpdatedChannelData")) {
                     Log.i(TAG, "DvbUpdatedChannelData");
                     //check trackInfo update
-                    sendUpdateTrackMsg(playerState, false);
+                    if (mHandlerThreadHandle != null) {
+                        mHandlerThreadHandle.postDelayed(
+                            () -> initSubtitleOrTeletextIfNeed(), 100);
+                    }
                 } else if (signal.equals("MhegAppStarted")) {
                     Log.i(TAG, "MhegAppStarted");
                     mIsMhepAppStarted = true;
