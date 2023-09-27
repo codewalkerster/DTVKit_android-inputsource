@@ -4821,6 +4821,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 }
                             } else {
                                 if (type.equals("ATV")) {
+                                    setBlockMute(false);
                                     sendUpdateTrackMsg(PlayerState.PLAYING, false);
                                 }
                                 notifyVideoAvailable();
@@ -4876,7 +4877,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             if (!mIsPip) {
                                 playerSetSubtitlesOn(false);
                             }
-                            if (!type.equals("dvbrecording")) {
+                            if (Channel.isATV(mTunedChannel)) {
+                                setBlockMute(true);
+                            } else if (!type.equals("dvbrecording")) {
                                 playerState = PlayerState.BLOCKED;
                             } else {
                                 setBlockMute(true);
@@ -5955,7 +5958,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         private void setBlockMute(boolean mute) {
             Log.d(TAG, "setBlockMute = " + mute);
-            if (mIsPip) {
+            if (Channel.isATV(mTunedChannel)) {
+                mAudioSystemCmdManager.handleAdtvAudioEvent(
+                    AudioSystemCmdManager.AUDIO_SERVICE_CMD_SET_MUTE, mute ? 1 : 0, 0);
+            } else if (mIsPip) {
                 playerSetPipMute(mute);
             } else {
                 playerSetMute(mute);
@@ -6572,6 +6578,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     }
                     if (mParameterManager != null) {
                         try {
+                            // only for trunk used
+                            if (!mParameterManager.getATvSystemControlOn()) {
+                                mParameterManager.setATvSystemControlOn(true);
+                            }
                             int unikey = Integer.parseInt((String) data.get("unikey")); //unikey
                             mParameterManager.setATVChannelBlock(isLocked, unikey);
                         } catch (Exception e) {

@@ -2741,6 +2741,28 @@ public class ParameterManager {
         }
     }
 
+    public void setATvSystemControlOn(boolean block) {
+        JSONArray args = new JSONArray();
+        try
+        {
+            args.put(block);
+            DtvkitGlueClient.getInstance().request("AtvPlayer.setSystemControlOn", args);
+        } catch (Exception e) {
+        }
+    }
+
+    public boolean getATvSystemControlOn() {
+        JSONArray args = new JSONArray();
+        boolean ret = false;
+        try
+        {
+            JSONObject obj = DtvkitGlueClient.getInstance().request("AtvPlayer.getSystemControlOn", args);
+            ret = obj.optBoolean("data", false);
+        } catch (Exception e) {
+        }
+        return ret;
+    }
+
     public int getTvSignalStatus() {
         int ret = 0;
         try {
