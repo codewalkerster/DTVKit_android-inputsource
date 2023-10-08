@@ -3948,7 +3948,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             Log.d(TAG, log.toString());
         }
 
-        private void updateTrackAndSelect(int isDvrPlaying, boolean clear) {
+        private void updateTrackAndSelect(int isDvrPlaying, boolean clear, boolean retuneSubtitle) {
             if (Channel.isATV(mTunedChannel)) {
                 List<TvTrackInfo> info = AtvCcTool.getInstance().getAtvCcTracks();
                 notifyTracksChanged(info);
@@ -3964,7 +3964,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     }
                 }
             } else {
-                boolean retSubtitle = (isDvrPlaying != 1) || (dvrSubtitleFlag != 1);
+                boolean retSubtitle = retuneSubtitle ?
+                    ((isDvrPlaying != 1) || (dvrSubtitleFlag != 1)) : false;
 
                 if (clear) {
                     Log.w(TAG, "updateTrackAndSelect: clear Tracks, because not playing status");
@@ -5236,10 +5237,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else if (signal.equals("DvbUpdatedChannelData")) {
                     Log.i(TAG, "DvbUpdatedChannelData");
                     //check trackInfo update
-                    if (mHandlerThreadHandle != null) {
-                        mHandlerThreadHandle.postDelayed(
-                            () -> initSubtitleOrTeletextIfNeed(), 100);
-                    }
+                    sendUpdateTrackMsg(PlayerState.PLAYING, false, false);
                 } else if (signal.equals("MhegAppStarted")) {
                     Log.i(TAG, "MhegAppStarted");
                     mIsMhepAppStarted = true;
@@ -5726,7 +5724,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         tryStopTimeshifting();
                         break;
                     case MSG_UPDATE_TRACKS_AND_SELECT:
-                        updateTrackAndSelect(msg.arg1, msg.arg2 == 1);
+                        updateTrackAndSelect(msg.arg1, msg.arg2 == 1, (Boolean)msg.obj);
                         break;
                     case MSG_SELECT_TRACK:
                         doSelectTrack(msg.arg1, (String) msg.obj);
@@ -6031,6 +6029,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
 
         private void sendUpdateTrackMsg(PlayerState playState, boolean isDvrPlaying) {
+            sendUpdateTrackMsg(playState, isDvrPlaying, true);
+        }
+
+        private void sendUpdateTrackMsg(PlayerState playState, boolean isDvrPlaying, boolean retuneSubtitle) {
             if (mHandlerThreadHandle != null) {
                 mHandlerThreadHandle.removeMessages(MSG_UPDATE_TRACKS_AND_SELECT);
                 Message msg = mHandlerThreadHandle.obtainMessage(MSG_UPDATE_TRACKS_AND_SELECT);
@@ -6046,6 +6048,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else {
                     msg.arg1 = 0;
                 }
+                msg.obj = (Object)retuneSubtitle;
                 mHandlerThreadHandle.sendMessage(msg);
             }
         }
