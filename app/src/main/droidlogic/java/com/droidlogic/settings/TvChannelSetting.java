@@ -79,11 +79,6 @@ public class TvChannelSetting {
             try {
                 data.put("video_std", mode);
                 data.put("vfmt", convertAtvCvbsFormat(Integer.parseInt((String) data.get("vfmt")), mode));
-                Uri channelsUri = TvContract.buildChannelUri(channel.getId());
-                ContentValues values = new ContentValues();
-                values.put(TvContract.Channels.COLUMN_INTERNAL_PROVIDER_DATA, data.toString().getBytes());
-                context.getContentResolver().update(channelsUri, values, null, null);
-
                 JSONArray args = new JSONArray();
                 args.put(Integer.parseInt((String) data.get("unikey"))); //unikey
                 args.put(channel.getAntennaType()); //atv_sigtype
@@ -121,11 +116,6 @@ public class TvChannelSetting {
 
             try {
                 data.put("audio_std", mode);
-                Uri channelsUri = TvContract.buildChannelUri(channel.getId());
-                ContentValues values = new ContentValues();
-                values.put(TvContract.Channels.COLUMN_INTERNAL_PROVIDER_DATA, data.toString().getBytes());
-                context.getContentResolver().update(channelsUri, values, null, null);
-
                 JSONArray args = new JSONArray();
                 args.put(Integer.parseInt((String) data.get("unikey"))); //unikey
                 args.put(channel.getAntennaType()); //atv_sigtype
@@ -156,11 +146,6 @@ public class TvChannelSetting {
 
             try {
                 data.put("fine_tune", finetune);
-                Uri channelsUri = TvContract.buildChannelUri(channel.getId());
-                ContentValues values = new ContentValues();
-                values.put(TvContract.Channels.COLUMN_INTERNAL_PROVIDER_DATA, data.toString().getBytes());
-                context.getContentResolver().update(channelsUri, values, null, null);
-
                 JSONArray args = new JSONArray();
                 args.put(Integer.parseInt((String) data.get("unikey")));
                 args.put(channel.getAntennaType());

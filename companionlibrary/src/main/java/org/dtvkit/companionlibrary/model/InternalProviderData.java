@@ -197,6 +197,21 @@ public class InternalProviderData {
         }
     }
 
+    public int getInt(String key) {
+        try {
+            Object obj = get(key);
+            if (obj instanceof Integer) {
+                return (int) obj;
+            } else if (obj instanceof String) {
+                return Integer.parseInt((String) obj);
+            } else {
+                return 0;
+            }
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     /**
      * This exception is thrown when an error occurs in getting or setting data for the
      * InternalProviderData.

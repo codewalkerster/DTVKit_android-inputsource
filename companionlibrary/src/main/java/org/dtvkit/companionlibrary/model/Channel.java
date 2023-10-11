@@ -86,6 +86,7 @@ public final class Channel {
     public static final String KEY_VIDEO_CODEC = "video_codec";
     public static final String KEY_CHANNEL_SIGNAL_TYPE = "channel_signal_type";
     public static final String KEY_FREQUENCY = "frequency";
+    public static final String KEY_FINE_TUNE = "fine_tune";
     public static final String KEY_DTVKIT_URI = "dvbUri";
     public static final String KEY_NETWORK_ID = "network_id";
 

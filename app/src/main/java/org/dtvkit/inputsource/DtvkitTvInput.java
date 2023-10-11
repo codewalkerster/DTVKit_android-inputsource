@@ -85,6 +85,7 @@ import com.google.common.collect.Lists;
 
 import org.droidlogic.dtvkit.DtvkitGlueClient;
 import org.droidlogic.dtvkit.IndentingPrintWriter;
+import org.droidlogic.dtvkit.TvChannelSetting;
 import org.droidlogic.dtvkit.TvMTSSetting;
 
 import org.dtvkit.inputsource.caption.AtvCcTool;
@@ -4373,10 +4374,29 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     Message msg = mMainHandle.obtainMessage(MSG_TUNE_ATV_SNOW, 0, 0);
                     mHandlerThreadHandle.sendMessage(msg);
                 }
+            } else if (TextUtils.equals(ConstantManager.ACTION_ATV_SET_VIDEO, action)) {
+                if (data != null) {
+                    int tune = data.getInt("video");
+                    mHandlerThreadHandle.removeMessages(MSG_ATV_FINE_TUNE_VIDEO);
+                    Message msg = mHandlerThreadHandle.obtainMessage(MSG_ATV_FINE_TUNE_VIDEO, tune, 0);
+                    mHandlerThreadHandle.sendMessageDelayed(msg, 0);
+                }
+            } else if (TextUtils.equals(ConstantManager.ACTION_ATV_SET_AUDIO, action)) {
+                if (data != null) {
+                    int tune = data.getInt("audio");
+                    mHandlerThreadHandle.removeMessages(MSG_ATV_FINE_TUNE_AUDIO);
+                    Message msg = mHandlerThreadHandle.obtainMessage(MSG_ATV_FINE_TUNE_AUDIO, tune, 0);
+                    mHandlerThreadHandle.sendMessageDelayed(msg, 0);
+                }
+            } else if (TextUtils.equals(ConstantManager.ACTION_ATV_SET_FINETUNE, action)) {
+                if (data != null) {
+                    int tune = data.getInt("finetune");
+                    mHandlerThreadHandle.removeMessages(MSG_ATV_FINE_TUNE_STEP);
+                    Message msg = mHandlerThreadHandle.obtainMessage(MSG_ATV_FINE_TUNE_STEP, tune, 0);
+                    mHandlerThreadHandle.sendMessageDelayed(msg, 200);
+                }
             }
         }
-
-
 
         private void enterNumberSearch() {
             final AlertDialog.Builder builder = new AlertDialog.Builder(DtvkitTvInput.this);
@@ -5560,9 +5580,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         protected static final int MSG_SCHEDULE_TIMESHIFT_RECORDING_TASK = 35;
         protected static final int MSG_TIMESHIFT_PLAY_SET_PLAYBACK_PARAMS = 36;
 
-        //mheg5
-        //protected static final int MSG_START_MHEG5 = 40;
-        //protected static final int MSG_STOP_MHEG5 = 41;
+        // atv fine tune
+        protected static final int MSG_ATV_FINE_TUNE_AUDIO = 60;
+        protected static final int MSG_ATV_FINE_TUNE_VIDEO = 61;
+        protected static final int MSG_ATV_FINE_TUNE_STEP = 62;
 
         //ci plus update
         protected static final int MSG_CI_UPDATE_PROFILE_OVER = 50;
@@ -5845,6 +5866,21 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_TUNING);
                         startNumberSearch(msg.arg1);
                         break;
+                    case MSG_ATV_FINE_TUNE_AUDIO: {
+                        TvChannelSetting test = new TvChannelSetting();
+                        mTunedChannel = TvContractUtils.getChannel(mContentResolver, TvContract.buildChannelUri(mTunedChannel.getId()));
+                        test.setAtvChannelAudio(getApplicationContext(), mTunedChannel, msg.arg1);
+                    } break;
+                    case MSG_ATV_FINE_TUNE_VIDEO: {
+                        TvChannelSetting test = new TvChannelSetting();
+                        mTunedChannel = TvContractUtils.getChannel(mContentResolver, TvContract.buildChannelUri(mTunedChannel.getId()));
+                        test.setAtvChannelVideo(getApplicationContext(), mTunedChannel, msg.arg1);
+                    } break;
+                    case MSG_ATV_FINE_TUNE_STEP: {
+                        TvChannelSetting test = new TvChannelSetting();
+                        mTunedChannel = TvContractUtils.getChannel(mContentResolver, TvContract.buildChannelUri(mTunedChannel.getId()));
+                        test.setAtvFineTune(getApplicationContext(), mTunedChannel, msg.arg1);
+                    } break;
                     default:
                         Log.d(TAG, "mHandlerThreadHandle initWorkThread default");
                         break;
@@ -7194,17 +7230,17 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             return false;
         }
         try {
-            array.put(Integer.parseInt((String) data.get("unikey"))); //unikey
+            array.put(data.getInt("unikey")); //unikey
             array.put(channel.getAntennaType()); //atv_sigtype
-            array.put(Integer.parseInt((String) data.get("frequency"))); //freq
-            array.put(Integer.parseInt((String) data.get("video_std"))); //vstd
-            array.put(Integer.parseInt((String) data.get("audio_std"))); //astd
-            array.put(Integer.parseInt((String) data.get("vfmt"))); //vfmt
+            array.put(data.getInt("frequency") + data.getInt("fine_tune")); //freq
+            array.put(data.getInt("video_std")); //vstd
+            array.put(data.getInt("audio_std")); //astd
+            array.put(data.getInt("vfmt")); //vfmt
             Log.i(TAG, "AtvPlayer playerPlay:" + channel);
             DtvkitGlueClient.getInstance().request("AtvPlayer.play", array);
         } catch (Exception e) {
-            Log.d(TAG, "[debug]channel : " + channel);
-            Log.d(TAG, "[debug]data : " + data);
+            Log.w(TAG, "[debug]channel : " + channel);
+            Log.w(TAG, "[debug]data : " + data);
             e.printStackTrace();
             return false;
         }

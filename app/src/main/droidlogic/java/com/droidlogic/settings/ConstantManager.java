@@ -40,7 +40,10 @@ public class ConstantManager {
     public static final String EVENT_NO_CHANNEL_FOUND = "event_no_channel_found";
     public static final String VALUE_PIP_ACTION_TUNE_NEXT = "tune_next";
     public static final String EVENT_TUNE_ATV_SNOW = "tune_atv_snow";
-
+    // atv fine Tune
+    public static final String ACTION_ATV_SET_VIDEO           = "action_atv_set_video";
+    public static final String ACTION_ATV_SET_AUDIO           = "action_atv_set_audio";
+    public static final String ACTION_ATV_SET_FINETUNE        = "action_atv_set_finetune";
     //show or hide overlay
     public static final String ACTION_TIF_CONTROL_OVERLAY = "tif_control_overlay";
     public static final String KEY_TIF_OVERLAY_SHOW_STATUS = "tif_overlay_show_status";

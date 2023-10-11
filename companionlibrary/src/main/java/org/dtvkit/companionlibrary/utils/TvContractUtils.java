@@ -81,11 +81,15 @@ public class TvContractUtils {
             put(Channel.KEY_NEW_DISPLAYNAME, "");
             put(Channel.KEY_SET_DISPLAYNUMBER, "0");
             put(Channel.KEY_NEW_DISPLAYNUMBER, "0");
-            //put(Channel.KEY_RAW_DISPLAYNAME, "0");
-            //put(Channel.KEY_RAW_DISPLAYNUMBER, "0");
             put(Channels.COLUMN_APP_LINK_ICON_URI, "");
             put(Channels.COLUMN_APP_LINK_INTENT_URI, "");
             put(Channel.KEY_SET_MOVE_DISPLAYNUMBER, "0");
+        }
+    };
+    private static final Map<String, String> ATV_EXTRA_SETTINGS_DEFAULT = new HashMap<String, String>() {
+        {
+            put(Channel.KEY_FREQUENCY, "0");
+            put(Channel.KEY_FINE_TUNE, "0");
         }
     };
 
@@ -232,10 +236,10 @@ public class TvContractUtils {
                 }
                 String uniqueStr = getUniqueStrForChannel(internalProviderData, channelType,
                         originalNetworkId, transportStreamId, serviceId,
-                        frequency, ciNumber, rawDisplayNumber);
+                        frequency, ciNumber);
                 channelMap.add(new Pair<>(uniqueStr, rowId));
                 if (!isSearched) {
-                    saveRawUseSettingValuesToMap(uniqueStr, channelUseSettingValueMap, internalProviderData);
+                    saveRawUseSettingValuesToMap(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
                     continue;
                 }
                 if (TvContract.Channels.TYPE_DVB_S.equals(EpgSyncJobService.getChannelTypeFilter())) {
@@ -252,7 +256,7 @@ public class TvContractUtils {
                                 }
                             }
                             if (!found) {
-                                saveRawUseSettingValuesToMap(uniqueStr, channelUseSettingValueMap, internalProviderData);
+                                saveRawUseSettingValuesToMap(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
                             }
                         }
                     }
@@ -260,7 +264,7 @@ public class TvContractUtils {
                     int searchFrequency = extras.getInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, 0);
                     if ((frequency != 0 && searchFrequency != frequency
                             && EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL.equals(searchMode))) {
-                        saveRawUseSettingValuesToMap(uniqueStr, channelUseSettingValueMap, internalProviderData);
+                        saveRawUseSettingValuesToMap(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
                     }
                 }
             }
@@ -306,7 +310,6 @@ public class TvContractUtils {
             internalProviderData = channel.getInternalProviderData();
             int frequency = 0;
             String ciNumber = null;
-            String rawDisplayNumber = null;
             if (internalProviderData != null) {
                 try {
                     frequency = Integer.parseInt((String)internalProviderData.get(Channel.KEY_FREQUENCY));
@@ -318,18 +321,13 @@ public class TvContractUtils {
                 } catch (Exception e) {
                     //Log.d(TAG, "updateChannels no ciNumber info Exception = " + e.getMessage());
                 }
-                try {
-                    rawDisplayNumber = (String)internalProviderData.get(Channel.KEY_RAW_DISPLAYNUMBER);
-                } catch (Exception e) {
-                    Log.d(TAG, "updateChannels no rawDisplayNumber info Exception = " + e.getMessage());
-                }
             } else {
                 Log.e(TAG, "updateChannels no internalProviderData, ignore");
                 continue;
             }
             String uniqueStr = getUniqueStrForChannel(internalProviderData, channelType,
                     originalNetworkId, transportStreamId, serviceId,
-                    frequency, ciNumber, rawDisplayNumber);
+                    frequency, ciNumber);
             Long rowId = null;
             if (EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_AUTO.equals(searchMode)) {
                 // need to remove all old channels
@@ -359,7 +357,7 @@ public class TvContractUtils {
                 if (DEBUG) {
                     Log.d(TAG, String.format("Mapping %s to %d", uniqueStr, rowId));
                 }
-                restoreRawUseSettingValuesToInternalProviderData(uniqueStr, channelUseSettingValueMap, internalProviderData);
+                restoreRawUseSettingValuesToInternalProviderData(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
                 if ("1".equals(singleUserSettings.get(Channel.KEY_SET_DISPLAYNUMBER))) {
                     values.put(TvContract.Channels.COLUMN_DISPLAY_NUMBER, singleUserSettings.get(Channel.KEY_NEW_DISPLAYNUMBER));
                 }
@@ -510,7 +508,7 @@ public class TvContractUtils {
     }
 
     //cache use settings
-    private static void saveRawUseSettingValuesToMap(String uniqueKey,
+    private static void saveRawUseSettingValuesToMap(String uniqueKey, boolean isATv,
             ArrayMap<String, ArrayMap<String, String>> map, InternalProviderData internalProviderData) {
         if (uniqueKey == null || map == null || internalProviderData == null) {
             Log.d(TAG, "saveRawUseSettingValuesToMap USER_SETTING_FLAG and USER_SETTING_FLAG_DEFAULT are not same length or null container");
@@ -528,6 +526,18 @@ public class TvContractUtils {
             }
             child.put(entry.getKey(), tempStr);
         }
+        if (isATv) {
+            for (Map.Entry <String, String> entry: ATV_EXTRA_SETTINGS_DEFAULT.entrySet()) {
+                try {
+                    tempStr = (String) internalProviderData.get(entry.getKey());
+                } catch (InternalProviderData.ParseException ignored) {
+                }
+                if (tempStr == null) {
+                    tempStr = entry.getValue();
+                }
+                child.put(entry.getKey(), tempStr);
+            }
+        }
         if (DEBUG) {
             Log.d(TAG, "saveRawUseSettingValuesToMap uniqueKey:" + uniqueKey + "," + child);
         }
@@ -535,7 +545,7 @@ public class TvContractUtils {
     }
 
     //restore use settings
-    private static void restoreRawUseSettingValuesToInternalProviderData(String uniqueKey,
+    private static void restoreRawUseSettingValuesToInternalProviderData(String uniqueKey, boolean isATv,
         ArrayMap<String, ArrayMap<String, String>> map, InternalProviderData internalProviderData) {
         if (uniqueKey == null || map == null || internalProviderData == null) {
             Log.w(TAG, "null data");
@@ -563,27 +573,48 @@ public class TvContractUtils {
             } catch (InternalProviderData.ParseException ignored) {
             }
         }
+        if (isATv) {
+            for (Map.Entry <String, String> entry: ATV_EXTRA_SETTINGS_DEFAULT.entrySet()) {
+                try {
+                    tempStr = child.get(entry.getKey());
+                    if (tempStr == null) {
+                        tempStr = entry.getValue();
+                    }
+                    internalProviderData.put(entry.getKey(), tempStr);
+                    if (DEBUG) {
+                        Log.d(TAG, "restoreRawUseSettingValuesToInternalProviderData "
+                                + entry.getKey() + "->" + tempStr);
+                    }
+                } catch (InternalProviderData.ParseException ignored) {
+                }
+            }
+        }
     }
 
     public static String getUniqueStrForChannel(InternalProviderData internalProviderData,
         String channelType, int originalNetworkId, int transportStreamId,
-        int serviceId, int frequency, String ciNumber, String rawDisplayNumber) {
-
-        String result = channelType
-                + "-" + (frequency / 1000000)
+        int serviceId, int frequency, String ciNumber) {
+        boolean isATv = Channels.TYPE_PAL.equals(channelType)
+                || Channels.TYPE_NTSC.equals(channelType)
+                || Channels.TYPE_SECAM.equals(channelType);
+        StringBuilder result = new StringBuilder(channelType
                 + "-" + originalNetworkId
                 + "-" + transportStreamId
                 + "-" + serviceId
-                + "-" + ciNumber;
+                + "-" + ciNumber);
+        int tuneFreq = frequency;
         try {
-            // for ATV use
-            String signal = (String) internalProviderData.get("signal_type");
-            result = result + "-" + signal;
-        } catch (InternalProviderData.ParseException ignored) {}
+            if (isATv) {
+                String signal = (String) internalProviderData.get("signal_type");
+                tuneFreq += internalProviderData.getInt("fine_tune");
+                result.append("-").append(signal);
+            }
+        } catch (Exception ignored) {}
+        result = result.append("-").append((tuneFreq / 1000));
         if (DEBUG) {
             Log.d(TAG,  "getUniqueStrForChannel::" + result);
         }
-        return result;
+        return result.toString();
     }
 
     /**
