@@ -10,8 +10,8 @@ LOCAL_SRC_FILES := $(call all-subdir-java-files)
 
 ifeq ($(PRODUCT_SUPPORT_TUNER_FRAMEWORK), true)
 #LOCAL_STATIC_JAVA_LIBRARIES := droidlogic.jniasplayer
-LOCAL_JAVA_LIBRARIES := droidlogic.jniasplayer JDvrLib
-LOCAL_REQUIRED_MODULES := droidlogic.jniasplayer JDvrLib
+LOCAL_JAVA_LIBRARIES := droidlogic.jniasplayer JDvrLib jcas-builder-library
+LOCAL_REQUIRED_MODULES := droidlogic.jniasplayer JDvrLib jcas-builder-library
 endif
 
 LOCAL_STATIC_JAVA_LIBRARIES := droidlogic.dtvkit.tuner

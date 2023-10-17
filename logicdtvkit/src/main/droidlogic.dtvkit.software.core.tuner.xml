@@ -17,5 +17,5 @@
 <permissions>
     <library name="droidlogic.dtvkit.software.core"
         file="/vendor/framework/droidlogic.dtvkit.software.core.jar"
-        dependency="droidlogic.jniasplayer:jdvrlib"/>
+        dependency="droidlogic.jniasplayer:jdvrlib:jcas-builder-library"/>
 </permissions>

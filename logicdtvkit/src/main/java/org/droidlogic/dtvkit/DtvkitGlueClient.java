@@ -66,6 +66,7 @@ public class DtvkitGlueClient {
             System.loadLibrary("dtvkit_jni");
             if (true == getFeatureSupportTunerFramework()) {
                 System.loadLibrary("jdvrlib-jni");//workaround for vendor linker namespace,jdvrlib and dtvkit need same classloader. Can static link jdvrlib after debug
+                System.loadLibrary("jcas_jni");
             }
         } catch (Exception e) {
             Log.d(TAG, "dtvkit_jni load error: " + e);
