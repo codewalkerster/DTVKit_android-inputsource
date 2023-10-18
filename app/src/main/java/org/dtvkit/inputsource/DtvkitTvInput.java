@@ -4944,7 +4944,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                     Log.e(TAG, ignore.getMessage());
                                 }
                             } else {
-                                Log.d(TAG, "ATV chgannel blocked");
+                                Log.d(TAG, "ATV channel blocked");
                                 Rating = "DVB_4";
                             }
                             playerState = PlayerState.BLOCKED;
@@ -4966,7 +4966,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             dvrSubtitleFlag = 0;
                             ContentRatingSystem system = mContentRatingsManager
                                 .getContentRatingSystem("com.android.tv" + "/" + mCurrentRatingSystem);
-                            if (system != null) {
+                            if (type.equals("ATV")) {
+                                notifyContentBlocked(TvContentRating.createRating(
+                                    "com.android.tv", "ATV", Rating));
+                            } else if (system != null) {
                                 String ratedName = system.getRatedNameByAge(ratingAge);
                                 if (TextUtils.isDigitsOnly(ratedName)) {
                                     ratedName = Rating;
