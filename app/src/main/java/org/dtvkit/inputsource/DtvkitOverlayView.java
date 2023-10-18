@@ -312,7 +312,7 @@ public class DtvkitOverlayView extends FrameLayout {
 
     public void hideCCSubtitle() {
         if (mCCSubView != null) {
-            mCCSubView.hide();
+            mCCSubView.clearContent();
         }
     }
 
