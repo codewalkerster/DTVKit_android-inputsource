@@ -5023,7 +5023,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             notifySessionEvent("signal_invalid_service", null);
                             break;
                         case "nodata":
-                            notifySessionEvent("signal_no_data", null);
+                            if (TvContract.Channels.TYPE_ISDB_T.equals(EpgSyncJobService.getChannelTypeFilter())) {
+                                notifySessionEvent("signal_no_data", null);
+                            }
                             break;
                         default:
                             Log.i(TAG, "Unhandled state: " + state);
