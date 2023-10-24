@@ -11,7 +11,10 @@ public class PropSettingManager {
     private static final String TAG = "PropSettingManager";
     private static final boolean DEBUG = true;
 
-    public static final String TV_STREAM_TIME = "vendor.sys.tv.stream.realtime";//sync with TvTime.java
+    public static final String TV_STREAM_REAL_TIME = "vendor.sys.tv.stream.realtime";//sync with TvTime.java
+    public static final String TV_STREAM_LOCAL_TIME = "vendor.sys.tv.stream.localtime";//sync with TvTime.java
+    public static final String TV_STREAM_CHANGE_TIME = "vendor.sys.tv.stream.offsetchange";//sync with TvTime.java
+    public static final String TV_STREAM_NEXT_TIME_TIME = "vendor.sys.tv.stream.timeozone.next";//sync with TvTime.java
     public static final String TV_PIP_STREAM_TIME = "vendor.sys.tv.stream.realtime1";//for pip
     public static final String PVR_RECORD_MODE = "vendor.tv.dtv.dvr.mode";//used in dtvkit pvr
     public static final String TIMESHIFT_DISABLE = "vendor.tv.dtv.tf.disable";
@@ -132,7 +135,7 @@ public class PropSettingManager {
     public static long getCurrentStreamTime(boolean streamTime) {
         long result = System.currentTimeMillis();
         if (streamTime) {
-            result = result + getLong(TV_STREAM_TIME, 0);
+            result = result + getLong(TV_STREAM_REAL_TIME, 0);
         }
         return result;
     }
@@ -147,7 +150,7 @@ public class PropSettingManager {
 
     public static long getStreamTimeDiff() {
         long result = 0;
-        result = getLong(TV_STREAM_TIME, 0);
+        result = getLong(TV_STREAM_REAL_TIME, 0);
         return result;
     }
 
@@ -158,5 +161,13 @@ public class PropSettingManager {
             result = setProp(PropSettingManager.PVR_RECORD_MODE, PropSettingManager.PVR_RECORD_MODE_CHANNEL);
         }
         return result;
+    }
+
+    public static void updateStreamTime(long realTime, long localTime, long timeOfChange, long nextTimeOffset) {
+        long currentSystemTime = System.currentTimeMillis();
+        setProp(PropSettingManager.TV_STREAM_REAL_TIME, String.valueOf(realTime - currentSystemTime));
+        setProp(PropSettingManager.TV_STREAM_LOCAL_TIME, String.valueOf(localTime - currentSystemTime));
+        setProp(PropSettingManager.TV_STREAM_CHANGE_TIME, String.valueOf(timeOfChange));
+        setProp(PropSettingManager.TV_STREAM_NEXT_TIME_TIME, String.valueOf(nextTimeOffset));
     }
 }

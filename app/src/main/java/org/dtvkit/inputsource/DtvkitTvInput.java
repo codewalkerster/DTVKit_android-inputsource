@@ -5550,6 +5550,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             sendEmptyMessageToInputThreadHandler(MSG_START_MONITOR_SYNCING);
                         }
                     }
+                } else if (signal.equals("UTC_TIME_CHANGED")) {
+                    if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                        mHandlerThreadHandle.sendEmptyMessageDelayed(MSG_UPDATE_UTC_TIME, 500);
+                    }
                 }
             }
         };
@@ -5579,6 +5583,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         protected static final int MSG_NUMBER_SEARCH = 23;
         protected static final int MSG_TUNE_ATV_SNOW = 24;
         protected static final int MSG_UPDATE_AD_PARAMETER = 25;
+        protected static final int MSG_UPDATE_UTC_TIME = 26;
 
         //timeshift
         protected static final int MSG_TIMESHIFT_PLAY = 30;
@@ -5907,6 +5912,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         mTunedChannel = TvContractUtils.getChannel(mContentResolver, TvContract.buildChannelUri(mTunedChannel.getId()));
                         test.setAtvFineTune(getApplicationContext(), mTunedChannel, msg.arg1);
                     } break;
+                    case MSG_UPDATE_UTC_TIME:
+                        PropSettingManager.updateStreamTime(mParameterManager.getDTVRealTime(), mParameterManager.getBroadcastTime(),
+                                mParameterManager.getDTVOffsetChangeTime(), mParameterManager.getDTVNextTimeZone());
+                        break;
                     default:
                         Log.d(TAG, "mHandlerThreadHandle initWorkThread default");
                         break;

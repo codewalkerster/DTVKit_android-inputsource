@@ -27,6 +27,7 @@ import org.droidlogic.dtvkit.DtvkitGlueClient;
 import com.droidlogic.dtvkit.inputsource.DataManager;
 import com.droidlogic.dtvkit.inputsource.ISO639Data;
 import com.droidlogic.dtvkit.inputsource.TargetRegionManager;
+import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
 
 import com.droidlogic.app.DataProviderManager;
 import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
@@ -2860,10 +2861,14 @@ public class ParameterManager {
     }
 
     public void setDaylightSavingMode(int mode) {
+        int oldDaylightSavingMode = Integer.parseInt(getDaylightSavingMode());
         JSONArray array = new JSONArray();
         try {
             array.put(mode);
             DtvkitGlueClient.getInstance().request("Dvb.SetDayLightSavingMode", array);
+            if (oldDaylightSavingMode + mode == 1 && FeatureUtil.getFeatureSupportTunerFramework()) {
+                PropSettingManager.updateStreamTime(getDTVRealTime(), getBroadcastTime(), getDTVOffsetChangeTime(), getDTVNextTimeZone());
+            }
         } catch (Exception e) {
             Log.i(TAG,"setDaylightSavingMode fail");
         }
@@ -2887,6 +2892,9 @@ public class ParameterManager {
         try {
             array.put(timeZone);
             DtvkitGlueClient.getInstance().request("Dvb.SetTimeZone", array);
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                PropSettingManager.updateStreamTime(getDTVRealTime(), getBroadcastTime(), getDTVOffsetChangeTime(), getDTVNextTimeZone());
+            }
         } catch (Exception e) {
             Log.i(TAG,"setTimeZone fail");
         }
@@ -3186,5 +3194,49 @@ public class ParameterManager {
         } catch (Exception e) {
             Log.e(TAG, "setDtvSystem = " + e.getMessage());
         }
+    }
+
+    public long getDTVRealTime() {
+        long realTime = 0;
+        try {
+            JSONArray array = new JSONArray();
+            realTime = DtvkitGlueClient.getInstance().request("Dvb.GetDTVRealTime", array).getLong("data");
+        } catch (Exception e) {
+            Log.e(TAG, "getDTVRealTime = " + e.getMessage());
+        }
+        return realTime;
+    }
+
+    public long getBroadcastTime() {
+        long localTime = 0;
+        try {
+            JSONArray array = new JSONArray();
+            localTime = DtvkitGlueClient.getInstance().request("Dvb.GetBroadcastTime", array).getLong("data");
+        } catch (Exception e) {
+            Log.e(TAG, "getBroadcastTime = " + e.getMessage());
+        }
+        return localTime;
+    }
+
+    public long getDTVOffsetChangeTime() {
+        long offsetChangeTime = 0;
+        try {
+            JSONArray array = new JSONArray();
+            offsetChangeTime = DtvkitGlueClient.getInstance().request("Dvb.GetDTVOffsetChangeTime", array).getLong("data");
+        } catch (Exception e) {
+            Log.e(TAG, "getDTVOffsetChangeTime = " + e.getMessage());
+        }
+        return offsetChangeTime;
+    }
+
+    public long getDTVNextTimeZone() {
+        long nextTimeZone = 0;
+        try {
+            JSONArray array = new JSONArray();
+            nextTimeZone = DtvkitGlueClient.getInstance().request("Dvb.GetDTVNextTimeZone", array).getLong("data");
+        } catch (Exception e) {
+            Log.e(TAG, "getDTVNextTimeZone = " + e.getMessage());
+        }
+        return nextTimeZone;
     }
 }
