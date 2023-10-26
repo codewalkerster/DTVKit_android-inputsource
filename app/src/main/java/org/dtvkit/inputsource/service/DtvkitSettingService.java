@@ -19,6 +19,8 @@ import android.os.Parcelable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.droidlogic.app.SystemControlManager;
 import com.droidlogic.dtvkit.IDtvkitSetting;
 import com.droidlogic.dtvkit.companionlibrary.utils.TvContractUtils;
 import com.droidlogic.fragment.ParameterManager;
@@ -45,23 +47,37 @@ public class DtvkitSettingService extends Service {
     protected ParameterManager mParameterManager;
     protected HbbTvUISetting mHbbTvUISetting;
     protected DtvKitScheduleManager mDtvKitScheduleManager;
+    public static final String SYS_TESTMODE_ENABLE = "persist.vendor.sys.testmode.enable";
 
     @Override
     public void onCreate() {
         super.onCreate();
         mParameterManager = new ParameterManager(this, DtvkitGlueClient.getInstance());
         mHbbTvUISetting   = new HbbTvUISetting();
-        DtvkitGlueClient.getInstance().registerSignalHandler(mSignalHandler);
         mDtvKitScheduleManager = new DtvKitScheduleManager(this, DtvkitGlueClient.getInstance(), false);
     }
 
     @Override
     public IBinder onBind(Intent intent) {
+        Log.i(TAG, "onBind");
         startMonitoringSync();
+        if (SystemControlManager.getInstance().getPropertyBoolean(SYS_TESTMODE_ENABLE, false)) {
+            DtvkitGlueClient.getInstance().registerSignalHandler(mSignalHandler);
+        }
         return new DtvkitSettingBinder();
     }
 
-    private DtvkitGlueClient.SignalHandler mSignalHandler= new DtvkitGlueClient.SignalHandler() {
+    @Override
+    public boolean onUnbind(Intent intent) {
+        Log.i(TAG, "onUnbind");
+        stopMonitoringSync();
+        if (SystemControlManager.getInstance().getPropertyBoolean(SYS_TESTMODE_ENABLE, false)) {
+            DtvkitGlueClient.getInstance().unregisterSignalHandler(mSignalHandler);
+        }
+        return super.onUnbind(intent);
+    }
+
+    private final DtvkitGlueClient.SignalHandler mSignalHandler = new DtvkitGlueClient.SignalHandler() {
         @Override
         public void onSignal(String signal, JSONObject data) {
             //Log.d(TAG,"signal:"+signal+",json:"+data.toString());
@@ -372,8 +388,6 @@ public class DtvkitSettingService extends Service {
 
     @Override
     public void onDestroy() {
-        stopMonitoringSync();
-        DtvkitGlueClient.getInstance().unregisterSignalHandler(mSignalHandler);
         super.onDestroy();
     }
 
