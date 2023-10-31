@@ -604,7 +604,7 @@ void Am_tuner_clearOnTuneEventListener(int tunerClientId) {
 jobject Am_tuner_openFilter(int tunerClientId, int mainType, int subType, long bufferSize, long callbackContext) {
     ALOGE("Start:%s:tuner id:%d, mainType : %d, subType: %d, bufferSize : %ld, callbackContext : 0x%lx", __FUNCTION__, tunerClientId,
         mainType, subType, bufferSize, callbackContext);
-    jweak wFilter = NULL;
+    jobject globalFilter = NULL;
     bool attached = false;
 
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -616,12 +616,12 @@ jobject Am_tuner_openFilter(int tunerClientId, int mainType, int subType, long b
     }
     jobject filter = env->CallObjectMethod(tuner, gTunerFields.openFilter, mainType, subType, (jlong)bufferSize, (jlong)callbackContext);
     if (NULL != filter) {
-        wFilter = env->NewWeakGlobalRef(filter);
+        globalFilter = env->NewGlobalRef(filter);
     }
     ReleaseEnv(attached);
 
-    ALOGE("End:%s:wFilter:%p", __FUNCTION__, wFilter);
-    return wFilter;
+    ALOGE("End:%s:globalFilter:%p", __FUNCTION__, globalFilter);
+    return globalFilter;
 }
 
 jint Am_tuner_getAvSyncHwId(int tunerClientId, jobject filter) {
@@ -672,7 +672,7 @@ jlong Am_tuner_getAvSyncTime(int tunerClientId, jint avSyncHwId) {
 
 jobject Am_tuner_openLnb(int tunerClientId, long callbackContext) {
     ALOGE("Start:%s:tuner id:%d, callbackContext : 0x%lx", __FUNCTION__, tunerClientId, callbackContext);
-    jweak wLnb = NULL;
+    jobject globalLnb = NULL;
     bool attached = false;
 
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -684,18 +684,18 @@ jobject Am_tuner_openLnb(int tunerClientId, long callbackContext) {
     }
     jobject lnb = env->CallObjectMethod(tuner, gTunerFields.openLnb, (jlong)callbackContext);
     if (NULL != lnb) {
-        wLnb = env->NewWeakGlobalRef(lnb);
+        globalLnb = env->NewGlobalRef(lnb);
     }
     env->DeleteLocalRef(lnb);
     ReleaseEnv(attached);
 
-    ALOGE("End:%s:wLnb:%p", __FUNCTION__, wLnb);
-    return wLnb;
+    ALOGE("End:%s:globalLnb:%p", __FUNCTION__, globalLnb);
+    return globalLnb;
 }
 
 jobject Am_tuner_openLnbByName(int tunerClientId, const std::string &name, long callbackContext) {
     ALOGE("Start:%s:tuner id:%d, name %s, callbackContext : 0x%lx", __FUNCTION__, tunerClientId, name.c_str(), callbackContext);
-    jweak wLnb = NULL;
+    jobject globalLnb = NULL;
     bool attached = false;
 
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -721,19 +721,19 @@ jobject Am_tuner_openLnbByName(int tunerClientId, const std::string &name, long 
     if (NULL != lnbName) {
         jobject lnb = env->CallObjectMethod(tuner, gTunerFields.openLnb, lnbName, (jlong)callbackContext);
         if (NULL != lnb) {
-            wLnb = env->NewWeakGlobalRef(lnb);
+            globalLnb = env->NewGlobalRef(lnb);
             env->DeleteLocalRef(lnb);
         }
     } else {
         ALOGE("%s: create lnb Name error", __FUNCTION__);
     }
-
+    env->DeleteLocalRef(nameArray);
     env->DeleteLocalRef(encoding);
     env->DeleteLocalRef(lnbName);
     ReleaseEnv(attached);
 
-    ALOGE("End:%s:wLnb:%p", __FUNCTION__, wLnb);
-    return wLnb;
+    ALOGE("End:%s:globalLnb:%p", __FUNCTION__, globalLnb);
+    return globalLnb;
 }
 
 int Am_tuner_connectCiCam(int tunerClientId, int ciCamId) {
@@ -814,7 +814,7 @@ int Am_tuner_disconnectFrontendToCiCam(int tunerClientId, int ciCamId) {
 
 jobject Am_tuner_openDescrambler(int tunerClientId) {
     ALOGE("Start:%s:tuner id:%d", __FUNCTION__, tunerClientId);
-    jweak wDescrambler = NULL;
+    jobject globalDescrambler = NULL;
     bool attached = false;
 
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -826,13 +826,13 @@ jobject Am_tuner_openDescrambler(int tunerClientId) {
     }
     jobject descrambler = env->CallObjectMethod(tuner, gTunerFields.openDescrambler);
     if (NULL != descrambler) {
-        wDescrambler = env->NewWeakGlobalRef(descrambler);
+        globalDescrambler = env->NewGlobalRef(descrambler);
     }
     env->DeleteLocalRef(descrambler);
     ReleaseEnv(attached);
 
-    ALOGE("End:%s:wLnb:%p", __FUNCTION__, wDescrambler);
-    return wDescrambler;
+    ALOGE("End:%s:globalDescrambler:%p", __FUNCTION__, globalDescrambler);
+    return globalDescrambler;
 }
 jobject Am_tuner_getSurfaceByTunerClient(int tunerClientId) {
     ALOGE("Start %s:, tunerClientId : %d", __FUNCTION__, tunerClientId);
@@ -851,7 +851,7 @@ jobject Am_tuner_getSurfaceByTunerClient(int tunerClientId) {
 }
 /*********************Filter Class map native method*****************************/
 void Am_filter_setType(jobject filter, int mainType, int subType) {
-    ALOGE("Start %s: mainType:%d, subType:%d", __FUNCTION__, mainType, subType);
+    ALOGE("Start %s: filter:%p, mainType:%d, subType:%d", __FUNCTION__, filter, mainType, subType);
 
     bool attached = false;
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -874,7 +874,7 @@ void Am_filter_setType(jobject filter, int mainType, int subType) {
 }
 
 void Am_filter_setCallback(jobject filter, long callbackContext) {
-    ALOGE("Start %s: callbackContext : %ld", __FUNCTION__, callbackContext);
+    ALOGE("Start %s: filter:%p, callbackContext : %ld", __FUNCTION__, filter, callbackContext);
 
     bool attached = false;
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -948,7 +948,7 @@ jint Am_filter_getId(jobject filter) {
 }
 
 jint Am_filter_setDataSource(jobject filter, jobject source) {
-    ALOGE("Start %s:", __FUNCTION__);
+    ALOGE("Start %s: filter : %p", __FUNCTION__, filter);
 
     bool attached = false;
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -1105,7 +1105,7 @@ void Am_filter_close(jobject filter) {
     env->CallVoidMethod(localFilter, gFilterFields.close);
 
     env->DeleteLocalRef(localFilter);
-    env->DeleteWeakGlobalRef(filter);
+    env->DeleteGlobalRef(filter);
     nativeClearException(env);
     ReleaseEnv(attached);
 
@@ -1237,7 +1237,7 @@ void Am_lnb_close(jobject lnb) {
     env->CallVoidMethod(localLnb, gLnbFields.close);
 
     env->DeleteLocalRef(localLnb);
-    env->DeleteWeakGlobalRef(lnb);
+    env->DeleteGlobalRef(lnb);
     ReleaseEnv(attached);
 
     ALOGE("End %s", __FUNCTION__);
@@ -1346,7 +1346,7 @@ void Am_descrambler_close(jobject descrambler) {
     env->CallVoidMethod(localDescrambler, gDescramblerFields.close);
 
     env->DeleteLocalRef(localDescrambler);
-    env->DeleteWeakGlobalRef(descrambler);
+    env->DeleteGlobalRef(descrambler);
     ReleaseEnv(attached);
 
     ALOGE("End %s", __FUNCTION__);
