@@ -2749,6 +2749,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 acquireTvHardware();
             } else {
                 if (!hasAnotherSession(this)) {
+                    onFinishAsync(false, false);
                     if (mPipHardware != null) {
                         mPipHardware.setSurface(null, null);
                     }
