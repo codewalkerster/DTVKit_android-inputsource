@@ -254,6 +254,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
     private HbbTvManager mHbbTvManager = null;
     private DtvKitScheduleManager mDtvKitScheduleManager = null;
+    private TunerAdapter mBackgroundTuner;
 
     public DtvkitTvInput() {
         Log.i(TAG, "newInstance");
@@ -984,6 +985,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             mAutoTimeManager.start();
         }
         firstSync();
+        if (FeatureUtil.getFeatureSupportTunerFramework()) {
+            Tuner tuner = new Tuner(this, null, PRIORITY_HINT_USE_CASE_TYPE_BACKGROUND);
+            mBackgroundTuner = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_BACKGROUND);
+        }
         Log.d(TAG, "initDtvkitTvInput end");
         mIsInited = true;
     }
@@ -1151,6 +1156,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     public Session onCreateSession(String inputId, String sessionId) {
         Log.i(TAG, "onCreateSession " + inputId + " sessionId : " + sessionId);
         DtvkitTvInputSession session = null;
+
         if (inputId.contains(String.valueOf(HARDWARE_PIP_DEVICE_ID))) {
             if (FeatureUtil.getFeatureSupportPip()) {
                 initDtvkitTvInput();
@@ -7089,9 +7095,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 if ((null != mTunerAdapterFCCPrev) || (null != mTunerAdapterFCCNext)) {
                     Log.e(TAG, "initFCCTuner error has init");
                 } else {
-                    Tuner tunerFCCPrev = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_BACKGROUND);
+                    Tuner tunerFCCPrev = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_LIVE);
                     mTunerAdapterFCCPrev = new TunerAdapter(tunerFCCPrev, TunerAdapter.TUNER_TYPE_LIVE_1);
-                    Tuner tunerFCCNext = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_BACKGROUND);
+                    Tuner tunerFCCNext = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_LIVE);
                     mTunerAdapterFCCNext = new TunerAdapter(tunerFCCNext, TunerAdapter.TUNER_TYPE_LIVE_2);
                 }
             }

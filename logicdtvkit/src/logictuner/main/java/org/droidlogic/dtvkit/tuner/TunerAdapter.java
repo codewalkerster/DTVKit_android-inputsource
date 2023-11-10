@@ -36,13 +36,14 @@ public class TunerAdapter {
     private static final String TAG = "TunerAdapter";
     private static final boolean DEBUG = true;
 
-    public static int TUNER_TYPE_LIVE_0              = 0;
+    public static int TUNER_TYPE_LIVE_0               = 0;
     public static int TUNER_TYPE_LIVE_1               = 1;
     public static int TUNER_TYPE_DVR_RECORD           = 2;
     public static int TUNER_TYPE_DVR_TIMESHIFT_RECORD = 3;
     public static int TUNER_TYPE_DVR_PLAY             = 4;
     public static int TUNER_TYPE_SCAN                 = 5;
     public static int TUNER_TYPE_LIVE_2               = 6;
+    public static int TUNER_TYPE_BACKGROUND           = 7;
 
     private Tuner mTuner;
     private CallbackExecutor mFrontendExecutor;

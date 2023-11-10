@@ -138,6 +138,7 @@ enum TUNER_TYPE {
     TUNER_TYPE_DVR_PLAY             = 4,
     TUNER_TYPE_SCAN                 = 5,
     TUNER_TYPE_LIVE_2               = 6,
+    TUNER_TYPE_BACKGROUND           = 7,
 };
 /*
 struct AMTuner : public RefBase {

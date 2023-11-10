@@ -216,7 +216,9 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
     bool attached = false;
     int tunerClientId = TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID;
     int tunerScanClientId = TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID;//For Scan switch LivePlay maybe have two tuner client
+    int tunerBackgroundClientId = TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID;//Background tuner for standby
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
+
     if (NULL == env) {
         ReleaseEnv(attached);
         ALOGE("%s: input parameter error", __FUNCTION__);
@@ -232,6 +234,8 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
                     tunerClientId = iter->first;
                 } else if (TUNER_TYPE_SCAN == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
                     tunerScanClientId = iter->first;
+                } else if (TUNER_TYPE_BACKGROUND == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
+                    tunerBackgroundClientId = iter->first;
                 }
             } else {
                 if (tunerType == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
@@ -242,9 +246,13 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
         }
     }
     ReleaseEnv(attached);
-    ALOGD("tunerClientId:%d, tunerScanClientId : %d", tunerClientId, tunerScanClientId);
+    ALOGD("tunerClientId:%d, tunerScanClientId : %d, tunerBackgroundClientId : %d", tunerClientId, tunerScanClientId,
+        tunerBackgroundClientId);
     if ((TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId) && (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID != tunerScanClientId)) {
         tunerClientId = tunerScanClientId;//under scan status only have scan type tuner.
+    }
+    if ((TUNER_TYPE_LIVE_0 == tunerType) && (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId)) {
+        tunerClientId = tunerBackgroundClientId;//for background function,when session release, need use background tuner to do work
     }
     ALOGD("end:%s, tunerClientId:%d", __FUNCTION__, tunerClientId);
     return tunerClientId;
