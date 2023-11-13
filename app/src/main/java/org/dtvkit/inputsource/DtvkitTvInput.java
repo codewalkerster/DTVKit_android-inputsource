@@ -621,23 +621,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
     };
 
-    private final ContentObserver mDroidLogicDbContentObserver = new ContentObserver(null) {
-        @Override
-        public void onChange(boolean selfChange) {
-            if (mSystemControlManager != null) {
-                String buildFingerprint = mSystemControlManager.getPropertyString("ro.build.fingerprint", "");
-                //Only for trunk use, to match CiPlus case
-                //Trunk has no separate CI menu, we use same security PIN code for CI CAM
-                //When doing this CI case, please change PIN code in security menu first
-                //Custom will has their own design, so use fingerprint to limit this logic.
-                if (buildFingerprint.contains("Amlogic")) {
-                    removeMessageInInputThreadHandler(MSG_CHECK_PIN_CODE_CHANGED);
-                    sendDelayedEmptyMessageToInputThreadHandler(MSG_CHECK_PIN_CODE_CHANGED, 1000);
-                }
-            }
-        }
-    };
-
     private Handler mMainHandler;
 
     private void runOnMainThread(Runnable r) {
@@ -670,9 +653,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         mSystemControlManager = SystemControlManager.getInstance();
         mTvMTSSetting = TvMTSSetting.getInstance();
 
-        mContentResolver.registerContentObserver(
-                Uri.parse(DataProviderManager.CONTENT_URI + DataProviderManager.TABLE_STRING_NAME),
-                true, mDroidLogicDbContentObserver);
         mContentResolver.registerContentObserver(TvContract.RecordedPrograms.CONTENT_URI,
                 true, mRecordingsContentObserver);
 
@@ -814,12 +794,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     break;
                 }
                 case MSG_CHECK_PIN_CODE_CHANGED: {
-                    String pinCode = mParameterManager.getStringParameters(ParameterManager.SECURITY_PASSWORD);
-                    if (!pinCode.equals(mPinCode)) {
-                        Log.d(TAG, "pin code changed, SetPinCodeToCam.");
-                        mPinCode = pinCode;
-                        mParameterManager.setPinCodeToCam(mPinCode);
-                    }
+                    // move to livetv
                     break;
                 }
                 case MSG_CHECK_CHANNEL_SEARCH_STATUS: {
@@ -1116,8 +1091,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         if (mAutoTimeManager != null) {
             mAutoTimeManager.release();
         }
-        //mContentResolver.unregisterContentObserver(mContentObserver);
-        mContentResolver.unregisterContentObserver(mDroidLogicDbContentObserver);
         mContentResolver.unregisterContentObserver(mRecordingsContentObserver);
         DtvkitGlueClient.getInstance().unregisterSignalHandler(mRecordingManagerHandler);
         DtvkitGlueClient.getInstance().unregisterSignalHandler(mChannelUpdateHandler);
