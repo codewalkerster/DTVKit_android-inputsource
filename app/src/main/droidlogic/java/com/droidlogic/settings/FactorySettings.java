@@ -39,6 +39,7 @@ import com.droidlogic.dtvkit.companionlibrary.model.InternalProviderData;
 import com.droidlogic.dtvkit.inputsource.DtvkitEpgSync;
 import com.droidlogic.dtvkit.inputsource.R;
 import com.droidlogic.fragment.ParameterManager;
+import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
 
 public class FactorySettings {
     private static final String TAG = "FactorySettings";
@@ -294,7 +295,10 @@ public class FactorySettings {
             if (sysSettingManager.isMediaPath(path)) {
                 String mountedPath = sysSettingManager.convertMediaPathToMountedPath(path);
                 if (sysSettingManager.isMountedPathAvailable(mountedPath)) {
-                    removeablePath = path;
+                    if (true == FeatureUtil.getFeatureSupportTunerFramework())
+                        removeablePath = mountedPath;
+                    else
+                        removeablePath = path;
                     break;
                 } else {
                     removeablePath = null;
