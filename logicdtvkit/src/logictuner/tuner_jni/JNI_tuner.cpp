@@ -257,16 +257,27 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
     ALOGD("end:%s, tunerClientId:%d", __FUNCTION__, tunerClientId);
     return tunerClientId;
 }
-jobject Am_tuner_getValidTuner() {
-    ALOGE("Start:%s", __FUNCTION__);
-    int tunerClientId = Am_tuner_getTunerClientId();
+jobject Am_tuner_getOriginalTuner(int tunerClientId) {
+    ALOGE("Start:%s, Tuner ClientId : %d", __FUNCTION__, tunerClientId);
+
+    bool attached = false;
     if (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId) {
         ALOGE("end:%s, not have tuner", __FUNCTION__);
         return NULL;
     }
+
+    JNIEnv *env = Am_tuner_getJNIEnv(&attached);
     jobject tuner = getTuner(tunerClientId);
-    ALOGD("end:%s, tuner object:%p", __FUNCTION__, tuner);
-    return tuner;
+
+    if ((NULL == env) || (NULL == tuner)) {
+        ReleaseEnv(attached);
+        ALOGE("%s: input parameter error", __FUNCTION__);
+        return NULL;
+    }
+    jobject originalTuner = env->CallObjectMethod(tuner, gTunerFields.getTuenr);
+    ReleaseEnv(attached);
+    ALOGD("end:%s, Original Tuner object:%p", __FUNCTION__, originalTuner);
+    return originalTuner;
 }
 
 jobject Am_tuner_getRecordTuner() {
