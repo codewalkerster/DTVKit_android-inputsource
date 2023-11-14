@@ -354,7 +354,6 @@ public class SubtitleServerView extends FrameLayout {
     public void setSize(int left, int top, int right, int bottom) {
         displayRect = new Rect(left, top, right, bottom);
         postInvalidate();
-        clearSubtitle();
     }
 
     public void setTeletextTransparent(boolean mode) {
