@@ -62,9 +62,7 @@ public class DtvkitSettingService extends Service {
     public IBinder onBind(Intent intent) {
         Log.i(TAG, "onBind");
         startMonitoringSync();
-        if (SystemControlManager.getInstance().getPropertyBoolean(SYS_TESTMODE_ENABLE, false)) {
-            DtvkitGlueClient.getInstance().registerSignalHandler(mSignalHandler);
-        }
+        DtvkitGlueClient.getInstance().registerSignalHandler(mSignalHandler);
         return new DtvkitSettingBinder();
     }
 
@@ -72,9 +70,7 @@ public class DtvkitSettingService extends Service {
     public boolean onUnbind(Intent intent) {
         Log.i(TAG, "onUnbind");
         stopMonitoringSync();
-        if (SystemControlManager.getInstance().getPropertyBoolean(SYS_TESTMODE_ENABLE, false)) {
-            DtvkitGlueClient.getInstance().unregisterSignalHandler(mSignalHandler);
-        }
+        DtvkitGlueClient.getInstance().unregisterSignalHandler(mSignalHandler);
         return super.onUnbind(intent);
     }
 
@@ -82,12 +78,14 @@ public class DtvkitSettingService extends Service {
         @Override
         public void onSignal(String signal, JSONObject data) {
             //Log.d(TAG,"signal:"+signal+",json:"+data.toString());
-            Message mess = mHandler.obtainMessage(SYNC_ON_SIGNAL, 0, 0, ON_SIGNAL);
-            Bundle b = new Bundle();
-            b.putString("signal",  signal);
-            b.putString("data",  data.toString());
-            mess.setData(b);
-            boolean info = mHandler.sendMessage(mess);
+            if (SystemControlManager.getInstance().getPropertyBoolean(SYS_TESTMODE_ENABLE, false) || signal.startsWith("Oad")) {
+                Message mess = mHandler.obtainMessage(SYNC_ON_SIGNAL, 0, 0, ON_SIGNAL);
+                Bundle b = new Bundle();
+                b.putString("signal", signal);
+                b.putString("data", data.toString());
+                mess.setData(b);
+                boolean info = mHandler.sendMessage(mess);
+            }
         }
     };
 
