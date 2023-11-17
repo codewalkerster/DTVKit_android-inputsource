@@ -1558,7 +1558,7 @@ static void dtvkit_lnb_native_callback(JNIEnv *env, jobject lnb, jint tunerClien
     ALOGD("%s start: callback tunerClientId:%d, eventType: %d", __FUNCTION__, tunerClientId, eventType);
 
     jclass lnbClass;
-    FIND_CLASS(lnbClass, FILTER_CLASS);
+    FIND_CLASS(lnbClass, LNB_CLASS);
     jfieldID callbackField = env->GetFieldID(lnbClass, "mLnbCallbackContext", "J");
     long callbackContext = (long)env->GetLongField(lnb, callbackField);
     if (0 != callbackContext) {
