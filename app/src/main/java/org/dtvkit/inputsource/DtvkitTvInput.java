@@ -3592,6 +3592,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 Log.w(TAG, "Session is released!!!");
                 return;
             }
+            /*
             if (null != mTunerAdapter) {
                 mTunerAdapter.release();
                 mTunerAdapter = null;
@@ -3599,6 +3600,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             releaseFCCTuner();
             releaseDvrPlaybackTuner();
             releaseDvrTimeshiftTuner();
+            */
             mSessionState = SessionState.RELEASING;
             exitNumberSearch();
             doDestroyOverlay();
@@ -3615,6 +3617,15 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             if (!hasAnotherSession(this)) {
                 onFinish(true, false);
             }
+
+            if (null != mTunerAdapter) {
+                mTunerAdapter.release();
+                mTunerAdapter = null;
+            }
+            releaseFCCTuner();
+            releaseDvrPlaybackTuner();
+            releaseDvrTimeshiftTuner();
+
             finalReleaseWorkThread();
             removeTunerSession(this);
             mSessionState = SessionState.RELEASED;
