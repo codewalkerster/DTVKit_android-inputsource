@@ -171,7 +171,7 @@ static void saveNativeTuner(JNIEnv *env, jobject thiz, const sp<AMTuner> &tuner)
     //JNIEnv *env = AndroidRuntime::getJNIEnv();
 //}
 int Am_tuner_getAndroidVersion() {
-    ALOGD("%s : %d", __FUNCTION__, gAndroidSDKVersion);
+    //ALOGD("%s : %d", __FUNCTION__, gAndroidSDKVersion);
     return gAndroidSDKVersion;
 }
 
@@ -931,7 +931,7 @@ jint Am_filter_configure(jobject filter, jobject config) {
 }
 
 jint Am_filter_getId(jobject filter) {
-    ALOGE("Start %s:, filter : %p", __FUNCTION__, filter);
+    //ALOGE("Start %s:, filter : %p", __FUNCTION__, filter);
 
     bool attached = false;
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -951,7 +951,7 @@ jint Am_filter_getId(jobject filter) {
     env->DeleteLocalRef(localFilter);
     ReleaseEnv(attached);
 
-    ALOGE("End %s : filterId: %d ", __FUNCTION__, filterId);
+    ALOGE("%s : filter : %p, filterId: 0x%x ", __FUNCTION__, filter, filterId);
     return filterId;
 }
 
@@ -1058,7 +1058,7 @@ jint Am_filter_flush(jobject filter) {
 }
 
 jint Am_filter_read(jobject filter, char * buffer, long offset, long size) {
-    ALOGE("Start %s:, filter :%p, offset : %ld, size : %ld", __FUNCTION__, filter, offset, size);
+    //ALOGE("Start %s:, filter :%p, offset : %ld, size : %ld", __FUNCTION__, filter, offset, size);
 
     bool attached = false;
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
@@ -1081,7 +1081,11 @@ jint Am_filter_read(jobject filter, char * buffer, long offset, long size) {
         return INVALID_VALUE;
     }
     jint readLength = env->CallIntMethod(localFilter, gFilterFields.read, readBuffer, (jlong)offset, (jlong)size);
-    ALOGE("%s : readLength: %d ", __FUNCTION__, readLength);
+
+    if (size != (long)readLength) {
+        ALOGE("%s : readLength: %d ", __FUNCTION__, readLength);
+    }
+
     if (0 != readLength) {
         env->GetByteArrayRegion(readBuffer, 0, readLength, (jbyte *)buffer);
     }
@@ -1090,7 +1094,7 @@ jint Am_filter_read(jobject filter, char * buffer, long offset, long size) {
     env->DeleteLocalRef(readBuffer);
     ReleaseEnv(attached);
 
-    ALOGE("End %s : ", __FUNCTION__);
+    ALOGE("%s:, filter :%p, offset : %ld, size : %ld", __FUNCTION__, filter, offset, size);
     return readLength;
 }
 

@@ -93,14 +93,12 @@ public class FilterAdapter {
     }
 
     private int getId() {
-        int filterId = Tuner.INVALID_FILTER_ID;
         if (null != mFilter) {
-            filterId = mFilter.getId();
-            Log.d(TAG, "filterId : " + filterId + " mTunerClientId = " + mTunerClientId);
+            return mFilter.getId();
         } else {
             Log.e(TAG, "filter hase close");
+            return Tuner.INVALID_FILTER_ID;
         }
-        return filterId;
     }
 
     private int setDataSource(Filter source) {
@@ -238,7 +236,10 @@ public class FilterAdapter {
 
         @Override
         public void onFilterStatusChanged(Filter filter, int status) {
-            nativeCallbackHandle(filter, null, status);
+            if (Filter.STATUS_OVERFLOW == status) {
+                Log.e(TAG, "onFilterStatusChanged filter id : " + + filter.getId() + " status : " + status );
+            }
+            //nativeCallbackHandle(filter, null, status);
         }
 
         private void nativeCallbackHandle(Filter filter, FilterEvent[] events, int status) {
