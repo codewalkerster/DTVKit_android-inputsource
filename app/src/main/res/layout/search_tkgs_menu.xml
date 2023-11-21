@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <TextView
@@ -19,17 +18,21 @@
         android:layout_height="wrap_content" />
 
     <LinearLayout
+        android:id="@+id/operate_mode"
         android:layout_width="@dimen/px_800.0"
         android:layout_height="@dimen/px_80.0"
-        android:layout_gravity="center_horizontal"
-        android:orientation="horizontal"
-        android:layout_marginLeft="@dimen/px_20.0"
-        android:layout_marginTop="@dimen/px_80.0">
+        android:layout_marginTop="@dimen/px_50.0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tkgs_title"
+        android:paddingLeft="@dimen/px_20.0"
+        android:paddingEnd="@dimen/px_20.0"
+        android:orientation="horizontal">
         <TextView
-            android:layout_width="@dimen/px_600.0"
+            android:layout_width="@dimen/px_570.0"
             android:layout_height="@dimen/px_80.0"
             android:text="@string/string_tkgs_operate_mode"
-            android:textSize="30sp"/>
+            android:textSize="20sp"/>
         <Spinner
             android:id="@+id/operate_mode_spinner"
             android:layout_width="0dp"
@@ -44,35 +47,43 @@
         android:id="@+id/locator_list_tv"
         android:layout_width="@dimen/px_800.0"
         android:layout_height="@dimen/px_80.0"
-        android:layout_gravity="center_horizontal"
         android:layout_marginTop="@dimen/px_20.0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/operate_mode"
         android:paddingLeft="@dimen/px_20.0"
         android:paddingEnd="@dimen/px_20.0"
         android:text="@string/string_tkgs_locator_list"
         android:background="@drawable/selector_item"
         android:focusable="true"
-        android:textSize="30sp"/>
+        android:textSize="20sp"/>
 
     <TextView
         android:id="@+id/hidden_locator_list_tv"
         android:layout_width="@dimen/px_800.0"
         android:layout_height="@dimen/px_80.0"
-        android:layout_gravity="center_horizontal"
         android:layout_marginTop="@dimen/px_20.0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/locator_list_tv"
         android:paddingLeft="@dimen/px_20.0"
         android:paddingEnd="@dimen/px_20.0"
         android:text="@string/string_tkgs_hidden_locator_list"
         android:background="@drawable/selector_item"
         android:focusable="true"
-        android:textSize="30sp"
+        android:textSize="20sp"
         android:visibility="gone"/>
 
     <LinearLayout
         android:id="@+id/table_version_ll"
         android:layout_width="@dimen/px_800.0"
         android:layout_height="@dimen/px_80.0"
-        android:layout_gravity="center_horizontal"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/hidden_locator_list_tv"
         android:layout_marginTop="@dimen/px_20.0"
+        android:paddingLeft="@dimen/px_20.0"
+        android:paddingEnd="@dimen/px_20.0"
         android:orientation="horizontal"
         android:background="@drawable/selector_item"
         android:focusable="true"
@@ -81,36 +92,36 @@
         <TextView
             android:layout_width="@dimen/px_600.0"
             android:layout_height="@dimen/px_80.0"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/px_20.0"
-            android:paddingLeft="@dimen/px_20.0"
-            android:paddingEnd="@dimen/px_20.0"
+            android:layout_gravity="center"
             android:text="@string/string_reset_table_version"
-            android:textSize="30sp" />
+            android:textSize="20sp" />
 
         <TextView
             android:id="@+id/table_version_tv"
             android:layout_width="wrap_content"
             android:layout_height="@dimen/px_80.0"
-            android:layout_marginLeft="@dimen/px_30.0"
+            android:layout_marginLeft="@dimen/px_20.0"
             android:gravity="center_vertical"
             android:textColor="@color/white"
-            android:textSize="15sp" />
+            android:textSize="20sp" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/prefer_ll"
         android:layout_width="@dimen/px_800.0"
         android:layout_height="@dimen/px_80.0"
-        android:layout_gravity="center_horizontal"
         android:orientation="horizontal"
         android:layout_marginTop="@dimen/px_20.0"
-        android:layout_marginLeft="@dimen/px_20.0">
+        android:paddingLeft="@dimen/px_20.0"
+        android:paddingEnd="@dimen/px_20.0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/table_version_ll">
         <TextView
-            android:layout_width="@dimen/px_600.0"
+            android:layout_width="@dimen/px_590.0"
             android:layout_height="@dimen/px_80.0"
             android:text="@string/string_tkgs_prefer_list"
-            android:textSize="30sp"/>
+            android:textSize="20sp"/>
         <Spinner
             android:id="@+id/prefer_spinner"
             android:layout_width="0dp"
@@ -122,24 +133,27 @@
         android:id="@+id/update_tv"
         android:layout_width="@dimen/px_800.0"
         android:layout_height="@dimen/px_80.0"
-        android:layout_gravity="center_horizontal"
         android:layout_marginTop="@dimen/px_20.0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/prefer_ll"
         android:paddingLeft="@dimen/px_20.0"
         android:paddingEnd="@dimen/px_20.0"
         android:text="@string/string_tkgs_update"
         android:background="@drawable/selector_item"
         android:focusable="true"
-        android:textSize="30sp"/>
+        android:textSize="20sp"/>
 
     <Button
         android:id="@+id/bt_scan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/px_600.0"
-        android:layout_marginTop="@dimen/px_200.0"
+        android:layout_alignParentBottom="true"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginEnd="@dimen/px_40.0"
+        android:layout_marginBottom="@dimen/px_40.0"
         android:text="@string/strContinue"
         android:background="@drawable/button"
         android:layout_gravity="center_horizontal"/>
-
-
-</LinearLayout>
+</android.support.constraint.ConstraintLayout>
