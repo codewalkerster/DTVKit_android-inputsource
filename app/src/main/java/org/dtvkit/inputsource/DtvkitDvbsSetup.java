@@ -74,6 +74,16 @@ public class DtvkitDvbsSetup extends Activity {
     }
 
     @Override
+    public void finish() {
+        Log.d(TAG, "finish");
+        if (null != mTunerAdapter) {
+            mTunerAdapter.release();
+            mTunerAdapter = null;
+        }
+        super.finish();
+    }
+
+    @Override
     protected void onDestroy() {
         mHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
