@@ -254,7 +254,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
     private HbbTvManager mHbbTvManager = null;
     private DtvKitScheduleManager mDtvKitScheduleManager = null;
-    private TunerAdapter mBackgroundTuner;
+    private TunerAdapter mBackgroundTuner = null;
+    private TunerAdapter mMainTuner = null;
 
     public DtvkitTvInput() {
         Log.i(TAG, "newInstance");
@@ -1965,10 +1966,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         public DtvkitRecordingSession(Context context, String inputId) {
             super(context);
-            if (FeatureUtil.getFeatureSupportTunerFramework()) {
-                Tuner tuner = new Tuner(context, null, PRIORITY_HINT_USE_CASE_TYPE_RECORD);
-                mRecordTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_DVR_RECORD);
-            }
+            initDvrRecordTuner(context);
             mContext = context;
             mInputId = inputId;
             mCurrentRecordIndex = mDtvkitRecordingSessionCount;
@@ -2077,10 +2075,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             } else {
                 Log.w(TAG, "onRelease null mRecordingProcessHandler" + ", index = " + mCurrentRecordIndex);
             }
-            if (null != mRecordTunerAdapter) {
-                mRecordTunerAdapter.release();
-                mRecordTunerAdapter = null;
-            }
+            releaseDvrRecordTuner();
         }
 
         public void doTune(Uri uri) {
@@ -2706,6 +2701,32 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             pw.println("endRecord   SystemTimeMillis:" + endRecordSystemTimeMillis);
             pw.decreaseIndent();
         }
+
+        private void initDvrRecordTuner(Context context) {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.i(TAG, "initDvrRecordTuner");
+                Tuner tuner = new Tuner(context, null, PRIORITY_HINT_USE_CASE_TYPE_RECORD);
+                mRecordTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_DVR_RECORD);
+            }
+        }
+
+        private void releaseDvrRecordTuner() {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.i(TAG, "releaseDvrRecordTuner");
+                if (null != mRecordTunerAdapter) {
+                    mRecordTunerAdapter.release();
+                    mRecordTunerAdapter = null;
+                    //background record finish need release frontend resource if not have live play
+                    if (null == getMainTunerSession()) {
+                        Log.i(TAG, "MainTuner : " + mMainTuner);
+                        if (null != mMainTuner) {
+                            mMainTuner.release();
+                            mMainTuner = null;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public class DtvkitPipTvSession extends DtvkitTvInputSession {
@@ -3121,7 +3142,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             public int frequency = 0;
             public String dvbUri = "";
         }
-        protected TunerAdapter mTunerAdapter = null;
+        protected TunerAdapter mPipTunerAdapter = null;
         protected TunerAdapter mDvrTimeShiftRecordTuner = null;
         protected TunerAdapter mDvrPlaybackTuner = null;
         protected TunerAdapter mTunerAdapterFCCNext = null;
@@ -3169,17 +3190,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
         DtvkitTvInputSession(DtvkitTvInput service, String sessionId, boolean isPip) {
             this(service, isPip);
-            if (FeatureUtil.getFeatureSupportTunerFramework()) {
-                Tuner tuner = new Tuner(service.getApplicationContext(), sessionId, PRIORITY_HINT_USE_CASE_TYPE_LIVE);
-                if (true == isPip) {
-                    mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_LIVE_1);
-                } else {
-                    mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_LIVE_0);
-                    if (FeatureUtil.getFeatureSupportFcc()) {
-                        initFCCTuner();
-                    }
-                }
-            }
+            initLiveTuner(service, sessionId, isPip);
         }
 
         DtvkitTvInputSession(DtvkitTvInput service, boolean isPip) {
@@ -3326,10 +3337,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         public boolean onSetSurface(Surface surface) {
             Log.i(TAG, "onSetSurface " + surface);
 
-            if (null != mTunerAdapter) {
-                mTunerAdapter.setSurfaceToNative(surface);
-            }
-
+            setLiveTunerSurface(surface, mIsPip);
             if (false == mIsPip) {
                 setFCCTunerSurface(surface);
             }
@@ -3592,15 +3600,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 Log.w(TAG, "Session is released!!!");
                 return;
             }
-            /*
-            if (null != mTunerAdapter) {
-                mTunerAdapter.release();
-                mTunerAdapter = null;
-            }
-            releaseFCCTuner();
-            releaseDvrPlaybackTuner();
-            releaseDvrTimeshiftTuner();
-            */
+
             mSessionState = SessionState.RELEASING;
             exitNumberSearch();
             doDestroyOverlay();
@@ -3618,10 +3618,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 onFinish(true, false);
             }
 
-            if (null != mTunerAdapter) {
-                mTunerAdapter.release();
-                mTunerAdapter = null;
-            }
+            releaseLiveTuner(mIsPip);
             releaseFCCTuner();
             releaseDvrPlaybackTuner();
             releaseDvrTimeshiftTuner();
@@ -7063,6 +7060,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         private void initDvrPlaybackTuner() {
             if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.i(TAG, "initDvrPlaybackTuner");
                 if (null == mDvrPlaybackTuner) {
                     Tuner tuner = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_PLAYBACK);
                     mDvrPlaybackTuner = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_DVR_PLAY);
@@ -7075,6 +7073,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         private void releaseDvrPlaybackTuner() {
             if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.i(TAG, "releaseDvrPlaybackTuner");
                 if (null != mDvrPlaybackTuner) {
                     mDvrPlaybackTuner.release();
                     mDvrPlaybackTuner = null;
@@ -7086,6 +7085,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         private void initDvrTimeshiftTuner () {
             if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.i(TAG, "initDvrTimeshiftTuner");
                 //timeshift record and timeshift play need different tuner object.
                 if (null == mDvrTimeShiftRecordTuner) {
                     Tuner timeShiftRecordTuner = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_RECORD);
@@ -7099,6 +7099,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         private void releaseDvrTimeshiftTuner() {
             if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.i(TAG, "releaseDvrTimeshiftTuner");
                 if (null != mDvrTimeShiftRecordTuner) {
                     mDvrTimeShiftRecordTuner.release();
                     mDvrTimeShiftRecordTuner = null;
@@ -7138,13 +7139,70 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
 
         private void setFCCTunerSurface(Surface surface) {
-            Log.d(TAG, "setFCCTunerSurface surface : " + surface);
             if (FeatureUtil.getFeatureSupportTunerFramework() && FeatureUtil.getFeatureSupportFcc()) {
+                Log.d(TAG, "setFCCTunerSurface surface : " + surface);
                 if (null != mTunerAdapterFCCNext) {
                     mTunerAdapterFCCNext.setSurfaceToNative(surface);
                 }
                 if (null != mTunerAdapterFCCPrev) {
                     mTunerAdapterFCCPrev.setSurfaceToNative(surface);
+                }
+            }
+        }
+
+        private void initLiveTuner(DtvkitTvInput service, String sessionId, boolean isPip) {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.i(TAG, "initLiveTuner isPip: " + isPip);
+                if (true == isPip) {
+                    Tuner tuner = new Tuner(service.getApplicationContext(), sessionId, PRIORITY_HINT_USE_CASE_TYPE_LIVE);
+                    mPipTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_LIVE_1);
+                } else {
+                    if (null == mMainTuner) {
+                        Tuner tuner = new Tuner(service.getApplicationContext(), sessionId, PRIORITY_HINT_USE_CASE_TYPE_LIVE);
+                        mMainTuner = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_LIVE_0);
+                    } else {
+                        Log.i(TAG, "not need new main tuner");
+                    }
+                    if (FeatureUtil.getFeatureSupportFcc()) {
+                        initFCCTuner();
+                    }
+                }
+            }
+        }
+
+        private void setLiveTunerSurface(Surface surface, boolean isPip) {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.d(TAG, "setLiveTunerSurface surface : " + surface + " isPip : " + isPip);
+                if (true == isPip) {
+                    if (null != mPipTunerAdapter) {
+                        mPipTunerAdapter.setSurfaceToNative(surface);
+                    }
+                } else {
+                    if (null != mMainTuner) {
+                        mMainTuner.setSurfaceToNative(surface);
+                    }
+                }
+            }
+        }
+
+        private void releaseLiveTuner(boolean isPip) {
+            if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                Log.i(TAG, "releaseLiveTuner isPip: " + isPip);
+                if (true == isPip) {
+                    if (null != mPipTunerAdapter) {
+                        mPipTunerAdapter.release();
+                        mPipTunerAdapter = null;
+                    }
+                } else {
+                    Log.i(TAG, "RecordingSession : " + mRecordingSession);
+                    if (null == mRecordingSession) {
+                        if (null != mMainTuner) {
+                            mMainTuner.release();
+                            mMainTuner = null;
+                        }
+                    } else {
+                        Log.i(TAG, "there is record working, so not release frontend resource");
+                    } //there is record session so need background record not release frontend release
                 }
             }
         }
