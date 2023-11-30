@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.droidlogic.dtvkit.inputsource">
+
+    <permission
+        android:name="com.droidlogic.android.cas.provider.permission.READ_USER_DATA"
+        android:protectionLevel="signature|privileged" />
+    <permission
+        android:name="com.droidlogic.android.cas.provider.permission.WRITE_USER_DATA"
+        android:protectionLevel="signature|privileged" />
+
+    <uses-permission android:name="com.droidlogic.android.cas.provider.permission.READ_USER_DATA"/>
+    <uses-permission android:name="com.droidlogic.android.cas.provider.permission.WRITE_USER_DATA"/>
+
+    <application>
+        <provider
+            android:name="com.droidlogic.dtvkit.cas.CasProvider"
+            android:authorities="com.droidlogic.android.cas.authorities"
+            android:enabled="true"
+            android:exported="true" />
+    </application>
+
+</manifest>

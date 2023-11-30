@@ -50,6 +50,8 @@ LOCAL_JNI_SHARED_LIBRARIES := libdtvkit_jni
 ifeq (1, $(strip $(shell expr $(PLATFORM_VERSION) \< 12)))
 LOCAL_JAVA_LIBRARIES += droidlogic droidlogic.dtvkit.software.core
 LOCAL_REQUIRED_MODULES := droidlogic droidlogic.dtvkit.software.core
+LOCAL_FULL_LIBS_MANIFEST_FILES := \
+  $(LOCAL_PATH)/AndroidManifest.xml
 else
 LOCAL_REQUIRED_MODULES := droidlogic.software.core droidlogic.dtvkit.software.core
 LOCAL_JAVA_LIBRARIES += droidlogic.software.core droidlogic.dtvkit.software.core
@@ -60,6 +62,13 @@ LOCAL_FULL_LIBS_MANIFEST_FILES := \
 endif
 LOCAL_DEX_PREOPT := false
 LOCAL_VENDOR_MODULE := true
+
+ifneq (,$(findstring cas,$(TARGET_PRODUCT)))
+LOCAL_FULL_LIBS_MANIFEST_FILES += \
+    $(LOCAL_PATH)/AndroidManifest_cas_provider.xml
+
+LOCAL_STATIC_JAVA_LIBRARIES += CasProviderLib
+endif
 
 #LOCAL_PRIVATE_PLATFORM_APIS := true
 include $(BUILD_PACKAGE)

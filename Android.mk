@@ -8,4 +8,5 @@ include $(LOCAL_PATH)/companionlibrary/src/main/Android.mk \
     $(LOCAL_PATH)/fvp/src/jni/Android.mk \
     $(LOCAL_PATH)/app/src/main/Android.mk \
     $(LOCAL_PATH)/hbbtvclient/Android.mk \
-    $(LOCAL_PATH)/exoplayer/Android.mk
+    $(LOCAL_PATH)/exoplayer/Android.mk \
+    $(LOCAL_PATH)/cas/src/main/Android.mk

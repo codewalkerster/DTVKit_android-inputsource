@@ -91,6 +91,7 @@ import org.droidlogic.dtvkit.TvMTSSetting;
 import org.dtvkit.inputsource.caption.AtvCcTool;
 import org.dtvkit.inputsource.caption.CustomerFont;
 
+import org.dtvkit.inputsource.cas.CasHelper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -697,6 +698,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         setDnsProp();
         sendEmptyMessageToInputThreadHandler(MSG_START_CA_SETTINGS_SERVICE);
         sendEmptyMessageToInputThreadHandler(MSG_CHECK_TV_PROVIDER_READY);
+
+        CasHelper.getInstance().init(this);
     }
 
     //input work handler define
@@ -1111,6 +1114,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             mDtvKitScheduleManager.release();
             mDtvKitScheduleManager = null;
         }
+        CasHelper.getInstance().destroy(this);
     }
 
     private boolean setTVAspectMode(int mode) {
