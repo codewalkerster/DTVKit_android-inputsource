@@ -256,6 +256,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     private DtvKitScheduleManager mDtvKitScheduleManager = null;
     private TunerAdapter mBackgroundTuner = null;
     private TunerAdapter mMainTuner = null;
+    private final Object mMainTunerResourceLock = new Object();
 
     public DtvkitTvInput() {
         Log.i(TAG, "newInstance");
@@ -1211,20 +1212,25 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
     }
 
-    private boolean hasAnotherSession(DtvkitTvInputSession thiz) {
+    private boolean hasAnotherSession(DtvkitTvInputSession thiz, boolean ignoreSurface) {
         synchronized (mTunerSessionLock) {
             DtvkitTvInputSession session;
             for (Map.Entry<Long, DtvkitTvInputSession> entry : mTunerSessions.entrySet()) {
                 session = entry.getValue();
-                if (thiz != session
-                    && thiz.isPipSession() == session.isPipSession()
-                    && session.mSurface != null) {
+                if ((thiz != session)
+                    && (thiz.isPipSession() == session.isPipSession())
+                    && (session.mSurface != null || ignoreSurface)) {
                     return true;
                 }
             }
         }
         return false;
     }
+
+    private boolean hasAnotherSession(DtvkitTvInputSession thiz) {
+        return hasAnotherSession(thiz, false);
+    }
+
 
     private DtvkitTvInputSession getMainTunerSession() {
         DtvkitTvInputSession result = null;
@@ -7157,11 +7163,17 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     Tuner tuner = new Tuner(service.getApplicationContext(), sessionId, PRIORITY_HINT_USE_CASE_TYPE_LIVE);
                     mPipTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_LIVE_1);
                 } else {
+                    synchronized (mMainTunerResourceLock) {
                     if (null == mMainTuner) {
                         Tuner tuner = new Tuner(service.getApplicationContext(), sessionId, PRIORITY_HINT_USE_CASE_TYPE_LIVE);
                         mMainTuner = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_LIVE_0);
                     } else {
-                        Log.i(TAG, "not need new main tuner");
+                            if (null == mRecordingSession) {
+                                Log.i(TAG, "old session is not release, so not need create");
+                            } else {
+                                Log.i(TAG, "resume from record session, not need greate new");
+                            }
+                        }
                     }
                     if (FeatureUtil.getFeatureSupportFcc()) {
                         initFCCTuner();
@@ -7197,8 +7209,14 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     Log.i(TAG, "RecordingSession : " + mRecordingSession);
                     if (null == mRecordingSession) {
                         if (null != mMainTuner) {
-                            mMainTuner.release();
-                            mMainTuner = null;
+                            synchronized (mMainTunerResourceLock) {
+                                if (!hasAnotherSession(this, true)) {
+                                    mMainTuner.release();
+                                    mMainTuner = null;
+                                } else {
+                                    Log.i(TAG, "other main session has create, so not need release");
+                                }
+                            }//for quickly return live tv, last session is released and new session is created together
                         }
                     } else {
                         Log.i(TAG, "there is record working, so not release frontend resource");
