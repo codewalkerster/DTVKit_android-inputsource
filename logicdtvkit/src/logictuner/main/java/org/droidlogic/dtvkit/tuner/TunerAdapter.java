@@ -233,25 +233,42 @@ public class TunerAdapter {
         mTuneEventListenerContext = 0;
     }
 
-    private FilterAdapter openFilter(int mainType, int subType, long bufferSize, long callbackContext) {
-        if (DEBUG) Log.d(TAG, "openFilter mainType : " + mainType + " subType : " + subType + " bufferSize : " + bufferSize
-            + " callbackContext : 0x" + Long.toHexString(callbackContext) + " mTunerClientId : " + mTunerClientId);
+    private FilterAdapter openFilter(int mainType,
+                                     int subType,
+                                     long bufferSize,
+                                     long callbackContext,
+                                     int privateCallback) {
+        if (DEBUG) {
+            Log.d(TAG, "openFilter mainType : " + mainType + " subType : " + subType +
+                    " bufferSize : " + bufferSize +
+                    " callbackContext : 0x" + Long.toHexString(callbackContext) +
+                    " privateCallback : " + privateCallback +
+                    " mTunerClientId : " + mTunerClientId);
+        }
         Filter filter = null;
         FilterAdapter.FilterAdapterCallback callback = null;
 
         if (0 == callbackContext) {
             filter = mTuner.openFilter(mainType, subType, bufferSize, null, null);
         } else {
-            callback = new FilterAdapter.FilterAdapterCallback();
-            filter = mTuner.openFilter(mainType, subType, bufferSize, mDemuxExecutor, callback);
+            if (privateCallback == 0) {
+                callback = new FilterAdapter.FilterAdapterCallback();
+                filter = mTuner.openFilter(mainType, subType, bufferSize, mDemuxExecutor, callback);
+            } else {
+                //privateCallback will make filter create separate thread for callback
+                filter = mTuner.openFilter(mainType, subType, bufferSize, null, callback);
+            }
         }
 
         if (null == filter) {
             Log.d(TAG, "openFilter error not request filter");
             return null;
         }
-        FilterAdapter filterAdapter = new FilterAdapter(filter, mDemuxExecutor, callbackContext, mTunerClientId);
-        if (null != callback) {
+        FilterAdapter filterAdapter = new FilterAdapter(filter,
+                (privateCallback == 0) ? mDemuxExecutor : null,
+                callbackContext,
+                mTunerClientId);
+        if (null != callback && privateCallback == 0) {
             callback.setCallbackFilterAdapter(filterAdapter);
         }
         Log.d(TAG, "request filter Id:" + filter.getId() + "|filterAdapter : " + filterAdapter);

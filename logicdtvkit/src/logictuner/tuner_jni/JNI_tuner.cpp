@@ -620,9 +620,15 @@ void Am_tuner_clearOnTuneEventListener(int tunerClientId) {
     return;
 }
 
-jobject Am_tuner_openFilter(int tunerClientId, int mainType, int subType, long bufferSize, long callbackContext) {
-    ALOGE("Start:%s:tuner id:%d, mainType : %d, subType: %d, bufferSize : %ld, callbackContext : 0x%lx", __FUNCTION__, tunerClientId,
-        mainType, subType, bufferSize, callbackContext);
+jobject Am_tuner_openFilter(int tunerClientId,
+                            int mainType,
+                            int subType,
+                            long bufferSize,
+                            long callbackContext,
+                            int privateCallback) {
+    ALOGE("Start:%s:tuner id:%d, mainType : %d, subType: %d, bufferSize : %ld,"
+          " callbackContext : 0x%lx, privateCallback : %d", __FUNCTION__, tunerClientId,
+        mainType, subType, bufferSize, callbackContext, privateCallback);
     jobject globalFilter = NULL;
     bool attached = false;
 
@@ -633,7 +639,13 @@ jobject Am_tuner_openFilter(int tunerClientId, int mainType, int subType, long b
         ALOGE("%s: input parameter error", __FUNCTION__);
         return NULL;
     }
-    jobject filter = env->CallObjectMethod(tuner, gTunerFields.openFilter, mainType, subType, (jlong)bufferSize, (jlong)callbackContext);
+    jobject filter = env->CallObjectMethod(tuner,
+                                           gTunerFields.openFilter,
+                                           mainType,
+                                           subType,
+                                           (jlong)bufferSize,
+                                           (jlong)callbackContext,
+                                           privateCallback);
     if (NULL != filter) {
         globalFilter = env->NewGlobalRef(filter);
     }
@@ -1405,7 +1417,7 @@ static void dtvkit_tuner_native_init (JNIEnv *env) {
         GET_METHOD_ID(gTunerFields.getFrontendStatus, tunerClazz, "getFrontendStatus", "([I)Landroid/media/tv/tuner/frontend/FrontendStatus;");
         GET_METHOD_ID(gTunerFields.setOnTuneEventListener, tunerClazz, "setOnTuneEventListener", "(J)V");
         GET_METHOD_ID(gTunerFields.clearOnTuneEventListener, tunerClazz, "clearOnTuneEventListener", "()V");
-        GET_METHOD_ID(gTunerFields.openFilter, tunerClazz, "openFilter", "(IIJJ)Ldroidlogic/dtvkit/tuner/FilterAdapter;");
+        GET_METHOD_ID(gTunerFields.openFilter, tunerClazz, "openFilter", "(IIJJI)Ldroidlogic/dtvkit/tuner/FilterAdapter;");
         GET_METHOD_ID(gTunerFields.getAvSyncHwId, tunerClazz, "getAvSyncHwId", "(Ldroidlogic/dtvkit/tuner/FilterAdapter;)I"); //TBD callback need modify
         GET_METHOD_ID(gTunerFields.getAvSyncTime, tunerClazz, "getAvSyncTime", "(I)J");
         GET_METHOD_ID(gTunerFields.openLnb, tunerClazz, "openLnb", "(J)Ldroidlogic/dtvkit/tuner/LnbAdapter;");

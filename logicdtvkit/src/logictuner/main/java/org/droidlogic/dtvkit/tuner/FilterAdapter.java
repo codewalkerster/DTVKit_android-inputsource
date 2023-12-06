@@ -10,6 +10,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Locale;
 import java.util.HashMap;
 import java.util.concurrent.Executor;
 import java.lang.Long;
@@ -25,16 +26,29 @@ public class FilterAdapter {
 
     private Filter mFilter;
     private Executor mCallbackExecutor;
+    private TunerAdapter.CallbackExecutor mInternalExecutor;
     private long mFilterCallbackContext;
     private int mTunerClientId;
 
     private native void nativeFilterCallback(FilterEvent[] events, int status);
 
-    public FilterAdapter(Filter filter, Executor callbackExecutor, long filterCallbackContext, int tunerClientId) {
+    public FilterAdapter(Filter filter,
+                         Executor callbackExecutor,
+                         long filterCallbackContext,
+                         int tunerClientId) {
         mFilter = filter;
         mCallbackExecutor = callbackExecutor;
+        mInternalExecutor = null;
         mFilterCallbackContext = filterCallbackContext;
         mTunerClientId = tunerClientId;
+
+        if (callbackExecutor == null && filterCallbackContext != 0) {
+            String thread_name = String.format(Locale.getDefault(), "fc-0x%x", filter.getId());
+            Log.i(TAG, "Create separate thread " + thread_name +
+                    " for callback in filter: " + filter.getId());
+            mInternalExecutor = new TunerAdapter.CallbackExecutor(thread_name);
+            setCallback(filterCallbackContext);
+        }
     }
 
     public Filter getFilter() {
@@ -54,7 +68,10 @@ public class FilterAdapter {
     private void setType(int mainType, int subtype) {
         if (null != mFilter) {
             FilterHelp.setType(mFilter, mainType, subtype);
-            if (DEBUG) Log.d(TAG, "setType filter id :" + mFilter.getId() + " mainType : " + mainType + " subtype : " + subtype);
+            if (DEBUG) {
+                Log.d(TAG, "setType filter id :" + mFilter.getId() +
+                        " mainType : " + mainType + " subtype : " + subtype);
+            }
         } else {
             Log.e(TAG, "filter hase close");
         }
@@ -62,13 +79,17 @@ public class FilterAdapter {
 
     private void setCallback(long callbackContext) {
         if (null != mFilter) {
-            if (DEBUG) Log.d(TAG, "setCallback filter id :" + mFilter.getId() + " callbackContext : 0x" + Long.toHexString(callbackContext));
+            if (DEBUG) {
+                Log.d(TAG, "setCallback filter id :" + mFilter.getId() +
+                        " callbackContext : 0x" + Long.toHexString(callbackContext));
+            }
             if (0 == callbackContext) {
                 FilterHelp.setCallback(mFilter, null, null);
                 mFilterCallbackContext = 0;
             } else {
                 FilterAdapterCallback callback = new FilterAdapterCallback();
-                FilterHelp.setCallback(mFilter, callback, mCallbackExecutor);
+                FilterHelp.setCallback(mFilter, callback,
+                        (mCallbackExecutor != null) ? mCallbackExecutor : mInternalExecutor);
                 mFilterCallbackContext = callbackContext;
                 callback.setCallbackFilterAdapter(this);
             }
@@ -82,7 +103,10 @@ public class FilterAdapter {
         if (null != mFilter) {
             if ((null != config) && (config instanceof FilterConfiguration)) {
                 result = mFilter.configure(config);
-                if (DEBUG) Log.d(TAG, "configure filter id :" + mFilter.getId() + "config : " + config + " result : " + result);
+                if (DEBUG) {
+                    Log.d(TAG, "configure filter id :" + mFilter.getId() +
+                            " config : " + config + " result : " + result);
+                }
             } else {
                 Log.e(TAG, "configure error");
             }
@@ -107,7 +131,10 @@ public class FilterAdapter {
             if ((null != source) && (source instanceof Filter)) {
                 result = mFilter.setDataSource(source);
                 mFilter = source;
-                if (DEBUG) Log.d(TAG, "setDataSource filter id :" + mFilter.getId() + "source filter id: " + source.getId() + " result : " + result);
+                if (DEBUG) {
+                    Log.d(TAG, "setDataSource filter id :" + mFilter.getId() +
+                            "source filter id: " + source.getId() + " result : " + result);
+                }
             } else {
                 Log.e(TAG, "setDataSource error");
             }
@@ -156,6 +183,10 @@ public class FilterAdapter {
             setCallback(0);
             mFilter.close();
             mFilter = null;
+            if (mInternalExecutor != null) {
+                mInternalExecutor.release();
+                mInternalExecutor = null;
+            }
             mCallbackExecutor = null;
             mFilterCallbackContext = 0;
             mTunerClientId = 0;
@@ -169,8 +200,8 @@ public class FilterAdapter {
         int result = Tuner.INVALID_FILTER_ID;
         if (null != mFilter) {
             result = mFilter.read(buffer, offset, size);
-            //Log.d(TAG, "read filter id :" + mFilter.getId() + " offset : " + offset + " size : " + size
-            //+ " buffer : " + buffer + " result : " + result);
+            //Log.d(TAG, "read filter id :" + mFilter.getId() + " offset : " + offset +
+            // " size : " + size + " buffer : " + buffer + " result : " + result);
         } else {
             Log.e(TAG, "filter hase close");
         }
@@ -186,14 +217,17 @@ public class FilterAdapter {
             try {
                 Class<?> Filter = Class.forName("android.media.tv.tuner.filter.Filter");
                 sSetTypeIds = Filter.getDeclaredMethod("setType", int.class, int.class);
-                sSetCallback = Filter.getDeclaredMethod("setCallback", FilterCallback.class, Executor.class);
+                sSetCallback = Filter.getDeclaredMethod("setCallback",
+                        FilterCallback.class, Executor.class);
                 sIsClose = Filter.getDeclaredField("mIsClosed");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        private static void setType(android.media.tv.tuner.filter.Filter filter, int mainType, int subType) {
+        private static void setType(android.media.tv.tuner.filter.Filter filter,
+                                    int mainType,
+                                    int subType) {
             try {
                 sSetTypeIds.invoke(filter, mainType, subType);
             } catch (Exception e) {
@@ -201,7 +235,9 @@ public class FilterAdapter {
             }
         }
 
-        private static void setCallback(android.media.tv.tuner.filter.Filter filter, FilterCallback callback, Executor executor) {
+        private static void setCallback(android.media.tv.tuner.filter.Filter filter,
+                                        FilterCallback callback,
+                                        Executor executor) {
             try {
                 sSetCallback.invoke(filter, callback, executor);
             } catch (Exception e) {

@@ -310,10 +310,10 @@ int getAVFilterId(bool isAudio, int pid, int vidoeStreamType, int audioStreamTyp
     jobject avFilter;
     if (true == isAudio) {
         Am_filter_callback vidoefilterCallback = videoFilterCallback;
-        avFilter = Am_tuner_openFilter(gTunerClient, MAIN_TYPE_TS, SUBTYPE_AUDIO, BUFFER_SIZE_AUDIO_DEFAULT, (long)vidoefilterCallback);
+        avFilter = Am_tuner_openFilter(gTunerClient, MAIN_TYPE_TS, SUBTYPE_AUDIO, BUFFER_SIZE_AUDIO_DEFAULT, (long)vidoefilterCallback, 0);
     } else {
         Am_filter_callback audioCallback = videoFilterCallback;
-        avFilter = Am_tuner_openFilter(gTunerClient, MAIN_TYPE_TS, SUBTYPE_VIDEO, BUFFER_SIZE_VIDEO_DEFAULT, (long)audioCallback);
+        avFilter = Am_tuner_openFilter(gTunerClient, MAIN_TYPE_TS, SUBTYPE_VIDEO, BUFFER_SIZE_VIDEO_DEFAULT, (long)audioCallback, 0);
     }
 
     if (NULL == avFilter) {
@@ -674,7 +674,7 @@ bool tuner_test_openPatFilter() {
 
     //1.request PAT filter
     Am_filter_callback filterCallback = patFilterCallback;
-    gWeakRefPatFilter = Am_tuner_openFilter(gTunerClient, MAIN_TYPE_TS, SUBTYPE_SECTION, BUFFER_SIZE_SECTION_DEFAULT, (long)filterCallback);
+    gWeakRefPatFilter = Am_tuner_openFilter(gTunerClient, MAIN_TYPE_TS, SUBTYPE_SECTION, BUFFER_SIZE_SECTION_DEFAULT, (long)filterCallback, 0);
 
     if (NULL == gWeakRefPatFilter) {
         ALOGD("%s : test fail, localFilter is null", __FUNCTION__);
