@@ -4851,7 +4851,14 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                     mHandlerThreadHandle.sendEmptyMessageDelayed(MSG_UPDATE_TRACK_INFO, MSG_UPDATE_TRACK_INFO_DELAY);
                                 }
                             } else if (type.equals("dvbrecording")) {
-                                setBlockMute(false);
+                                if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                                    if (mHandlerThreadHandle != null) {
+                                        Message msg = mMainHandle.obtainMessage(MSG_BLOCK_MUTE_OR_UNMUTE, 0, 0);
+                                        mHandlerThreadHandle.sendMessage(msg);
+                                    }
+                                } else {
+                                    setBlockMute(false);
+                                }
                                 startPosition = originalStartPosition = 0; // start position is always 0 when playing back recorded program
                                 currentPosition = playerGetElapsedAndTruncated(data)[0];
                                 Log.i(TAG, "dvbrecording currentPosition = " + currentPosition
@@ -4932,7 +4939,14 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             } else if (!type.equals("dvbrecording")) {
                                 playerState = PlayerState.BLOCKED;
                             } else {
-                                setBlockMute(true);
+                                 if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                                    if (mHandlerThreadHandle != null) {
+                                        Message msg = mMainHandle.obtainMessage(MSG_BLOCK_MUTE_OR_UNMUTE, 1, 0);
+                                        mHandlerThreadHandle.sendMessage(msg);
+                                    }
+                                } else {
+                                    setBlockMute(true);
+                                }
                             }
                             dvrSubtitleFlag = 0;
                             ContentRatingSystem system = mContentRatingsManager
