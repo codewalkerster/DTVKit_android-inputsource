@@ -4807,6 +4807,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     Log.i(TAG, "signal: " + state);
                     switch (state) {
                         case "playing":
+                        case "audio_only_playing":
                             /*
                              * type: "dvblive"         -> livetv streaming
                              * type: "dvbrecording"    -> dvr playback
@@ -4821,7 +4822,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 if (mTunedChannel == null) {
                                     return;
                                 }
-                                if (mTunedChannel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO)) {
+                                if (state.equals("audio_only_playing")
+                                    || mTunedChannel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO)) {
                                     notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_AUDIO_ONLY);
                                 } else {
                                     notifyVideoAvailable();
@@ -4871,7 +4873,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 if (mTunedChannel == null) {
                                     return;
                                 }
-                                if (mTunedChannel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO)) {
+                                if (state.equals("audio_only_playing")
+                                    || mTunedChannel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO)) {
                                     notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_AUDIO_ONLY);
                                 } else {
                                     notifyVideoAvailable();
@@ -4882,26 +4885,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                     sendUpdateTrackMsg(PlayerState.PLAYING, false);
                                 }
                                 notifyVideoAvailable();
-                            }
-                            if (mMainHandle != null) {
-                                mMainHandle.removeMessages(MSG_EVENT_SHOW_HIDE_OVERLAY);
-                                Message msg = mMainHandle.obtainMessage(MSG_EVENT_SHOW_HIDE_OVERLAY);
-                                msg.arg1 = 1;
-                                mMainHandle.sendMessageDelayed(msg, 100);
-                            }
-                            break;
-                        case "audio_only_playing":
-                            if (mTuneInfo.update) {
-                                mTuneInfo.update = false;
-                                sendMsgTsUpdate();
-                            }
-                            playerState = PlayerState.PLAYING;
-                            if (type.equals("dvblive")) {
-                                if (mTunedChannel == null) {
-                                    return;
-                                }
-                                notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_AUDIO_ONLY);
-                                sendUpdateTrackMsg(PlayerState.PLAYING, false);
                             }
                             if (mMainHandle != null) {
                                 mMainHandle.removeMessages(MSG_EVENT_SHOW_HIDE_OVERLAY);
