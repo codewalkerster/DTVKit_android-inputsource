@@ -155,7 +155,7 @@ public class ConstantManager {
 
     public static final String ACTION_AUDIO_TRACK_SELECTED = "action_audio_track_selected";
 
-    public static final String ACTION_TKGS_START_TUNE_UPDATE = "action_tkgs_start_tune_update";
+    public static final String ACTION_TKGS_FINISH_TUNE_UPDATE = "action_tkgs_finish_tune_update";
 
     public static final Map<String, String> PI_TO_VIDEO_FORMAT_MAP = new HashMap<>();
     static {

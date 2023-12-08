@@ -258,6 +258,8 @@ public class TvContractUtils {
                             if (!found) {
                                 saveRawUseSettingValuesToMap(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
                             }
+                        } else /* TKGS update */{
+                            saveRawUseSettingValuesToMap(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
                         }
                     }
                 } else {
