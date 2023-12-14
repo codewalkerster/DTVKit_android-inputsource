@@ -761,7 +761,9 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
             || opType == DvbsParameterManager.OPERATOR_ASTRA_HD_PLUS
             || opType == DvbsParameterManager.OPERATOR_SKY_D
             || opType == DvbsParameterManager.OPERATOR_AIRTEL
-            || opType == DvbsParameterManager.OPERATOR_SUNDIRECT) {
+            || opType == DvbsParameterManager.OPERATOR_SUNDIRECT
+            || opType == DvbsParameterManager.OPERATOR_CANALPLUS
+            || opType == DvbsParameterManager.OPERATOR_TIVUSAT) {
             args.put("quick");
             args.put(opType);
             args.put("fti");
@@ -815,6 +817,18 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
             return null;
         }
         args.put(lnbArgs.toString());//arg3
+
+        // some operators require bouquet id
+        if (opType == DvbsParameterManager.OPERATOR_AIRTEL) {
+            args.put(DvbsParameterManager.OPERATOR_AIRTEL_BOUQUETID);
+        }
+        else if (opType == DvbsParameterManager.OPERATOR_SUNDIRECT) {
+            args.put(DvbsParameterManager.OPERATOR_SUNDIRECT_BOUQUETID);
+        }
+        else if (opType == DvbsParameterManager.OPERATOR_CANALPLUS) {
+            args.put(DvbsParameterManager.OPERATOR_CANALPLUS_BOUQUETID);
+        }
+
         return args;
     }
 

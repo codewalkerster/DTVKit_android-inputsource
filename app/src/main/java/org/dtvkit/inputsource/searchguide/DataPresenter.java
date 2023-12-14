@@ -96,6 +96,10 @@ public class DataPresenter {
             mOperateType = DvbsParameterManager.OPERATOR_TKGS;
         } else if (operateType.contains("SunDirect")) {
             mOperateType = DvbsParameterManager.OPERATOR_SUNDIRECT;
+        } else if (operateType.contains("Canal+")) {
+            mOperateType = DvbsParameterManager.OPERATOR_CANALPLUS;
+        } else if (operateType.contains("Tivusat")) {
+            mOperateType = DvbsParameterManager.OPERATOR_TIVUSAT;
         } else {
             mOperateType = DvbsParameterManager.OPERATOR_DEFAULT;
         }
