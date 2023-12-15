@@ -3573,8 +3573,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             //comment it as need add pip
             //writeSysFs("/sys/class/video/video_global_output", "0");
             mAudioADAutoStart = mDataManager.getIntParameters(DataManager.TV_KEY_AD_SWITCH) == 1;
-            mAudioSystemCmdManager.handleAdtvAudioEvent(
-                    AudioSystemCmdManager.AUDIO_SERVICE_CMD_AD_SWITCH_ENABLE, mAudioADAutoStart ? 1 : 0, 0);
+            if (!FeatureUtil.getFeatureSupportTunerFramework()) {
+                mAudioSystemCmdManager.handleAdtvAudioEvent(
+                        AudioSystemCmdManager.AUDIO_SERVICE_CMD_AD_SWITCH_ENABLE, mAudioADAutoStart ? 1 : 0, 0);
+            }
             mTuneInfo.isDTv = !Channel.isATV(targetChannel);
             boolean playResult = doTune(mTunedChannel, targetChannel, channelUri, dvbUri, mhegTune);
             if (channelUri == null && Channel.isATV(targetChannel)) {
