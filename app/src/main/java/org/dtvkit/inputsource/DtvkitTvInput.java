@@ -6464,7 +6464,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 if (timeshiftAvailable.isAvailable()) {
                     if (timeshiftRecorderState != RecorderState.STOPPED) {
                         Log.w(TAG, "tryStartTimeshifting do nothing, timeshift is not stopped.");
-                        releaseDvrTimeshiftTuner();
+                        //releaseDvrTimeshiftTuner(); for quickly start timeshift, not response for second time
                         return;
                     }
                     timeshiftRecorderState = RecorderState.STARTING;
