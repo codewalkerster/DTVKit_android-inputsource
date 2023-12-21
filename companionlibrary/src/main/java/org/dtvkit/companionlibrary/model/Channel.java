@@ -41,6 +41,7 @@ public final class Channel {
     private static final long INVALID_CHANNEL_ID = -1;
     private static final int INVALID_INTEGER_VALUE = -1;
     private static final int IS_SEARCHABLE = 1;
+    private static final int IS_BROWSABLE = 1;
 
     private long mId;
     private String mPackageName;
@@ -62,6 +63,7 @@ public final class Channel {
     private byte[] mInternalProviderData;
     private String mNetworkAffiliation;
     private int mSearchable = 1;//default searchable
+    private int mBrowsable = 1;//default browsable
     private String mServiceType;
     private int mIsLocked;
     private int mFrequency;
@@ -76,6 +78,7 @@ public final class Channel {
     public static final String KEY_HIDDEN = "hidden";
     public static final String KEY_SET_HIDDEN = "set_hidden";
     public static final String KEY_SET_DELETE = "set_delete";
+    public static final String KEY_SET_LOCKED = "set_locked";
     public static final String KEY_SET_DISPLAYNAME = "set_displayname";
     public static final String KEY_NEW_DISPLAYNAME = "new_displayname";
     public static final String KEY_SET_DISPLAYNUMBER = "set_displaynumber";
@@ -247,6 +250,13 @@ public final class Channel {
     }
 
     /**
+     * @return The value of {@link TvContract.Channels#COLUMN_BROWSABLE} for the channel.
+     */
+    public boolean isBrowsable() {
+        return mBrowsable == IS_BROWSABLE;
+    }
+
+    /**
      * @return The value of {@link TvContract.Channels#COLUMN_INTERNAL_PROVIDER_DATA} for the
      * channel.
      */
@@ -397,6 +407,7 @@ public final class Channel {
         values.put(TvContract.Channels.COLUMN_TRANSPORT_STREAM_ID, mTransportStreamId);
         values.put(TvContract.Channels.COLUMN_SERVICE_ID, mServiceId);
         values.put(TvContract.Channels.COLUMN_NETWORK_AFFILIATION, mNetworkAffiliation);
+        values.put(TvContract.Channels.COLUMN_BROWSABLE, mBrowsable);
         values.put(TvContract.Channels.COLUMN_SEARCHABLE, mSearchable);
         values.put(TvContract.Channels.COLUMN_SERVICE_TYPE, mServiceType);
 
@@ -454,6 +465,7 @@ public final class Channel {
         mChannelLogo = other.mChannelLogo;
         mInternalProviderData = other.mInternalProviderData;
         mNetworkAffiliation = other.mNetworkAffiliation;
+        mBrowsable = other.mBrowsable;
         mSearchable = other.mSearchable;
         mServiceType = other.mServiceType;
         mIsLocked = other.mIsLocked;
@@ -500,6 +512,9 @@ public final class Channel {
             builder.setPackageName(cursor.getString(index));
         }
         if (!cursor.isNull(++index)) {
+            builder.setBrowsable(cursor.getInt(index) == IS_BROWSABLE);
+        }
+        if (!cursor.isNull(++index)) {
             builder.setSearchable(cursor.getInt(index) == IS_SEARCHABLE);
         }
         if (!cursor.isNull(++index)) {
@@ -520,25 +535,23 @@ public final class Channel {
         if (!cursor.isNull(++index)) {
             builder.setLocked(cursor.getInt(index));
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!cursor.isNull(++index)) {
-                builder.setAppLinkColor(cursor.getInt(index));
-            }
-            if (!cursor.isNull(++index)) {
-                builder.setAppLinkIconUri(cursor.getString(index));
-            }
-            if (!cursor.isNull(++index)) {
-                builder.setAppLinkIntentUri(cursor.getString(index));
-            }
-            if (!cursor.isNull(++index)) {
-                builder.setAppLinkPosterArtUri(cursor.getString(index));
-            }
-            if (!cursor.isNull(++index)) {
-                builder.setAppLinkText(cursor.getString(index));
-            }
-            if (!cursor.isNull(++index)) {
-                builder.setChannelAntennaType(cursor.getInt(index));
-            }
+        if (!cursor.isNull(++index)) {
+            builder.setAppLinkColor(cursor.getInt(index));
+        }
+        if (!cursor.isNull(++index)) {
+            builder.setAppLinkIconUri(cursor.getString(index));
+        }
+        if (!cursor.isNull(++index)) {
+            builder.setAppLinkIntentUri(cursor.getString(index));
+        }
+        if (!cursor.isNull(++index)) {
+            builder.setAppLinkPosterArtUri(cursor.getString(index));
+        }
+        if (!cursor.isNull(++index)) {
+            builder.setAppLinkText(cursor.getString(index));
+        }
+        if (!cursor.isNull(++index)) {
+            builder.setChannelAntennaType(cursor.getInt(index));
         }
         InternalProviderData data = builder.mChannel.getInternalProviderData();
         if (data != null) {
@@ -552,7 +565,7 @@ public final class Channel {
     }
 
     private static String[] getProjection() {
-        String[] baseColumns = new String[] {
+        return new String[] {
                 TvContract.Channels._ID,
                 TvContract.Channels.COLUMN_DESCRIPTION,
                 TvContract.Channels.COLUMN_DISPLAY_NAME,
@@ -562,6 +575,7 @@ public final class Channel {
                 TvContract.Channels.COLUMN_NETWORK_AFFILIATION,
                 TvContract.Channels.COLUMN_ORIGINAL_NETWORK_ID,
                 TvContract.Channels.COLUMN_PACKAGE_NAME,
+                TvContract.Channels.COLUMN_BROWSABLE,
                 TvContract.Channels.COLUMN_SEARCHABLE,
                 TvContract.Channels.COLUMN_SERVICE_ID,
                 TvContract.Channels.COLUMN_SERVICE_TYPE,
@@ -569,19 +583,13 @@ public final class Channel {
                 TvContract.Channels.COLUMN_TYPE,
                 TvContract.Channels.COLUMN_VIDEO_FORMAT,
                 TvContract.Channels.COLUMN_LOCKED,
+                TvContract.Channels.COLUMN_APP_LINK_COLOR,
+                TvContract.Channels.COLUMN_APP_LINK_ICON_URI,
+                TvContract.Channels.COLUMN_APP_LINK_INTENT_URI,
+                TvContract.Channels.COLUMN_APP_LINK_POSTER_ART_URI,
+                TvContract.Channels.COLUMN_APP_LINK_TEXT,
+                TvContract.Channels.COLUMN_INTERNAL_PROVIDER_FLAG3
         };
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            String[] marshmallowColumns = new String[] {
-                    TvContract.Channels.COLUMN_APP_LINK_COLOR,
-                    TvContract.Channels.COLUMN_APP_LINK_ICON_URI,
-                    TvContract.Channels.COLUMN_APP_LINK_INTENT_URI,
-                    TvContract.Channels.COLUMN_APP_LINK_POSTER_ART_URI,
-                    TvContract.Channels.COLUMN_APP_LINK_TEXT,
-                    TvContract.Channels.COLUMN_INTERNAL_PROVIDER_FLAG3
-            };
-            return CollectionUtils.concatAll(baseColumns, marshmallowColumns);
-        }
-        return baseColumns;
     }
 
     /**
@@ -880,6 +888,18 @@ public final class Channel {
          */
         public Builder setSearchable(boolean searchable) {
             mChannel.mSearchable = searchable ? IS_SEARCHABLE : 0;
+            return this;
+        }
+
+        /**
+         * Sets whether this channel can be browsable for in other applications.
+         *
+         * @param browsable The value of
+         * {@link TvContract.Channels#COLUMN_BROWSABLE} for the channel.
+         * @return This Builder object to allow for chaining of calls to builder methods.
+         */
+        public Builder setBrowsable(boolean browsable) {
+            mChannel.mBrowsable = browsable ? IS_BROWSABLE : 0;
             return this;
         }
 

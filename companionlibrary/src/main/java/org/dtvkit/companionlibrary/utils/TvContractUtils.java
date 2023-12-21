@@ -74,6 +74,7 @@ public class TvContractUtils {
             put(Channel.KEY_SET_FAVOURITE, "0");
             put(Channel.KEY_SET_HIDDEN, "0");
             put(Channel.KEY_SET_DELETE, "0");
+            put(Channel.KEY_SET_LOCKED, "0");
             put(Channel.KEY_IS_FAVOURITE, "0");
             put(Channel.KEY_FAVOURITE_INFO, "");
             put(Channel.KEY_HIDDEN, "false");
@@ -361,10 +362,19 @@ public class TvContractUtils {
                 }
                 restoreRawUseSettingValuesToInternalProviderData(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
                 if ("1".equals(singleUserSettings.get(Channel.KEY_SET_DISPLAYNUMBER))) {
-                    values.put(TvContract.Channels.COLUMN_DISPLAY_NUMBER, singleUserSettings.get(Channel.KEY_NEW_DISPLAYNUMBER));
+                    values.put(Channels.COLUMN_DISPLAY_NUMBER, singleUserSettings.get(Channel.KEY_NEW_DISPLAYNUMBER));
                 }
                 if ("1".equals(singleUserSettings.get(Channel.KEY_SET_DISPLAYNAME))) {
-                    values.put(TvContract.Channels.COLUMN_DISPLAY_NAME, singleUserSettings.get(Channel.KEY_NEW_DISPLAYNAME));
+                    values.put(Channels.COLUMN_DISPLAY_NAME, singleUserSettings.get(Channel.KEY_NEW_DISPLAYNAME));
+                }
+                if ("1".equals(singleUserSettings.get(Channel.KEY_SET_LOCKED))) {
+                    values.put(Channels.COLUMN_LOCKED, 1);
+                }
+                if ("1".equals(singleUserSettings.get(Channel.KEY_SET_HIDDEN))) {
+                    values.put(Channels.COLUMN_BROWSABLE, 0);
+                }
+                if ("1".equals(singleUserSettings.get(Channel.KEY_SET_DELETE))) {
+                    values.put(Channels.COLUMN_SEARCHABLE, 0);
                 }
                 if (!TextUtils.isEmpty(singleUserSettings.get(Channels.COLUMN_APP_LINK_ICON_URI))) {
                     values.put(Channels.COLUMN_APP_LINK_ICON_URI, singleUserSettings.get(Channels.COLUMN_APP_LINK_ICON_URI));

@@ -6766,6 +6766,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
                 while (cursor.moveToNext()) {
                     Channel nextChannel = Channel.fromCursor(cursor);
+                    if (!nextChannel.isSearchable()) {
+                        continue;
+                    }
                     Log.i(TAG, "channel " + nextChannel);
                     if ((nextChannel.getType().contains(signalType) && antennaType == 0)
                         || (Channel.isATV(nextChannel) && nextChannel.getAntennaType() == antennaType)) {

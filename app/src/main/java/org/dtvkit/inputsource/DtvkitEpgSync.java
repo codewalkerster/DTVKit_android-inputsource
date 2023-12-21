@@ -206,11 +206,13 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                         .setType(TvContractUtils.videoStdToType(vstd))
                         .setDisplayNumber(ATVDisplayNumber)
                         .setServiceType(TvContract.Channels.SERVICE_TYPE_AUDIO_VIDEO)
+                        .setBrowsable(true)
+                        .setSearchable(true)
                         .setOriginalNetworkId(0)
                         .setTransportStreamId(0)
                         .setServiceId(0)
                         .setInternalProviderData(data)
-                        .setLocked(service.getBoolean("Block") == true ? 1: 0)
+                        .setLocked(service.getBoolean("Block") ? 1: 0)
                         .setChannelAntennaType(service.getInt("SigType"))
                         .build());
             }
@@ -356,6 +358,8 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                 channels.add(new Channel.Builder()
                         .setDisplayName(service.getString("name"))
                         .setType(channelType)
+                        .setBrowsable(!service.getBoolean("hidden"))
+                        .setSearchable(data.getBoolean("profile_selectable"))
                         .setDisplayNumber(String.format(Locale.ENGLISH, "%d", service.getInt("lcn")))
                         .setServiceType(service.getBoolean("is_data") ? TvContract.Channels.SERVICE_TYPE_OTHER : (service.getBoolean("radio") ? TvContract.Channels.SERVICE_TYPE_AUDIO :
                                 TvContract.Channels.SERVICE_TYPE_AUDIO_VIDEO))

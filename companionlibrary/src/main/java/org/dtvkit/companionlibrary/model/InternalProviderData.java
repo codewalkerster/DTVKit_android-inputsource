@@ -197,6 +197,22 @@ public class InternalProviderData {
         }
     }
 
+    public boolean getBoolean(String key) {
+        try {
+            Object obj = get(key);
+            if (obj instanceof Integer) {
+                return ((int) obj) != 0;
+            } else if (obj instanceof String) {
+                return ((String) obj).compareToIgnoreCase("true") == 0;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, " getBoolean " + key + ":" + e.getMessage());
+            return false;
+        }
+    }
+
     public int getInt(String key) {
         try {
             Object obj = get(key);
@@ -208,6 +224,7 @@ public class InternalProviderData {
                 return 0;
             }
         } catch (Exception e) {
+            Log.e(TAG, " getInt " + key + ":" + e.getMessage());
             return 0;
         }
     }
