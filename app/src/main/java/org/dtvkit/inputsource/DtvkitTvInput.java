@@ -4819,6 +4819,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 mTuneInfo.update = false;
                                 sendMsgTsUpdate();
                             }
+                            PlayerState oldplayerState = playerState;
                             playerState = PlayerState.PLAYING;
                             if (type.equals("dvblive")) {
                                 if (mTunedChannel == null) {
@@ -4855,13 +4856,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                     mHandlerThreadHandle.sendEmptyMessageDelayed(MSG_UPDATE_TRACK_INFO, MSG_UPDATE_TRACK_INFO_DELAY);
                                 }
                             } else if (type.equals("dvbrecording")) {
-                                if (FeatureUtil.getFeatureSupportTunerFramework()) {
-                                    if (mHandlerThreadHandle != null) {
-                                        Message msg = mMainHandle.obtainMessage(MSG_BLOCK_MUTE_OR_UNMUTE, 0, 0);
-                                        mHandlerThreadHandle.sendMessage(msg);
-                                    }
-                                } else {
-                                    setBlockMute(false);
+                                if (oldplayerState != PlayerState.PLAYING) {
+                                    Message msg = mMainHandle.obtainMessage(MSG_BLOCK_MUTE_OR_UNMUTE, 0, 0);
+                                    mHandlerThreadHandle.sendMessage(msg);
                                 }
                                 startPosition = originalStartPosition = 0; // start position is always 0 when playing back recorded program
                                 currentPosition = playerGetElapsedAndTruncated(data)[0];
@@ -4909,7 +4906,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 Log.d(TAG, "ATV chgannel blocked");
                                 Rating = "DVB_4";
                             }
-
+                            playerState = PlayerState.BLOCKED;
                             if (mMainHandle != null) {
                                 mMainHandle.removeMessages(MSG_EVENT_SHOW_HIDE_OVERLAY);
                                 Message msg = mMainHandle.obtainMessage(MSG_EVENT_SHOW_HIDE_OVERLAY);
@@ -4921,17 +4918,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                             if (Channel.isATV(mTunedChannel)) {
                                 setBlockMute(true);
-                            } else if (!type.equals("dvbrecording")) {
-                                playerState = PlayerState.BLOCKED;
-                            } else {
-                                 if (FeatureUtil.getFeatureSupportTunerFramework()) {
-                                    if (mHandlerThreadHandle != null) {
-                                        Message msg = mMainHandle.obtainMessage(MSG_BLOCK_MUTE_OR_UNMUTE, 1, 0);
-                                        mHandlerThreadHandle.sendMessage(msg);
-                                    }
-                                } else {
-                                    setBlockMute(true);
-                                }
+                            } else if (type.equals("dvbrecording")) {
+                                Message msg = mMainHandle.obtainMessage(MSG_BLOCK_MUTE_OR_UNMUTE, 1, 0);
+                                mHandlerThreadHandle.sendMessage(msg);
                             }
                             dvrSubtitleFlag = 0;
                             ContentRatingSystem system = mContentRatingsManager
@@ -6109,7 +6098,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 mHandlerThreadHandle.removeMessages(MSG_UPDATE_TRACKS_AND_SELECT);
                 Message msg = mHandlerThreadHandle.obtainMessage(MSG_UPDATE_TRACKS_AND_SELECT);
                 Log.d(TAG, "sendUpdateTrackMsg state:" + playState);
-                if (playerState != PlayerState.PLAYING) {
+                if (playState != PlayerState.PLAYING) {
                     // clear tracks
                     msg.arg2 = 1;
                 } else {
@@ -6349,7 +6338,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             mSessionState = SessionState.TUNED;
             recordedProgram = getRecordedProgram(uri);
             if (recordedProgram != null) {
-                playerState = PlayerState.PLAYING;
                 onFinish(false, true);
                 DtvkitGlueClient.getInstance().registerSignalHandler(mHandler);
                 mAudioADAutoStart = mDataManager.getIntParameters(DataManager.TV_KEY_AD_SWITCH) == 1;
