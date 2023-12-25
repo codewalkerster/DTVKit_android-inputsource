@@ -44,7 +44,7 @@ public class SubtitleServerView extends FrameLayout {
     int mPauseExDraw = 0;
     boolean mTtxTransparent = false;
 
-    static final int SUBTITLE_SUB_TYPE_TTX = 9;
+    static final int SUBTITLE_SUB_TYPE_TTX = 8;
     static final int SUBTITLE_SUB_TYPE_ARIB = 16;
     static final int MSG_SUBTITLE_SHOW_CLOSED_CAPTION = 5;
     protected static final int MSG_SET_TELETEXT_MIX_NORMAL = 6;
@@ -386,7 +386,7 @@ public class SubtitleServerView extends FrameLayout {
         SimpleDateFormat simpleDate = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
         String savePath;
         if (bitmap != null) {
-            savePath = ct.getExternalFilesDir(null) + "/" + simpleDate.format(now.getTime()) + ".jpg";
+            savePath = ct.getExternalFilesDir(null) + "/" + simpleDate.format(now.getTime()) + ".png";
         } else if (!TextUtils.isEmpty(content)) {
             savePath = ct.getExternalFilesDir(null) + "/" + simpleDate.format(now.getTime()) + ".cc.log";
         } else {
@@ -397,7 +397,7 @@ public class SubtitleServerView extends FrameLayout {
             FileOutputStream fos = new FileOutputStream(file);
             if (bitmap != null) {
                 Log.i(TAG, "debug: dump subtitle: " + savePath);
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 50, fos);
+                bitmap.compress(Bitmap.CompressFormat.PNG, 30, fos);
             } else if (content != null) {
                 Log.d(TAG, "debug: dump file:" + savePath + ", size: " + content.length());
                 FileWriter fw =new FileWriter(file);
