@@ -4694,7 +4694,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     keyCode == KeyEvent.KEYCODE_6 ||
                     keyCode == KeyEvent.KEYCODE_7 ||
                     keyCode == KeyEvent.KEYCODE_8 ||
-                    keyCode == KeyEvent.KEYCODE_9;
+                    keyCode == KeyEvent.KEYCODE_9 ||
+                    keyCode == KeyEvent.KEYCODE_3D_MODE;
         }
 
         private void dealTeletextKeyCode(int keyCode) {
@@ -4772,6 +4773,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     playerNotifyTeletextEvent(number + TT_EVENT_0);
                     break;
                 }
+                case KeyEvent.KEYCODE_3D_MODE:
+                    // SUBPAGE_MODE
+                    playerNotifyTeletextEvent(33);
+                    break;
                 default:
                     break;
             }
