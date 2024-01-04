@@ -27,7 +27,7 @@ public class DtvkitGlueClient {
     private static final int REQUEST_MESSAGE_TIMEOUT_SHORT_MILLIS = 1000;
     private static final int REQUEST_MESSAGE_TIMEOUT_LONG_MILLIS = 3000;
     private static final int REQUEST_MESSAGE_BOMB_MILLIS = 15000;
-    private Handler mMainHandler = null;
+    private Handler mGlueHandler = null;
     private static DtvkitGlueClient mSingleton = null;
     private final CopyOnWriteArrayList<Pair<Integer, SignalHandler>> mSignalHandlers = new CopyOnWriteArrayList<>();
     // debug used
@@ -132,12 +132,13 @@ public class DtvkitGlueClient {
             Log.e(TAG, e.getMessage());
             return;
         }
-        synchronized (mSignalHandlers) {
+
+        mGlueHandler.post(() -> {
             for (Pair <Integer, SignalHandler> handler : mSignalHandlers) {
                 if (handler.first == id)
                     handler.second.onSignal(resource, object);
             }
-        }
+        });
     }
 
     public void notifyServerStateCallback(int state) {
@@ -149,10 +150,9 @@ public class DtvkitGlueClient {
             Log.e(TAG, "notifyServerStateCallback " + e.getMessage());
             return;
         }
-        synchronized (mSignalHandlers) {
-            for (Pair <Integer, SignalHandler> handler : mSignalHandlers) {
+
+        for (Pair <Integer, SignalHandler> handler : mSignalHandlers) {
                 handler.second.onSignal("stateOfdtvkit", object);
-            }
         }
     }
 
@@ -276,14 +276,11 @@ public class DtvkitGlueClient {
         // Singleton
         mDirectBuffer = ByteBuffer.allocateDirect(DIRECT_BUFFER_SIZE);
         nativeConnectDtvkit(this, mDirectBuffer);
-        /*
-        int debuggable = SystemProperties.getInt("ro.debuggable", 0);
-        if (debuggable == 1) {
-            HandlerThread thread = new HandlerThread("GlueClientThread");
-            thread.start();
-            mMainHandler = new Handler(thread.getLooper());
-        }
-        */
+
+        //callback thread
+        HandlerThread thread = new HandlerThread("GlueSignalThr");
+        thread.start();
+        mGlueHandler = new Handler(thread.getLooper());
     }
 
     public synchronized static DtvkitGlueClient getInstance() {
