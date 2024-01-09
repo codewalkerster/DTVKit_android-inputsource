@@ -865,20 +865,43 @@ jobject Am_tuner_openDescrambler(int tunerClientId) {
     ALOGE("End:%s:globalDescrambler:%p", __FUNCTION__, globalDescrambler);
     return globalDescrambler;
 }
+
 jobject Am_tuner_getSurfaceByTunerClient(int tunerClientId) {
     ALOGE("Start %s:, tunerClientId : %d", __FUNCTION__, tunerClientId);
     bool attached = false;
+    jobject globalSurface = NULL;
     JNIEnv *env = Am_tuner_getJNIEnv(&attached);
     jobject tuner = getTuner(tunerClientId);
+
     if ((NULL == env) || (NULL == tuner)) {
         ReleaseEnv(attached);
         ALOGE("%s: input parameter error", __FUNCTION__);
         return NULL;
     }
-    jobject surface = env->GetObjectField(tuner, gTunerFields.surface);//need ASPlayer to modify NewGlobalRef
+    jobject surface = env->GetObjectField(tuner, gTunerFields.surface);//need ASPlayer to delete globalSurface
+    if (NULL != surface) {
+        globalSurface = env->NewGlobalRef(surface);
+    }
     ReleaseEnv(attached);
-    ALOGE("End %s surface : %p", __FUNCTION__, surface);
-    return surface;
+    ALOGE("End %s surface : %p", __FUNCTION__, globalSurface);
+    return globalSurface;
+}
+
+void Am_tuner_DeleteSurfaceRef(jobject surface) {
+    ALOGE("Start %s:, surface : %p", __FUNCTION__, surface);
+    bool attached = false;
+    JNIEnv *env = Am_tuner_getJNIEnv(&attached);
+
+    if (NULL == env) {
+        ReleaseEnv(attached);
+        ALOGE("%s: input parameter error", __FUNCTION__);
+        return;
+    }
+    env->DeleteGlobalRef(surface);
+
+    ReleaseEnv(attached);
+    ALOGE("End %s", __FUNCTION__);
+    return;
 }
 /*********************Filter Class map native method*****************************/
 void Am_filter_setType(jobject filter, int mainType, int subType) {
