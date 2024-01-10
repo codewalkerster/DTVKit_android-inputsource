@@ -3,6 +3,7 @@ package com.droidlogic.dtvkit.inputsource;
 import android.media.tv.TvContract;
 import android.media.tv.TvContentRating;
 import android.net.Uri;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.text.TextUtils;
 
@@ -39,7 +40,8 @@ public class DtvkitEpgSync extends EpgSyncJobService {
     public static final int SIGNAL_ISDBT = 5;
     // public static final int SIGNAL_ANALOG = 8;
     boolean mIsUK = false;
-
+    ArrayMap<Integer, String> mChIdMap = new ArrayMap<>();
+    com.droidlogic.dtvkit.inputsource.DataManager mDataManager;
     /* called after channel search */
     public static JSONArray getServicesList() throws Exception {
         return getDvbServicesList("cur", "all");
@@ -116,6 +118,31 @@ public class DtvkitEpgSync extends EpgSyncJobService {
     public List<Channel> getChannels(boolean syncCurrent) {
         if (syncCurrent && TextUtils.isEmpty(getChannelTypeFilter())) {
             setChannelTypeFilter(TvContractUtils.dvbSourceToChannelTypeString(getCurrentDvbSource()));
+        }
+        int countryCode = ParameterManager.getCurrentCountryCode();
+        mIsUK = "gbr".equals(ParameterManager.getIso3NameByCountryCode(countryCode));
+        JSONArray refChTable = null;
+        if (TvContractUtils.dvbSourceToInt(getChannelTypeFilter()) == SIGNAL_COFDM) {
+            if (mDataManager == null) {
+                mDataManager = new com.droidlogic.dtvkit.inputsource.DataManager(this);
+            }
+            boolean isDvbt2 = mDataManager.getIntParameters(com.droidlogic.dtvkit.inputsource.DataManager.KEY_DVBT_TYPE) == 1;
+            refChTable = ParameterManager.getRfChannelTable(countryCode, ParameterManager.DTV_TYPE_DVBT, isDvbt2);
+        } else if (TvContractUtils.dvbSourceToInt(getChannelTypeFilter()) == SIGNAL_QAM) {
+            refChTable = ParameterManager.getRfChannelTable(countryCode, ParameterManager.DTV_TYPE_DVBC, false);
+        }
+        // save CH_ID.
+        mChIdMap.clear();
+        if (refChTable != null) {
+            for (int i = 0; i < refChTable.length(); i++) {
+                JSONObject item = (JSONObject) refChTable.opt(i);
+                if (item == null) {
+                    continue;
+                }
+                int freq = item.optInt("freq", 0);
+                String chId = item.optString("name", "");
+                mChIdMap.put(freq, chId);
+            }
         }
         List<Channel> channels = new ArrayList<>(getDvbChannels(syncCurrent));
         if (TvContractUtils.dvbSourceToInt(getChannelTypeFilter()) == SIGNAL_ISDBT) {
@@ -223,9 +250,7 @@ public class DtvkitEpgSync extends EpgSyncJobService {
     }
 
     public List<Channel> getDvbChannels(boolean syncCurrent) {
-        mIsUK = "gbr".equals(ParameterManager.getCurrentCountryIso3Name());
         List<Channel> channels = new ArrayList<>();
-
         Log.i(TAG, "Get channels for epg sync, current: " + syncCurrent);
 
         try {
@@ -261,12 +286,15 @@ public class DtvkitEpgSync extends EpgSyncJobService {
             for (int i = 0; i < services.length(); i++) {
                 JSONObject service = services.getJSONObject(i);
                 String uri = service.getString("uri");
-
+                int freq = service.getInt("freq");
                 InternalProviderData data = new InternalProviderData();
                 data.put("dvbUri", uri);
                 data.put("hidden", service.getBoolean("hidden"));
                 data.put("network_id", service.getInt("network_id"));
-                data.put("frequency", service.getInt("freq"));
+                data.put("frequency", freq);
+                if (mChIdMap.size() > 0 && mChIdMap.containsKey(freq)) {
+                    data.put("ch_id", mChIdMap.get(freq));
+                }
                 JSONObject satellite = new JSONObject();
                 satellite.put("satellite_info_name", service.getString("sate_name"));
                 data.put("satellite_info", satellite.toString());

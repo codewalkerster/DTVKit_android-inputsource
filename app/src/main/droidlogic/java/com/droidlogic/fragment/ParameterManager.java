@@ -1008,12 +1008,11 @@ public class ParameterManager {
         return result;
     }
 
-    public static String getCurrentCountryIso3Name() {
-        String result = null;
-        int currentCountryCode = getCurrentCountryCode();
+    public static String getIso3NameByCountryCode(int currentCountryCode) {
+        String result = "";
         try {
             JSONObject resultObj = getCountries();
-            JSONArray data = null;
+            JSONArray data;
             if (resultObj != null) {
                 data = (JSONArray)resultObj.get("data");
                 if (data.length() == 0) {
@@ -1030,10 +1029,14 @@ public class ParameterManager {
                 Log.d(TAG, "getCurrentCountryIso3Name then get null");
             }
         } catch (Exception e) {
-            Log.d(TAG, "getCurrentCountryIso3Name Exception " + e.getMessage() + ", trace=" + e.getStackTrace());
             e.printStackTrace();
         }
         return result;
+    }
+
+    public static String getCurrentCountryIso3Name() {
+        int currentCountryCode = getCurrentCountryCode();
+        return getIso3NameByCountryCode(currentCountryCode);
     }
 
     public int getCountryCodeByIndex(int index) {
@@ -1519,7 +1522,7 @@ public class ParameterManager {
     public JSONArray getIsdbtChannelTable(int countryCode) {
         return getRfChannelTable(countryCode, DTV_TYPE_ISDBT, false);
     }
-    public JSONArray getRfChannelTable(int countryCode, int dtvType, boolean isDvbt2) {
+    public static JSONArray getRfChannelTable(int countryCode, int dtvType, boolean isDvbt2) {
         JSONArray result = new JSONArray();
         try {
             JSONObject resultObj = null;
