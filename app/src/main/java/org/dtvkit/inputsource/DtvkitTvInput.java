@@ -8062,6 +8062,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 if (TextUtils.isEmpty(subLang) || ConstantManager.CONSTANT_UND_FLAG.equals(subLang)) {
                     subLang = ConstantManager.CONSTANT_UND_VALUE + ((undefinedIndex > 0) ? undefinedIndex : "");
                     undefinedIndex++;
+                } else if (ConstantManager.CONSTANT_QAA.equalsIgnoreCase(subLang)) {
+                    subLang = ConstantManager.CONSTANT_ORIGINAL_LANGUAGE;
                 }
                 track.setLanguage(subLang);
                 int pid = subtitleStream.getInt("pid");

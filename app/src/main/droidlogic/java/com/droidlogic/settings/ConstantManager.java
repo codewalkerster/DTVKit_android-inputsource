@@ -65,6 +65,7 @@ public class ConstantManager {
 
     public static final String CONSTANT_QAA = "qaa";//Original Audio flag
     public static final String CONSTANT_ORIGINAL_AUDIO = "Original Audio";
+    public static final String CONSTANT_ORIGINAL_LANGUAGE = "Original language";
     public static final String CONSTANT_UND_FLAG = "und";//undefined flag
     public static final String CONSTANT_UND_VALUE = "Undefined";
     public static final String CONSTANT_QAD = "qad";
