@@ -19,7 +19,7 @@
 #include <map>
 #include <algorithm>
 #include "JNI_tuner.h"
-#include "JNIASPlayer.h"
+//#include "JNIASPlayer.h"
 #include "type_change_utils.h"
 
 using namespace android;
@@ -1498,9 +1498,9 @@ static void dtvkit_tuner_native_init (JNIEnv *env) {
         ALOGE("ERROR: DescramblerAdapter find class error\n");
     }
 
-    ALOGD(":%s, test for JniASPlayer_registerJNI START", __FUNCTION__);
-    JniASPlayer_registerJNI(env);
-    ALOGD(":%s, test for JniASPlayer_registerJNI END", __FUNCTION__);
+//    ALOGD(":%s, test for JniASPlayer_registerJNI START", __FUNCTION__);
+//    JniASPlayer_registerJNI(env);
+//    ALOGD(":%s, test for JniASPlayer_registerJNI END", __FUNCTION__);
     dtvkit_tuner_android_version_setting();
 }
 
