@@ -119,7 +119,7 @@ public class SatelliteWrap {
         }
     }
 
-    public void addSatellite(String name, boolean isEast, int position) {
+    public void addSatellite(String name, boolean isEast, float position) {
         try {
             JSONArray array = new JSONArray();
             array.put(name);

@@ -1030,7 +1030,7 @@ public class ScanDishSetupFragment extends com.droidlogic.dtvkit.inputsource.sea
                     if (data != null && "ok".equals(data.getString("button"))) {
                         String name_add = data.getString("value1");
                         boolean is_east_add = data.getBoolean("value2", true);
-                        int position_add = Integer.valueOf(data.getString("value3"));
+                        float position_add = Float.parseFloat(data.getString("value3"));
                         mParameterManager.getDvbsParaManager().getSatelliteWrap().addSatellite(name_add, is_east_add, position_add);
                         mItemAdapterSatellites.reFill(mParameterManager.getDvbsParaManager().getSatelliteNameList());
                         // switchToLeftList();
