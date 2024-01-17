@@ -7112,13 +7112,15 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         private void releaseDvrTimeshiftTuner() {
             if (FeatureUtil.getFeatureSupportTunerFramework()) {
                 Log.i(TAG, "releaseDvrTimeshiftTuner");
-                if (null != mDvrTimeShiftRecordTuner) {
-                    mDvrTimeShiftRecordTuner.release();
-                    mDvrTimeShiftRecordTuner = null;
-                } else {
-                    Log.i(TAG, "DvrTimeShiftRecordTuner has release");
+                synchronized (this) {// onSignal and work thread will call this function so need synchronized
+                    if (null != mDvrTimeShiftRecordTuner) {
+                        mDvrTimeShiftRecordTuner.release();
+                        mDvrTimeShiftRecordTuner = null;
+                    } else {
+                        Log.i(TAG, "DvrTimeShiftRecordTuner has release");
+                    }
+                    releaseDvrPlaybackTuner();
                 }
-                releaseDvrPlaybackTuner();
             }
         }
 

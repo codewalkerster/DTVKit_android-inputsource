@@ -18,6 +18,7 @@
 //#include "android_runtime/AndroidRuntime.h"
 #include <map>
 #include <algorithm>
+#include <mutex>
 #include "JNI_tuner.h"
 //#include "JNIASPlayer.h"
 #include "type_change_utils.h"
@@ -90,9 +91,10 @@ static tuner_fields gTunerFields;
 static filter_fields gFilterFields;
 static lnb_fields gLnbFields;
 static descrambler_fields gDescramblerFields;
-static std::map<jint, jobject> gTunerMap;
 static JavaVM *gJavaVM = NULL;
+static std::map<jint, jobject> gTunerMap;
 static std::vector<long> gTunerStatusListener;
+static std::mutex gTunerLock;
 
 #define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
 
@@ -224,11 +226,12 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
         ALOGE("%s: input parameter error", __FUNCTION__);
         return tunerClientId;
     }
+    std::lock_guard<std::mutex> tunerlock(gTunerLock);
     ALOGD("tuner size:%d", gTunerMap.size());
     for (std::map<jint, jobject>::iterator iter = gTunerMap.begin(); iter != gTunerMap.end(); iter++) {
         jobject tuner = iter->second;
         if (NULL != tuner) {
-            ALOGD("tuner :%p, type : %d", tuner, (int)env->GetIntField(tuner, gTunerFields.tunerType));
+            ALOGD("clientId :%d, type : %d, tuner :%p,", iter->first, (int)env->GetIntField(tuner, gTunerFields.tunerType), tuner);
             if (TUNER_TYPE_LIVE_0 == tunerType) {
                 if (TUNER_TYPE_LIVE_0 == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
                     tunerClientId = iter->first;
@@ -1525,6 +1528,7 @@ static void dtvkit_tuner_native_setup(JNIEnv *env, jobject thiz, jint tunerClien
 
 static void dtvkit_tuner_native_release(JNIEnv *env, jobject thiz, jint tunerClientId) {
     ALOGD("enter:%s, tunerClientId:%d", __FUNCTION__, tunerClientId);
+    std::lock_guard<std::mutex> tunerlock(gTunerLock);
     std::map<jint, jobject>::iterator iter = gTunerMap.find(tunerClientId);
     if (iter != gTunerMap.end()) {
         jobject tuner = iter->second;
