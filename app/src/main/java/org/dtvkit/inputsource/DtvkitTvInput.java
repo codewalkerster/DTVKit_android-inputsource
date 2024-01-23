@@ -5042,7 +5042,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                         mTunedChannel, Channel.KEY_IS_DATA_SERVICE, false)) {
                                     if (!isAv) {
                                         Log.d(TAG, "data_service isAv=false can not play well!");
-                                        notifySessionEvent("signal_data_service", null);
+                                        mHandlerThreadHandle.postDelayed(() -> sendBundleToAppByTif("signal_data_service", null), 1000);
                                     }
                                 }
                             } else {
