@@ -1588,7 +1588,7 @@ static void dtvkit_tuner_native_scan_callback(JNIEnv *env, jobject tuner, jint t
 
 /*********FilterAdapter Native***************/
 static void dtvkit_filter_native_callback(JNIEnv *env, jobject filter, jobjectArray events, jint status) {
-    //ALOGD("%s start: callback", __FUNCTION__);
+    ALOGD("%s start: callback", __FUNCTION__);
 
     jclass filterClass;
     FIND_CLASS(filterClass, FILTER_CLASS);
@@ -1600,7 +1600,8 @@ static void dtvkit_filter_native_callback(JNIEnv *env, jobject filter, jobjectAr
     } else {
         ALOGD("not register callback");
     }
-    //ALOGD("end:%s", __FUNCTION__);
+    nativeClearException(env);
+    ALOGD("end:%s", __FUNCTION__);
 }
 
 /*********LnbAdapter Native***************/

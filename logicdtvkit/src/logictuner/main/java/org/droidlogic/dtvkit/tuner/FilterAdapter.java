@@ -23,12 +23,18 @@ import org.json.JSONObject;
 public class FilterAdapter {
     private static final String TAG = "FilterAdapter";
     private static final boolean DEBUG = true;
+    private static final int FILTER_INIT  = 0;
+    private static final int FILTER_START = 1;
+    private static final int FILTER_STOP  = 2;
+    private static final int FILTER_CLOSE = 3;
 
     private Filter mFilter;
     private Executor mCallbackExecutor;
     private TunerAdapter.CallbackExecutor mInternalExecutor;
     private long mFilterCallbackContext;
     private int mTunerClientId;
+    private int mFilterStatus;
+    private final Object mLock = new Object();//For Multi-threading call filter close and native callback
 
     private native void nativeFilterCallback(FilterEvent[] events, int status);
 
@@ -49,6 +55,7 @@ public class FilterAdapter {
             mInternalExecutor = new TunerAdapter.CallbackExecutor(thread_name);
             setCallback(filterCallbackContext);
         }
+        mFilterStatus = FILTER_INIT;
     }
 
     public Filter getFilter() {
@@ -73,7 +80,7 @@ public class FilterAdapter {
                         " mainType : " + mainType + " subtype : " + subtype);
             }
         } else {
-            Log.e(TAG, "filter hase close");
+            Log.e(TAG, "filter has close");
         }
     }
 
@@ -94,7 +101,7 @@ public class FilterAdapter {
                 callback.setCallbackFilterAdapter(this);
             }
         } else {
-            Log.e(TAG, "filter hase close");
+            Log.e(TAG, "filter has close");
         }
     }
 
@@ -111,18 +118,23 @@ public class FilterAdapter {
                 Log.e(TAG, "configure error");
             }
         } else {
-            Log.e(TAG, "filter hase close");
+            Log.e(TAG, "filter has close");
         }
         return result;
     }
 
     private int getId() {
+        int filterId = Tuner.INVALID_FILTER_ID;
         if (null != mFilter) {
-            return mFilter.getId();
+            try {
+                filterId = mFilter.getId();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         } else {
-            Log.e(TAG, "filter hase close");
-            return Tuner.INVALID_FILTER_ID;
+            Log.e(TAG, "filter has close");
         }
+        return filterId;
     }
 
     private int setDataSource(Filter source) {
@@ -139,7 +151,7 @@ public class FilterAdapter {
                 Log.e(TAG, "setDataSource error");
             }
         } else {
-            Log.e(TAG, "filter hase close");
+            Log.e(TAG, "filter has close");
         }
         return result;
     }
@@ -147,10 +159,11 @@ public class FilterAdapter {
     private int start() {
         int result = Tuner.INVALID_FILTER_ID;
         if (null != mFilter) {
+            mFilterStatus = FILTER_START;
             result = mFilter.start();
             if (DEBUG) Log.d(TAG, "start filter id :" + mFilter.getId() + " result : " + result);
         } else {
-            Log.e(TAG, "filter hase close");
+            Log.e(TAG, "filter has close");
         }
         return result;
     }
@@ -158,10 +171,11 @@ public class FilterAdapter {
     private int stop() {
         int result = Tuner.INVALID_FILTER_ID;
         if (null != mFilter) {
+            mFilterStatus = FILTER_STOP;
             result = mFilter.stop();
             if (DEBUG) Log.d(TAG, "stop filter id :" + mFilter.getId() + " result : " + result);
         } else {
-            Log.e(TAG, "filter hase close");
+            Log.e(TAG, "filter has close");
         }
         return result;
     }
@@ -172,7 +186,7 @@ public class FilterAdapter {
             result = mFilter.flush();
             if (DEBUG) Log.d(TAG, "flush filter id :" + mFilter.getId() + " result : " + result);
         } else {
-            Log.e(TAG, "filter hase close");
+            Log.e(TAG, "filter has close");
         }
         return result;
     }
@@ -180,18 +194,21 @@ public class FilterAdapter {
     private void close() {
         if (null != mFilter) {
             if (DEBUG) Log.d(TAG, "close filter id :" + mFilter.getId());
-            setCallback(0);
-            mFilter.close();
-            mFilter = null;
-            if (mInternalExecutor != null) {
-                mInternalExecutor.release();
-                mInternalExecutor = null;
+            synchronized (mLock) {
+                mFilterStatus = FILTER_CLOSE;
+                setCallback(0);
+                mFilter.close();
+                mFilter = null;
+                if (mInternalExecutor != null) {
+                    mInternalExecutor.release();
+                    mInternalExecutor = null;
+                }
+                mCallbackExecutor = null;
+                mFilterCallbackContext = 0;
+                mTunerClientId = 0;
             }
-            mCallbackExecutor = null;
-            mFilterCallbackContext = 0;
-            mTunerClientId = 0;
         } else {
-            Log.e(TAG, "filter hase close");
+            Log.e(TAG, "filter has close");
         }
     }
 
@@ -199,11 +216,15 @@ public class FilterAdapter {
         //TBD:need check array length
         int result = Tuner.INVALID_FILTER_ID;
         if (null != mFilter) {
-            result = mFilter.read(buffer, offset, size);
+            try {
+                result = mFilter.read(buffer, offset, size);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             //Log.d(TAG, "read filter id :" + mFilter.getId() + " offset : " + offset +
             // " size : " + size + " buffer : " + buffer + " result : " + result);
         } else {
-            Log.e(TAG, "filter hase close");
+            Log.e(TAG, "filter has close");
         }
         return result;
     }
@@ -281,11 +302,13 @@ public class FilterAdapter {
         private void nativeCallbackHandle(Filter filter, FilterEvent[] events, int status) {
             try {
                 if (null != mFilterAdapter) {
-                    Log.d(TAG, "onFilterEvent filter id :" + filter.getId());
-                    if (0 != mFilterAdapter.mFilterCallbackContext) {
-                        mFilterAdapter.nativeFilterCallback(events, status);
-                    } else {
-                        //TBD use data for TIAF
+                    Log.d(TAG, "onFilterEvent filter id :" + filter.getId() + " FilterStatus : " + mFilterAdapter.mFilterStatus);
+                    synchronized (mFilterAdapter.mLock) {
+                        if ((0 != mFilterAdapter.mFilterCallbackContext) && (FILTER_START== mFilterAdapter.mFilterStatus)) {
+                            mFilterAdapter.nativeFilterCallback(events, status);
+                        } else {
+                            Log.e(TAG, "filter has stop or close FilterStatus : " + mFilterAdapter.mFilterStatus);
+                        }
                     }
                 } else {
                     Log.e(TAG, "Error not register callback FilterAdapter");
