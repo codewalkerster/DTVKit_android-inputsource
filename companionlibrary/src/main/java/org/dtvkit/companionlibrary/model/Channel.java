@@ -81,7 +81,7 @@ public final class Channel {
     public static final String KEY_SET_LOCKED = "set_locked";
     public static final String KEY_SET_DISPLAYNAME = "set_displayname";
     public static final String KEY_NEW_DISPLAYNAME = "new_displayname";
-    public static final String KEY_SET_DISPLAYNUMBER = "set_displaynumber";
+    public static final String KEY_SET_DISPLAYNUMBER = "set_displaynumber"; // index when set
     public static final String KEY_SET_MOVE_DISPLAYNUMBER = "set_move_displaynumber";
     public static final String KEY_NEW_DISPLAYNUMBER = "new_displaynumber";
     public static final String KEY_RAW_DISPLAYNAME = "raw_displayname";

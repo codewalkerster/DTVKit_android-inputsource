@@ -80,7 +80,7 @@ public class TvContractUtils {
             put(Channel.KEY_HIDDEN, "false");
             put(Channel.KEY_SET_DISPLAYNAME, "0");
             put(Channel.KEY_NEW_DISPLAYNAME, "");
-            put(Channel.KEY_SET_DISPLAYNUMBER, "0");
+            put(Channel.KEY_SET_DISPLAYNUMBER, "");
             put(Channel.KEY_NEW_DISPLAYNUMBER, "0");
             put(Channels.COLUMN_APP_LINK_ICON_URI, "");
             put(Channels.COLUMN_APP_LINK_INTENT_URI, "");
@@ -220,7 +220,7 @@ public class TvContractUtils {
                     ciNumber = (String) internalProviderData.get(Channel.KEY_CHANNEL_CI_NUMBER);
                     rawDisplayName = (String) internalProviderData.get(Channel.KEY_RAW_DISPLAYNAME);
                     rawDisplayNumber = (String) internalProviderData.get(Channel.KEY_RAW_DISPLAYNUMBER);
-                    boolean setRawDisplayNumber = "1".equals(internalProviderData.get(Channel.KEY_SET_DISPLAYNUMBER));
+                    boolean setRawDisplayNumber = !TextUtils.isEmpty((String) internalProviderData.get(Channel.KEY_SET_DISPLAYNUMBER));
                     boolean setRawDisplayName = "1".equals(internalProviderData.get(Channel.KEY_SET_DISPLAYNAME));
                     if (setRawDisplayNumber) {
                         internalProviderData.put(Channel.KEY_NEW_DISPLAYNUMBER, displayNumber);
@@ -361,7 +361,7 @@ public class TvContractUtils {
                     Log.d(TAG, String.format("Mapping %s to %d", uniqueStr, rowId));
                 }
                 restoreRawUseSettingValuesToInternalProviderData(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
-                if ("1".equals(singleUserSettings.get(Channel.KEY_SET_DISPLAYNUMBER))) {
+                if (!TextUtils.isEmpty(singleUserSettings.get(Channel.KEY_SET_DISPLAYNUMBER))) {
                     values.put(Channels.COLUMN_DISPLAY_NUMBER, singleUserSettings.get(Channel.KEY_NEW_DISPLAYNUMBER));
                 }
                 if ("1".equals(singleUserSettings.get(Channel.KEY_SET_DISPLAYNAME))) {
