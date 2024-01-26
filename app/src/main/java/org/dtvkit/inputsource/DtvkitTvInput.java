@@ -5838,13 +5838,15 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     case MSG_TS_UPDATE:
                         String newUri = mTuneInfo.dvbUri;
                         Uri retuneUri;
-                        long id = 0;
                         Channel channel = null;
                         List<Channel> channelList = TvContractUtils.getChannels(mContentResolver, mInputId);
-                        if (!mTuneInfo.isDTv && mTuneInfo.frequency > 0) {
+                        if (!mTuneInfo.isDTv) {
                             // atv case
                             int freq = mTuneInfo.frequency;
                             Log.d(TAG, "MSG_TS_UPDATE, freq:" + freq);
+                            if (mTuneInfo.frequency == 0) {
+                                break;
+                            }
                             int antennaType = 0;
                             String dtvType = mDataManager.getStringParameters(DataManager.KEY_ISDB_ANTENNA_TYPE);
                             if (TextUtils.equals(TvContract.Channels.TYPE_ATSC_C, dtvType)) {
@@ -5858,9 +5860,17 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 }
                             }
                         } else {
-                            Log.d(TAG, "MSG_TS_UPDATE, uri:" + newUri);
-                            if (TextUtils.isEmpty(newUri)) {
-                                break;
+                            // some streams change, no newUri reported, but current channel delete and
+                            // insert again (_ID changed), we need let app know.
+                            try {
+                                if (TextUtils.isEmpty(newUri)) {
+                                    newUri = (String) mTunedChannel.getInternalProviderData().get("dvbUri");
+                                    Log.d(TAG, "MSG_TS_UPDATE, uri:" + newUri + "(current)");
+                                } else {
+                                    Log.d(TAG, "MSG_TS_UPDATE, uri:" + newUri);
+                                }
+                            } catch (Exception e) {
+                                Log.w(TAG, " " + e.getMessage());
                             }
                             for (Channel nextChannel : channelList) {
                                 InternalProviderData data = nextChannel.getInternalProviderData();
@@ -5879,15 +5889,15 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 }
                             }
                         }
+                        long id = 0;
                         boolean found = false;
                         if (channel != null) {
-                            found = true;
                             id = channel.getId();
-                            Log.d(TAG, "id = "+ id);
+                            Log.d(TAG, "_ID=" + mTunedChannel.getId() + ", _ID=" + id);
+                            found = mTunedChannel.getId() != id;
                         }
                         if (found) {
-                            retuneUri = Uri.parse("content://android.media.tv/channel");
-                            retuneUri = ContentUris.withAppendedId(retuneUri,id);
+                            retuneUri = TvContract.buildChannelUri(id);
                             Log.i(TAG, "retune to " + retuneUri);
                             notifyChannelRetuned(retuneUri);
                             //sync
