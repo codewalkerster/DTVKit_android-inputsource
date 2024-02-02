@@ -7,6 +7,7 @@ import android.os.HandlerThread;
 import androidx.annotation.NonNull;
 
 import com.droidlogic.dtvkit.cas.ird.IrdHandler;
+import com.droidlogic.dtvkit.cas.nagra.NagraHandler;
 
 import org.json.JSONObject;
 
@@ -14,6 +15,7 @@ public class CasUtils {
     private static CasUtils mInstance;
     private Handler mThreadHandler;
     private IrdHandler mIrdHandler;
+    private NagraHandler mNagraHandler;
     private CasCallback mCallback;
     private String mCurrentUri = null;
 
@@ -44,6 +46,7 @@ public class CasUtils {
 
     public void init(@NonNull Context context, @NonNull CasCallback callback) {
         mIrdHandler = new IrdHandler(context, mThreadHandler);
+        mNagraHandler = new NagraHandler(context, mThreadHandler);
         mCallback = callback;
     }
 
@@ -52,12 +55,17 @@ public class CasUtils {
         if (mIrdHandler != null) {
             mIrdHandler.destroy(context);
         }
+        if (mNagraHandler != null) {
+            mNagraHandler.destroy(context);
+        }
     }
 
     public void onCasSignal(@NonNull JSONObject casEvent) {
         String casSystem = casEvent.optString("cas_system", "");
         if ("irdeto".equalsIgnoreCase(casSystem)) {
             mIrdHandler.handleCasProvider(casEvent);
+        } else if ("Nagra".equalsIgnoreCase(casSystem)) {
+            mNagraHandler.handleCasProvider(casEvent);
         }
     }
 

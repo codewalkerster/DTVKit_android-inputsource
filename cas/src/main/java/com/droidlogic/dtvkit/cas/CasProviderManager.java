@@ -124,6 +124,7 @@ public class CasProviderManager {
                 "cas.irdeto.info.record_status".equals(id) ||
                 "cas.irdeto.info.playback_status".equals(id) ||
                 "cas.irdeto.info.timeshiftRecord_status".equals(id) ||
-                "cas.irdeto.info.fsu".equals(id);
+                "cas.irdeto.info.fsu".equals(id) ||
+                "cas.nagra.info.reset_ret".equals(id);
     }
 }

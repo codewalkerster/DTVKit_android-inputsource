@@ -11,6 +11,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.droidlogic.dtvkit.cas.CasHandler;
 import com.droidlogic.dtvkit.cas.CasProvider;
 import com.droidlogic.dtvkit.cas.CasProviderManager;
 import com.droidlogic.dtvkit.cas.CasUtils;
@@ -21,7 +22,7 @@ import org.json.JSONObject;
 import java.util.Iterator;
 import java.util.Locale;
 
-public class IrdHandler {
+public class IrdHandler extends CasHandler {
     private static final String TAG = "IrdHandler";
     private final Context mContext;
     private final ServiceHandleManager mServiceHandleManager;
@@ -112,6 +113,7 @@ public class IrdHandler {
         getCasInitialStatus();
     }
 
+    @Override
     public void onPlayStatusStart(@NonNull String dvbUri) {
         refreshStatusOnPlayingStart();
         String[] ids = dvbUri.replace("dvb://", "").split("\\.");
@@ -131,6 +133,7 @@ public class IrdHandler {
         }
     }
 
+    @Override
     public void onPlayingStopped() {
         //fake an fp message to clear fp cache
         try {
@@ -138,7 +141,7 @@ public class IrdHandler {
             fp.put("enhanced", true);
             fp.put("start", false);
             mFpManager.onFpAdded(fp);
-        } catch (Exception ignore) {};
+        } catch (Exception ignore) {}
     }
 
     public void threadHandleCasMessages(@NonNull Message msg) {
@@ -182,6 +185,7 @@ public class IrdHandler {
         }
     }
 
+    @Override
     public void handleCasProvider(@NonNull JSONObject casEvent) {
         Log.d(TAG, "handleCasProvider: " + casEvent);
         if (mThreadHandler == null || mCasProviderManager == null)
@@ -191,6 +195,15 @@ public class IrdHandler {
         if (type >= 1000 && casRequestValue == null) {
             //ioctl type
             return;
+        }
+
+        //valid cas info, set ca system id to irdeto
+        if (mCasSystem != CAS_SYSTEM_IRDETO) {
+            mCasSystem = CAS_SYSTEM_IRDETO;
+            mThreadHandler.postDelayed(
+                    () -> mCasProviderManager.putCasSettingsValue(mContext,
+                            "cas.system.id", "" + CAS_SYSTEM_IRDETO),
+                    0);
         }
         switch (type) {
             case CAS_MSG_TYPE_BANNER: {
@@ -578,6 +591,7 @@ public class IrdHandler {
                 true, mCasActionObserver);
     }
 
+    @Override
     public void destroy(@NonNull Context context) {
         if (mCasActionObserver != null) {
             context.getContentResolver().unregisterContentObserver(mCasActionObserver);
@@ -711,9 +725,13 @@ public class IrdHandler {
                     if (type == REQUEST_TYPE_PRODUCT_STATUS) {
                         casRequestResult = getMultipleProductStatus(casRet);
                     }
-                    ret.put("msg_type", type);
-                    ret.put("status", casRequestResult);
-                    return ret;
+                    if (casRequestResult != null &&
+                            casRequestResult.optString("Status")
+                                    .equalsIgnoreCase("OK")) {
+                        ret.put("msg_type", type);
+                        ret.put("status", casRequestResult);
+                        return ret;
+                    }
                 }
             } catch (Exception ignore) {
             }
@@ -735,6 +753,7 @@ public class IrdHandler {
         }
     }
 
+    @Override
     public void getCasInitialStatus() {
         if (mThreadHandler == null)
             return;
