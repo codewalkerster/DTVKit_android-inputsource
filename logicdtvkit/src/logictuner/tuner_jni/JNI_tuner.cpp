@@ -1526,8 +1526,9 @@ static void dtvkit_tuner_native_setup(JNIEnv *env, jobject thiz, jint tunerClien
     ALOGD("end:%s", __FUNCTION__);
 }
 
-static void dtvkit_tuner_native_release(JNIEnv *env, jobject thiz, jint tunerClientId) {
+static bool dtvkit_tuner_native_release(JNIEnv *env, jobject thiz, jint tunerClientId) {
     ALOGD("enter:%s, tunerClientId:%d", __FUNCTION__, tunerClientId);
+    bool result = false;
     std::lock_guard<std::mutex> tunerlock(gTunerLock);
     std::map<jint, jobject>::iterator iter = gTunerMap.find(tunerClientId);
     if (iter != gTunerMap.end()) {
@@ -1537,10 +1538,12 @@ static void dtvkit_tuner_native_release(JNIEnv *env, jobject thiz, jint tunerCli
         }
         gTunerMap.erase(iter);
         notifyTunerStatusChange(tunerClientId, TUNER_RELEASE);
+        result = true;
     } else {
         ALOGE("tuner release error, not have tuner Client");
     }
-    ALOGD("end:%s", __FUNCTION__);
+    ALOGD("end:%s, result = %d", __FUNCTION__, result);
+    return result;
 }
 
 static void dtvkit_tuner_native_tune_callback(JNIEnv *env, jobject tuner, jint tunerClientId, jint tuneEvent) {
@@ -1633,7 +1636,7 @@ static void dtvkit_tuner_native_testcase(JNIEnv *env) {
 static JNINativeMethod gTunerMethods[] = {
     {"nativeInit", "()V",  (void *)dtvkit_tuner_native_init},
     {"nativeSetup", "(I)V",  (void *)dtvkit_tuner_native_setup},
-    {"nativeRelease", "(I)V",  (void *)dtvkit_tuner_native_release},
+    {"nativeRelease", "(I)Z",  (void *)dtvkit_tuner_native_release},
     {"nativeTunerEventCallback", "(II)V",  (void *)dtvkit_tuner_native_tune_callback},
     {"nativeTunerSetSurface", "(Landroid/view/Surface;)V",  (void *)dtvkit_tuner_native_set_surface},
     {"nativeTunerTestCase", "()V",  (void *)dtvkit_tuner_native_testcase},

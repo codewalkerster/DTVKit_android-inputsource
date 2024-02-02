@@ -59,7 +59,7 @@ public class TunerAdapter {
 
     private static native void nativeInit();
     private native void nativeSetup(int tunerClientId);
-    private native void nativeRelease(int tunerClientId);
+    private native boolean nativeRelease(int tunerClientId);//to resolve multi-thread double release
     private native void nativeTunerEventCallback(int tunerClientId, int TuneEvent);
     private native void nativeTunerSetSurface(Surface surface);
     private native void nativeTunerTestCase();//For JNI Testcase
@@ -85,13 +85,16 @@ public class TunerAdapter {
 
     public void release() {
         Log.d(TAG, "release mTunerClientId :" + mTunerClientId);
-        nativeRelease(mTunerClientId);
-        releaseCallbackThread();
-        if (null != mTuner) {
-            mTuner.close();
-            mTuner = null;
+        if (true == nativeRelease(mTunerClientId)) {
+            releaseCallbackThread();
+            if (null != mTuner) {
+                mTuner.close();
+            }
+        } else {
+            Log.d(TAG, "mTunerClientId :" + mTunerClientId + " has released");
         }
         mTunerType = TUNER_TYPE_LIVE_0;
+        mTuner = null;
         mSurface = null;
         Log.d(TAG, "release finish");
     }
