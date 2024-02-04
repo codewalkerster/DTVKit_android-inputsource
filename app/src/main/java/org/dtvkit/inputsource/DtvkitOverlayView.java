@@ -62,8 +62,6 @@ public class DtvkitOverlayView extends FrameLayout {
     public DtvkitOverlayView(Context context, Handler mainHandler, boolean enableCC) {
         super(context);
         Log.i(TAG, "Created" + this);
-        mHbbTvFrameLayout = new HbbTvOverlayView(getContext());
-        addView(mHbbTvFrameLayout);
         mSubServerView = new SubtitleServerView(getContext(), mainHandler);
         addView(mSubServerView);
         nativeOverlayView = new MhegOverlayView(getContext(), mainHandler);
@@ -81,6 +79,8 @@ public class DtvkitOverlayView extends FrameLayout {
         addView(ciOverlayView);
         mEwbsAlarmOverlayView = new EWBSAlarmOverlayView(getContext());
         addView(mEwbsAlarmOverlayView);
+        mHbbTvFrameLayout = new HbbTvOverlayView(getContext());
+        addView(mHbbTvFrameLayout);
     }
 
     public void destroy() {
