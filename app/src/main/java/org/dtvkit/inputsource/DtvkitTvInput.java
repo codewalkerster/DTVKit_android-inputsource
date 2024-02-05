@@ -7249,9 +7249,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         boolean changed = false;
         String path;
 
+        //To support upgrade between dtvkit server and atf, need change pvr path
         if (true == FeatureUtil.getFeatureSupportTunerFramework()) {
+            newPath = SysSettingManager.convertMediaPathToMountedPath(newPath);
             path = newPath;
         } else {
+            newPath = SysSettingManager.convertStoragePathToMediaPath(newPath);
             path = SysSettingManager.convertMediaPathToMountedPath(newPath);
         }
 
