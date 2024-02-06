@@ -7210,6 +7210,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else {
                     if (null != mMainTuner) {
                         mMainTuner.setSurfaceToNative(surface);
+                        mBackgroundTuner.setSurfaceToNative(surface);//set surface to background tuner for prepare other using
                     }
                 }
             }

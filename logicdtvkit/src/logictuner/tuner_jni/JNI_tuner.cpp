@@ -232,8 +232,8 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
         jobject tuner = iter->second;
         if (NULL != tuner) {
             ALOGD("clientId :%d, type : %d, tuner :%p,", iter->first, (int)env->GetIntField(tuner, gTunerFields.tunerType), tuner);
-            if (TUNER_TYPE_LIVE_0 == tunerType) {
-                if (TUNER_TYPE_LIVE_0 == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
+            if ((TUNER_TYPE_LIVE_0 == tunerType) || (TUNER_TYPE_LIVE_1 == tunerType)) {
+                if (tunerType == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
                     tunerClientId = iter->first;
                 } else if (TUNER_TYPE_SCAN == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
                     tunerScanClientId = iter->first;
@@ -254,7 +254,7 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
     if ((TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId) && (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID != tunerScanClientId)) {
         tunerClientId = tunerScanClientId;//under scan status only have scan type tuner.
     }
-    if ((TUNER_TYPE_LIVE_0 == tunerType) && (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId)) {
+    if (((TUNER_TYPE_LIVE_0 == tunerType) || (TUNER_TYPE_LIVE_1 == tunerType)) && (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId)) {
         tunerClientId = tunerBackgroundClientId;//for background function,when session release, need use background tuner to do work
     }
     ALOGD("end:%s, tunerClientId:%d", __FUNCTION__, tunerClientId);
