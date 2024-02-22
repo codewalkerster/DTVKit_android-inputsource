@@ -431,7 +431,7 @@ public class SysSettingManager {
     }
 
     public static String convertMediaPathToMountedPath(String mediaPath) {
-        String result = null;
+        String result = mediaPath;
         if (isMediaPath(mediaPath)) {
             String[] split = mediaPath.split("/");
             if (split != null && split.length >= 4) {
@@ -447,7 +447,7 @@ public class SysSettingManager {
     }
 
     public static String convertStoragePathToMediaPath(String mountPath) {
-        String result = null;
+        String result = mountPath;
         if (isStoragePath(mountPath)) {
             String[] split = mountPath.split("/");
             if (split != null && split.length >= 3) {
