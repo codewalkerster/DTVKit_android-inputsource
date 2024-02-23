@@ -43,6 +43,10 @@ public class CasHelper {
                             onPlayingStopped();
                         }
                     }
+                } else if ("RecordingStatusChanged".equals(signal)) {
+                    if (data != null) {
+                        onRecordingStatusChanged();
+                    }
                 }
             };
 
@@ -163,6 +167,18 @@ public class CasHelper {
                 Method ins = mCasUtils.getDeclaredMethod("getInstance");
                 Object casUtilsInstance = ins.invoke(null);
                 Method onPlayingStopped = mCasUtils.getDeclaredMethod("onPlayingStopped");
+                onPlayingStopped.invoke(casUtilsInstance);
+            }
+        } catch (Exception ignore) {}
+    }
+
+    private synchronized void onRecordingStatusChanged() {
+        try {
+            if (mCasUtils != null) {
+                Method ins = mCasUtils.getDeclaredMethod("getInstance");
+                Object casUtilsInstance = ins.invoke(null);
+                Method onPlayingStopped =
+                        mCasUtils.getDeclaredMethod("onRecordingStatusChanged");
                 onPlayingStopped.invoke(casUtilsInstance);
             }
         } catch (Exception ignore) {}

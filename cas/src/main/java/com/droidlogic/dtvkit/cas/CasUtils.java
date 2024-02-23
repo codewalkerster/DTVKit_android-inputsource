@@ -76,6 +76,9 @@ public class CasUtils {
         if (mIrdHandler != null) {
             mIrdHandler.onPlayStatusStart(uri);
         }
+        if (mNagraHandler != null) {
+            mNagraHandler.onPlayStatusStart(uri);
+        }
     }
 
     public void onPlayingStopped() {
@@ -84,6 +87,21 @@ public class CasUtils {
         }
         if (mIrdHandler != null) {
             mIrdHandler.onPlayingStopped();
+        }
+        if (mNagraHandler != null) {
+            mNagraHandler.onPlayingStopped();
+        }
+    }
+
+    public void onRecordingStatusChanged() {
+        synchronized (this) {
+            mCurrentUri = null;
+        }
+        if (mIrdHandler != null) {
+            mIrdHandler.onRecordingStatusChanged();
+        }
+        if (mNagraHandler != null) {
+            mNagraHandler.onRecordingStatusChanged();
         }
     }
 

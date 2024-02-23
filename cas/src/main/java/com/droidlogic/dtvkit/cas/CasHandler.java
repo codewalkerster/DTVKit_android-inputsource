@@ -14,5 +14,6 @@ public abstract class CasHandler {
     public abstract void handleCasProvider(@NonNull JSONObject casEvent);
     public abstract void onPlayStatusStart(@NonNull String uri);
     public abstract void onPlayingStopped();
+    public abstract void onRecordingStatusChanged();
     public abstract void getCasInitialStatus();
 }

@@ -166,6 +166,10 @@ public class NagraHandler extends CasHandler {
     }
 
     @Override
+    public void onRecordingStatusChanged() {
+    }
+
+    @Override
     public void getCasInitialStatus() {
         mThreadHandler.postDelayed(() -> {
             JSONObject ret = casRequest(CAS_REQUEST_INVOKE_SYSTEM_INFO);

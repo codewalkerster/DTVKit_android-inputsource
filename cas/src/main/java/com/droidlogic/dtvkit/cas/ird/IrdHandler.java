@@ -142,6 +142,15 @@ public class IrdHandler extends CasHandler {
             fp.put("start", false);
             mFpManager.onFpAdded(fp);
         } catch (Exception ignore) {}
+
+        mThreadHandler.removeCallbacks(mServiceStatusUpdater);
+        mThreadHandler.postDelayed(mServiceStatusUpdater, DEFAULT_STATUS_DELAY);
+    }
+
+    @Override
+    public void onRecordingStatusChanged() {
+        mThreadHandler.removeCallbacks(mServiceStatusUpdater);
+        mThreadHandler.postDelayed(mServiceStatusUpdater, DEFAULT_STATUS_DELAY);
     }
 
     public void threadHandleCasMessages(@NonNull Message msg) {
@@ -391,7 +400,7 @@ public class IrdHandler extends CasHandler {
                 String emType = (type == CAS_MSG_TYPE_ECM_MONITOR_STATUS) ? "ecm" : "emm";
                 String id = "cas.irdeto.info.service_status." + emType + ".monitoring";
                 mThreadHandler.post(() -> {
-                    mServiceHandleManager.parseMonitoringStatus(emType, casEvent);
+                    mServiceHandleManager.parseMonitoringStatus(casEvent);
                     mCasProviderManager.putCasSettingsValue(mContext, id,
                             mServiceHandleManager.createMonitoringProvider(emType));
                 });
@@ -630,17 +639,14 @@ public class IrdHandler extends CasHandler {
     }
 
     private void sendServiceMonitoringInLooper(boolean start) {
-        int emmHandle = mServiceHandleManager.getEmmHandle();
-        int ecmHandle = mServiceHandleManager.getEcmHandle();
         try {
-            JSONObject emmArgs = new JSONObject();
-            emmArgs.put("handle", emmHandle);
-            emmArgs.put("start", start ? 1 : 0);
-            casRequest(REQUEST_TYPE_SERVICE_MONITOR, emmArgs);
-            JSONObject ecmArgs = new JSONObject();
-            ecmArgs.put("handle", ecmHandle);
-            ecmArgs.put("start", start ? 1 : 0);
-            casRequest(REQUEST_TYPE_SERVICE_MONITOR, ecmArgs);
+            int[] ids = mServiceHandleManager.getServiceHandles();
+            for (int id : ids) {
+                JSONObject args = new JSONObject();
+                args.put("handle", id);
+                args.put("start", start ? 1 : 0);
+                casRequest(REQUEST_TYPE_SERVICE_MONITOR, args);
+            }
         } catch (Exception ignored) {}
     }
 
