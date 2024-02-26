@@ -228,6 +228,15 @@ public class FilterAdapter {
         } else {
             Log.e(TAG, "filter has close");
         }
+/* test code for dump filter buffer data
+        if (null != buffer) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0 ; i < size; i++) {
+                sb.append(String.format(" %02x", buffer[i]));
+            }
+            Log.d(TAG, "dump : " + sb.toString());
+        }
+*/
         return result;
     }
 

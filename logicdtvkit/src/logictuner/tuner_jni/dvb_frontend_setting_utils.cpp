@@ -131,6 +131,16 @@ jobject dvb_utils_getDvbsFrontendSettingsObject(JNIEnv *env, Dvbs_Frontend_Setti
                                            dvbsCodeRateObject, dvbsFrontendSettings.symbol_rate, dvbsFrontendSettings.roll_off, dvbsFrontendSettings.pilot,
                                            dvbsFrontendSettings.input_streamId,dvbsFrontendSettings.standard, dvbsFrontendSettings.vcm,
                                            dvbsFrontendSettings.scan_type, dvbsFrontendSettings.isDiseqcRxMessage);
+        if (nullptr != dvbsSettingObject) {
+            jlong endFrequency = (jlong)dvbsFrontendSettings.end_frequency;
+            if (endFrequency > 0) {
+                jmethodID setEndFrequencyMethodID = env->GetMethodID(dvbsSettingClass, "setEndFrequencyLong", "(J)V");
+                if (nullptr != setEndFrequencyMethodID) {
+                    env->CallVoidMethod(dvbsSettingObject, setEndFrequencyMethodID, endFrequency);
+                    ALOGD("%s : set end frequency : %lu", __FUNCTION__, dvbsFrontendSettings.end_frequency);
+                }
+            }
+        }
     } else {
         dvbsSettingInit = env->GetMethodID(dvbsSettingClass, "<init>", "(IILandroid/media/tv/tuner/frontend/DvbsCodeRate;IIIIII)V");
         dvbsSettingObject = env->NewObject(dvbsSettingClass, dvbsSettingInit,dvbsFrontendSettings.frequency, dvbsFrontendSettings.modulation,

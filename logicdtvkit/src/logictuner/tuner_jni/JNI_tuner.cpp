@@ -1162,7 +1162,16 @@ jint Am_filter_read(jobject filter, char * buffer, long offset, long size) {
     if (0 != readLength) {
         env->GetByteArrayRegion(readBuffer, 0, readLength, (jbyte *)buffer);
     }
-
+/* test code for dump filter buffer data
+    char *test = new char[readLength+1];
+    if (0 != readLength) {
+        env->GetByteArrayRegion(readBuffer, 0, readLength, (jbyte *)test);
+        ALOGE("%s : test", __FUNCTION__);
+    }
+    for (int i = 0; i < readLength; i++) {
+        ALOGD("%s:, 0x%x", __FUNCTION__, test[i]);
+    }
+*/
     env->DeleteLocalRef(localFilter);
     env->DeleteLocalRef(readBuffer);
     ReleaseEnv(attached);
