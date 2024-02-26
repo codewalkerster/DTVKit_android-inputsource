@@ -896,16 +896,13 @@ public class DtvkitEpgSync extends EpgSyncJobService {
             String[] DVB_ContentRating = {"DVB_4", "DVB_5", "DVB_6", "DVB_7", "DVB_8", "DVB_9", "DVB_10",
                     "DVB_11", "DVB_12", "DVB_13", "DVB_14", "DVB_15", "DVB_16", "DVB_17", "DVB_18", "DVB_19"};
 
-            parentalRating += 3; //minimum age = rating + 3 years
-//        Log.d(TAG, "parseParentalRatings parentalRating:"+ parentalRating + ", title = " + title);
-            if (parentalRating >= 4 && parentalRating <= 19) {
-                TvContentRating r = TvContentRating.createRating(ratingDomain, ratingSystemDefinition, DVB_ContentRating[parentalRating - 4], (String) null);
-                if (r != null) {
-                    ratings_array[0] = r;
-                    Log.d(TAG, "parse ratings add rating:" + r.flattenToString() + ", title = " + title);
-                }
-            } else {
+            if (parentalRating == 0) {
+                //no rating
                 ratings_array = null;
+            } else {
+                TvContentRating r = TvContentRating.createRating(ratingDomain,
+                    ratingSystemDefinition, "DVB_" + (parentalRating + 3), (String) null);
+                ratings_array[0] = r;
             }
         }
 
