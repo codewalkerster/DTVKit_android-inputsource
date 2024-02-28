@@ -184,6 +184,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     private String mCurrentRatingSystem = "DVB";
 
     private String mInputId;
+    private PowerManager.WakeLock mDTVKitWakeLock;
 
     private TvMTSSetting mTvMTSSetting;
 
@@ -1689,8 +1690,39 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     mainSession.sendBundleToAppByTif(ConstantManager.ACTION_CI_PLUS_INFO, bundle);
                 }
             }
+        } else if (signal.equals("acquireWakeLock")) {
+            String reason = data.optString("reason");
+            PowerManager pm = getSystemService(PowerManager.class);
+            mDTVKitWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DTVKit_0");
+            if (mDTVKitWakeLock != null) {
+                Log.d(TAG, "acquireWakeLock " + mDTVKitWakeLock);
+                mDTVKitWakeLock.acquire();
+            }
+        } else if (signal.equals("releaseWakeLock")) {
+            String reason = data.optString("reason");
+            if (mDTVKitWakeLock != null) {
+                Log.d(TAG, "releaseWakeLock " + mDTVKitWakeLock.isHeld());
+                if (mDTVKitWakeLock.isHeld()) {
+                    mDTVKitWakeLock.release();
+                }
+                mDTVKitWakeLock = null;
+            }
+        } else if (signal.equals("setExactAlarm")) {
+            long pendingTime = data.optLong("time"); // milliseconds
+            AlarmManager alarm = getSystemService(AlarmManager.class);
+            PendingIntent pendingIntent = buildPendingIntent();
+            alarm.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + pendingTime, pendingIntent);
         }
     };
+
+    private PendingIntent buildPendingIntent() {
+        Intent intent = new Intent("DTVKit_Alarm");
+        intent.addFlags(0x01000000/*Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND*/);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        Log.d(TAG, "buildPendingIntent = " + pendingIntent);
+        return pendingIntent;
+    }
 
     private final DtvkitGlueClient.SignalHandler mCIPLUSCardHandler = (signal, data) -> {
         if (signal.equals("CIPLUS_CARD_INSERT")) {
