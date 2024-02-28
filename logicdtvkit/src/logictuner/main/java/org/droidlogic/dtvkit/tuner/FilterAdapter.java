@@ -194,9 +194,10 @@ public class FilterAdapter {
     private void close() {
         if (null != mFilter) {
             if (DEBUG) Log.d(TAG, "close filter id :" + mFilter.getId());
+            setCallback(0);
             synchronized (mLock) {
                 mFilterStatus = FILTER_CLOSE;
-                setCallback(0);
+                //setCallback(0);
                 mFilter.close();
                 mFilter = null;
                 if (mInternalExecutor != null) {
@@ -207,6 +208,7 @@ public class FilterAdapter {
                 mFilterCallbackContext = 0;
                 mTunerClientId = 0;
             }
+            if (DEBUG) Log.d(TAG, "close filter finish");
         } else {
             Log.e(TAG, "filter has close");
         }
