@@ -172,3 +172,20 @@ jobject filter_utils_getAVTsFilterConfiguration(JNIEnv *env, TS_Filter_Configura
     ALOGE("End:%s, %p", __FUNCTION__, tsFilterConfigurationObject);
     return tsFilterConfigurationObject;
 }
+
+jobject filter_utils_getTsFilterConfiguration(JNIEnv *env, int pid) {
+    ALOGE("Start:%s", __FUNCTION__);
+
+    if (NULL == env) {
+        ALOGD("%s : fail, env is null", __FUNCTION__);
+        return NULL;
+    }
+
+    //get ts filter configuration object
+    jclass tsFilterConfigurationClass = env->FindClass(TS_FILTER_CONFIGURATION_CLASS);
+    jmethodID tsFilterConfigurationInit = env->GetMethodID(tsFilterConfigurationClass, "<init>", "(Landroid/media/tv/tuner/filter/Settings;I)V");
+    jobject tsFilterConfigurationObject = env->NewObject(tsFilterConfigurationClass, tsFilterConfigurationInit, nullptr, pid);
+
+    ALOGE("End:%s, %p, %d", __FUNCTION__, tsFilterConfigurationObject, pid);
+    return tsFilterConfigurationObject;
+}
