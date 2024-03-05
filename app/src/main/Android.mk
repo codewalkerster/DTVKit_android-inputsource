@@ -29,6 +29,11 @@ LOCAL_STATIC_JAVA_LIBRARIES += \
    amlogic-hbbtv-client \
    guava-android-31
 
+ifeq ($(PRODUCT_SUPPORT_TUNER_FRAMEWORK), true)
+    LOCAL_REQUIRED_MODULES += droidlogic.dtvkit.atf.wrapper
+endif
+LOCAL_STATIC_JAVA_LIBRARIES += droidlogic.dtvkit.atf.aidl
+
 LOCAL_STATIC_JAVA_AAR_LIBRARIES += exo-player
 
 ifneq (0, $(shell expr $(PLATFORM_SDK_VERSION) \>= 29))
@@ -49,11 +54,11 @@ LOCAL_JNI_SHARED_LIBRARIES := libdtvkit_jni
 
 ifeq (1, $(strip $(shell expr $(PLATFORM_VERSION) \< 12)))
 LOCAL_JAVA_LIBRARIES += droidlogic droidlogic.dtvkit.software.core
-LOCAL_REQUIRED_MODULES := droidlogic droidlogic.dtvkit.software.core
+LOCAL_REQUIRED_MODULES += droidlogic droidlogic.dtvkit.software.core
 LOCAL_FULL_LIBS_MANIFEST_FILES := \
   $(LOCAL_PATH)/AndroidManifest.xml
 else
-LOCAL_REQUIRED_MODULES := droidlogic.software.core droidlogic.dtvkit.software.core
+LOCAL_REQUIRED_MODULES += droidlogic.software.core droidlogic.dtvkit.software.core
 LOCAL_JAVA_LIBRARIES += droidlogic.software.core droidlogic.dtvkit.software.core
 LOCAL_USES_LIBRARIES := droidlogic.software.core droidlogic.dtvkit.software.core
 LOCAL_FULL_LIBS_MANIFEST_FILES := \

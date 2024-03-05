@@ -158,6 +158,10 @@
                 <action android:name="com.droidlogic.dtvkit.inputsource.service.DtvkitSettingService" />
             </intent-filter>
         </service>
+        <service
+            android:name=".service.GlueWrapperService"
+            android:exported="true">
+        </service>
         <activity android:exported="true"
              android:name="com.droidlogic.dtvkit.inputsource.FvpScanActivity">
             <intent-filter>
