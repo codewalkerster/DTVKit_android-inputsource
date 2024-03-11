@@ -50,6 +50,7 @@ public class TunerAdapter {
     private CallbackExecutor mDemuxExecutor;
     private NativeScanCallback mNativeScanCallback;
     private Surface mSurface;
+    private Surface mPipSurface;
     //private Handler mCallbackHandler;
     //private HandlerThread mCallbackThread;
     private long mTuneEventListenerContext = 0;
@@ -99,10 +100,16 @@ public class TunerAdapter {
         Log.d(TAG, "release finish");
     }
 
-    public void setSurfaceToNative(Surface surface) {
-        Log.d(TAG, "setSurfaceToNative mTunerClientId : " + mTunerClientId + "surface:" + surface);
+    public void saveMainSurface(Surface surface) {
+        Log.d(TAG, "saveMainSurface mTunerClientId : " + mTunerClientId + "main surface:" + surface);
         mSurface = surface;
-        nativeTunerSetSurface(surface);
+        //nativeTunerSetSurface(surface);
+    }
+
+    public void savePipSurface(Surface surface) {
+        Log.d(TAG, "savePipSurface mTunerClientId : " + mTunerClientId + "pip surface:" + surface);
+        mPipSurface = surface;
+        //nativeTunerSetSurface(surface);
     }
 
     public void startTestCase() {

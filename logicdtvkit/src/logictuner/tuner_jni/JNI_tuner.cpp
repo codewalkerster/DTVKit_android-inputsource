@@ -55,6 +55,7 @@ struct tuner_fields {
     jfieldID nativeTunerContext;
     jfieldID tunerType;
     jfieldID surface;
+    jfieldID pipSurface;
 };
 
 struct filter_fields {
@@ -232,7 +233,7 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
         jobject tuner = iter->second;
         if (NULL != tuner) {
             ALOGD("clientId :%d, type : %d, tuner :%p,", iter->first, (int)env->GetIntField(tuner, gTunerFields.tunerType), tuner);
-            if ((TUNER_TYPE_LIVE_0 == tunerType) || (TUNER_TYPE_LIVE_1 == tunerType)) {
+            if ((TUNER_TYPE_LIVE_0 == tunerType) || (TUNER_TYPE_LIVE_1 == tunerType) || (TUNER_TYPE_LIVE_2 == tunerType)) {
                 if (tunerType == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
                     tunerClientId = iter->first;
                 } else if (TUNER_TYPE_SCAN == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
@@ -249,12 +250,12 @@ int Am_tuner_getTunerClientIdByType(int tunerType) {
         }
     }
     ReleaseEnv(attached);
-    ALOGD("tunerClientId:%d, tunerScanClientId : %d, tunerBackgroundClientId : %d", tunerClientId, tunerScanClientId,
+    ALOGD("tunerClientId : %d, tunerScanClientId : %d, tunerBackgroundClientId : %d", tunerClientId, tunerScanClientId,
         tunerBackgroundClientId);
     if ((TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId) && (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID != tunerScanClientId)) {
         tunerClientId = tunerScanClientId;//under scan status only have scan type tuner.
     }
-    if (((TUNER_TYPE_LIVE_0 == tunerType) || (TUNER_TYPE_LIVE_1 == tunerType)) && (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId)) {
+    if (((TUNER_TYPE_LIVE_0 == tunerType) || (TUNER_TYPE_LIVE_1 == tunerType) || (TUNER_TYPE_LIVE_2 == tunerType)) && (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId)) {
         tunerClientId = tunerBackgroundClientId;//for background function,when session release, need use background tuner to do work
     }
     ALOGD("end:%s, tunerClientId:%d", __FUNCTION__, tunerClientId);
@@ -885,6 +886,29 @@ jobject Am_tuner_getSurfaceByTunerClient(int tunerClientId) {
     if (NULL != surface) {
         globalSurface = env->NewGlobalRef(surface);
     }
+    env->DeleteLocalRef(surface);
+    ReleaseEnv(attached);
+    ALOGE("End %s surface : %p", __FUNCTION__, globalSurface);
+    return globalSurface;
+}
+
+jobject Am_tuner_getPipSurfaceByTunerClient(int tunerClientId) {
+    ALOGE("Start %s:, tunerClientId : %d", __FUNCTION__, tunerClientId);
+    bool attached = false;
+    jobject globalSurface = NULL;
+    JNIEnv *env = Am_tuner_getJNIEnv(&attached);
+    jobject tuner = getTuner(tunerClientId);
+
+    if ((NULL == env) || (NULL == tuner)) {
+        ReleaseEnv(attached);
+        ALOGE("%s: input parameter error", __FUNCTION__);
+        return NULL;
+    }
+    jobject surface = env->GetObjectField(tuner, gTunerFields.pipSurface);
+    if (NULL != surface) {
+        globalSurface = env->NewGlobalRef(surface);
+    }
+    env->DeleteLocalRef(surface);
     ReleaseEnv(attached);
     ALOGE("End %s surface : %p", __FUNCTION__, globalSurface);
     return globalSurface;
@@ -1457,6 +1481,7 @@ static void dtvkit_tuner_native_init (JNIEnv *env) {
         GET_METHOD_ID(gTunerFields.getTuenr, tunerClazz, "getTuenr", "()Landroid/media/tv/tuner/Tuner;");
         GET_FIELD_ID(gTunerFields.tunerType, tunerClazz, "mTunerType", "I");
         GET_FIELD_ID(gTunerFields.surface, tunerClazz, "mSurface", "Landroid/view/Surface;");
+        GET_FIELD_ID(gTunerFields.pipSurface, tunerClazz, "mPipSurface", "Landroid/view/Surface;");
     } else {
         ALOGE("ERROR: TunerAdapter find class error\n");
     }

@@ -7118,7 +7118,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 if (null == mDvrPlaybackTuner) {
                     Tuner tuner = new Tuner(mContext, null, PRIORITY_HINT_USE_CASE_TYPE_PLAYBACK);
                     mDvrPlaybackTuner = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_DVR_PLAY);
-                    mDvrPlaybackTuner.setSurfaceToNative(mSurface);//Test For Playback
+                    mDvrPlaybackTuner.saveMainSurface(mSurface);//Test For Playback
                 } else {
                     Log.i(TAG, "DvrPlaybackTuner has instance mDvrPlaybackTuner : " + mDvrPlaybackTuner);
                 }
@@ -7198,10 +7198,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             if (FeatureUtil.getFeatureSupportTunerFramework() && FeatureUtil.getFeatureSupportFcc()) {
                 Log.d(TAG, "setFCCTunerSurface surface : " + surface);
                 if (null != mTunerAdapterFCCNext) {
-                    mTunerAdapterFCCNext.setSurfaceToNative(surface);
+                    mTunerAdapterFCCNext.saveMainSurface(surface);
                 }
                 if (null != mTunerAdapterFCCPrev) {
-                    mTunerAdapterFCCPrev.setSurfaceToNative(surface);
+                    mTunerAdapterFCCPrev.saveMainSurface(surface);
                 }
             }
         }
@@ -7237,17 +7237,27 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 Log.d(TAG, "setLiveTunerSurface surface : " + surface + " isPip : " + isPip);
                 if (true == isPip) {
                     if (null != mPipTunerAdapter) {
-                        mPipTunerAdapter.setSurfaceToNative(surface);
+                        mPipTunerAdapter.savePipSurface(surface);
+                    }
+                    if (null != mMainTuner) {
+                        mMainTuner.savePipSurface(surface);
+                        mBackgroundTuner.savePipSurface(surface);//PIP may be need get surface dynamically
                     }
                 } else {
+                    if (null != mPipTunerAdapter) {
+                        mPipTunerAdapter.saveMainSurface(surface);
+                    }
+
                     if (null != mMainTuner) {
-                        mMainTuner.setSurfaceToNative(surface);
-                        mBackgroundTuner.setSurfaceToNative(surface);//set surface to background tuner for prepare other using
+                        mMainTuner.saveMainSurface(surface);
+                        mBackgroundTuner.saveMainSurface(surface);//set surface to background tuner for prepare other using
                     } else {
                         Log.d(TAG, "setLiveTunerSurface error main tuner is null need new one");
                         initLiveTuner(outService, null, false);
-                        mMainTuner.setSurfaceToNative(surface);
-                        mBackgroundTuner.setSurfaceToNative(surface);
+                        if (null != mMainTuner) {
+                            mMainTuner.saveMainSurface(surface);
+                        }
+                        mBackgroundTuner.saveMainSurface(surface);//set surface to background tuner for prepare other using
                     }
                 }
             }
