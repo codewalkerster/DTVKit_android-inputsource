@@ -772,6 +772,10 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
             args.put("quick");
             args.put(opType);
             args.put(mSearchByManualTKGS ? "manual" :  "fti");
+        } else if(opType == DvbsParameterManager.OPERATOR_FRANSAT) {
+            args.put("quick");
+            args.put(opType);
+            args.put("automatic"); // TODO: manual
         } else {
             /*[scanmode, network, {lnblist: [{lnb:1},{lnb:2},..]}]*/
             int id = mDataManager.getIntParameters(DataManager.KEY_SEARCH_MODE);
@@ -822,11 +826,11 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
         if (opType == DvbsParameterManager.OPERATOR_AIRTEL) {
             args.put(DvbsParameterManager.OPERATOR_AIRTEL_BOUQUETID);
         }
-        else if (opType == DvbsParameterManager.OPERATOR_SUNDIRECT) {
-            args.put(DvbsParameterManager.OPERATOR_SUNDIRECT_BOUQUETID);
-        }
         else if (opType == DvbsParameterManager.OPERATOR_CANALPLUS) {
             args.put(DvbsParameterManager.OPERATOR_CANALPLUS_BOUQUETID);
+        }
+        else if (opType == DvbsParameterManager.OPERATOR_FRANSAT) {
+            args.put(DvbsParameterManager.OPERATOR_FRANSAT_BOUQUETID);
         }
 
         return args;
