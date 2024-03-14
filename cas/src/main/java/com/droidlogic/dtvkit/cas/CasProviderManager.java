@@ -1,5 +1,6 @@
 package com.droidlogic.dtvkit.cas;
 
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -73,7 +74,7 @@ public class CasProviderManager {
         values.put("scroll", scroll);
         values.put("text", message);
         values.put("option", option);
-        values.put("flag1", flag1);
+        values.put("flag1", msgType == 1 ? 1 : flag1);//force message default set to 1
         if (msgType <= 1) {
             try (Cursor cursor = context.getContentResolver().query(
                     uri,
@@ -86,9 +87,12 @@ public class CasProviderManager {
                     byte[] data = cursor.getBlob(1);
                     if (Arrays.equals(data, message)) {
                         if (msgType == 1) {
-                            //remove same force messages
-                            context.getContentResolver().delete(
-                                    uri, "_id = ?", new String[]{String.valueOf(id)});
+                            //found same force message, update for attributes
+                            context.getContentResolver().update(uri,
+                                    values, "_id = ?", new String[]{String.valueOf(id)});
+                            context.getContentResolver().notifyChange(
+                                    ContentUris.withAppendedId(uri, id), null);
+                            return;
                         } else {
                             //has same normal message, skip it
                             return;
@@ -114,8 +118,9 @@ public class CasProviderManager {
     public void cleanForceMessagesOnStart(@NonNull Context context) {
         Uri attributedUri = Uri.parse(CasProvider.CONTENT_URI
                 + CasProvider.TABLE_SCREEN_MESSAGES);
-        context.getContentResolver().delete(attributedUri,
-                "message_type >= 1", null);
+        String deleteSelection = "message_type > 1 or " +
+                "(message_type=1 and attributed=1 and enhanced=1 and duration=0)";
+        context.getContentResolver().delete(attributedUri, deleteSelection, null);
     }
 
     private boolean skipCheckDuplicatedId(@NonNull String id) {
