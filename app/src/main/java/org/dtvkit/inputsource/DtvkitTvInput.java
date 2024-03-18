@@ -5520,7 +5520,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else if (signal.equals("AudioTrackSelected")) {
                     // after track changed, should update sound mode again
                     notifySessionEvent(ConstantManager.ACTION_AUDIO_TRACK_SELECTED, null);
-                    sendUpdateTrackMsg(PlayerState.PLAYING, recordedProgram != null);
+                    sendUpdateTrackMsg(PlayerState.PLAYING, recordedProgram != null, false);
                     // TODO: MAY be merged later, HandleAudioEvent is invalid in ATF
                     if (FeatureUtil.getFeatureSupportTunerFramework()) {
                         DtvkitTvInputSession main = getMainTunerSession();
