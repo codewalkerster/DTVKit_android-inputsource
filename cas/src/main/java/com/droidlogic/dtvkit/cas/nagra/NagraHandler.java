@@ -27,8 +27,10 @@ public class NagraHandler extends CasHandler {
     protected CasProviderManager mCasProviderManager;
 
     private static final int CAS_MSG_ERROR_BANNER = 0;
+    private static final int CAS_MSG_PROVISION_STATUS = 3;
     private static final int CAS_REQUEST_INVOKE_SYSTEM_INFO = 3000;
-    private static final int CAS_REQUEST_INVOKE_FACTORY_RESET = 4000;
+    private static final int CAS_REQUEST_INVOKE_FACTORY_RESET = 3001;
+    private static final int CAS_REQUEST_INVOKE_PROVISION_STATUS = 3002;
 
     private static final String NAGRA_FAC_RESET_ACTION = "action.nagra.reset";
 
@@ -99,6 +101,17 @@ public class NagraHandler extends CasHandler {
                 }
                 break;
             }
+            case CAS_MSG_PROVISION_STATUS: {
+                String id = "cas.nagra.info.provision_status";
+                JSONObject value = casEvent.optJSONObject("content");
+                if (value != null) {
+                    mThreadHandler.postDelayed(() ->
+                                    mCasProviderManager
+                                            .putCasSettingsValue(mContext, id, value.toString()),
+                            50);
+                }
+                break;
+            }
             case CAS_REQUEST_INVOKE_SYSTEM_INFO: {
                 String id = "cas.nagra.info.system";
                 JSONObject value = null;
@@ -108,13 +121,35 @@ public class NagraHandler extends CasHandler {
                     String casRequestResult = casRequestValue.optString("Status", "fail");
                     if ("OK".equalsIgnoreCase(casRequestResult)) {
                         value = casRequestValue.optJSONObject("Result");
-                    } else if ("Unavailable".equalsIgnoreCase(casRequestResult)) {
-                        mThreadHandler.postDelayed(this::getCasInitialStatus, 2000);
                     }
                 }
                 //then try if from jCas
                 if (value == null ) {
                     value = casEvent.optJSONObject("system_info");
+                }
+                if (value != null) {
+                    JSONObject finalValue = value;
+                    mThreadHandler.postDelayed(() ->
+                                    mCasProviderManager.putCasSettingsValue(mContext,
+                                            id, finalValue.toString()),
+                            50);
+                }
+                break;
+            }
+            case CAS_REQUEST_INVOKE_PROVISION_STATUS: {
+                String id = "cas.nagra.info.provision_status";
+                JSONObject value = null;
+                //first try if from cas hal
+                JSONObject casRequestValue = casEvent.optJSONObject("status");
+                if (casRequestValue != null) {
+                    String casRequestResult = casRequestValue.optString("Status", "fail");
+                    if ("OK".equalsIgnoreCase(casRequestResult)) {
+                        value = casRequestValue.optJSONObject("Result");
+                    }
+                }
+                //then try if from jCas
+                if (value == null ) {
+                    value = casEvent.optJSONObject("provision_status");
                 }
                 if (value != null) {
                     JSONObject finalValue = value;
@@ -133,12 +168,9 @@ public class NagraHandler extends CasHandler {
                 if (casRequestValue != null) {
                     String casRequestResult = casRequestValue.optString("Status", "fail");
                     if ("OK".equalsIgnoreCase(casRequestResult)) {
-                        String r = casRequestValue.optString("Result");
-                        if ("Success".equalsIgnoreCase(r)) {
-                            ret = 1;
-                        } else {
-                            ret = 0;
-                        }
+                        ret = 1;
+                    } else {
+                        ret = 0;
                     }
                 }
                 //then try if from jCas
@@ -173,6 +205,12 @@ public class NagraHandler extends CasHandler {
     public void getCasInitialStatus() {
         mThreadHandler.postDelayed(() -> {
             JSONObject ret = casRequest(CAS_REQUEST_INVOKE_SYSTEM_INFO);
+            if (ret != null) {
+                handleCasProvider(ret);
+            }
+        }, 200);
+        mThreadHandler.postDelayed(() -> {
+            JSONObject ret = casRequest(CAS_REQUEST_INVOKE_PROVISION_STATUS);
             if (ret != null) {
                 handleCasProvider(ret);
             }
