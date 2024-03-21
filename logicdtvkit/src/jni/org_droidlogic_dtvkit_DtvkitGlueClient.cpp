@@ -804,7 +804,7 @@ static void setSubtitleOn(int pid, uint16_t onid, uint16_t tsid, int type, int m
         if ((type == SUBTITLE_SUB_TYPE_TTX)) {
             mSubContext->ttControl(TT_EVENT_GO_TO_PAGE, magazine, page, teletext_region_id, 0);
         } else if (type == SUBTITLE_SUB_TYPE_TTX_SUB) {
-            mSubContext->ttControl(TT_EVENT_GO_TO_SUBTITLE, magazine, page, 0, 0);
+            mSubContext->ttControl(TT_EVENT_GO_TO_SUBTITLE, magazine, page, -1, 0); //region_id: -1, use the id in stream
         } else if (type == SUBTITLE_SUB_TYPE_DVB) {
             if (magazine != 0 || page != 0) {
                 mSubContext->setCompositionPageId(magazine);
