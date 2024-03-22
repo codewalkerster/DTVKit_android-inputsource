@@ -5939,9 +5939,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             mTunedChannel = channel;
                             if (playerState == PlayerState.PLAYING) {
                                 Log.i(TAG, "re-notifyVideoAvailable");
-                                if (mTunedChannel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO)) {
-                                    notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_AUDIO_ONLY);
-                                } else {
+                                if (mTunedChannel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO_VIDEO)) {
                                     notifyVideoAvailable();
                                 }
                             }
