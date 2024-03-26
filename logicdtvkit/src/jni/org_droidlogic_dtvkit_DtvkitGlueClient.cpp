@@ -67,7 +67,7 @@ static jmethodID notifyServerStateCallback;
 sp<amlogic::SubtitleServerClient> mSubContext;
 static jboolean g_bSubStatus = false;
 static int subtitle_ca_flag = 0;
-static int teletext_region_id = 0;
+static int teletext_region_id = -1;
 
 #define DTVKIT_SUBTITLE_ADD_OFFSET 4
 #define SUBTITLE_DEMUX_SOURCE 4
@@ -638,7 +638,7 @@ static void getSubtitleListenerImpl() {
 }
 
 void SubtitleMessageHandler::handleMessage(const Message & message) {
-    if (message.what != SUBTITLE_CTL_ATTACH)
+    if (message.what != SUBTITLE_CTL_ATTACH && message.what != SUBTITLE_CTL_SET_REGION_ID)
     {
         if (mSubContext == nullptr)
         {
@@ -707,7 +707,8 @@ void SubtitleMessageHandler::handleMessage(const Message & message) {
         case SUBTITLE_CTL_SET_REGION_ID:
             ALOGD("set region Id:%d", param);
             teletext_region_id = param;
-            mSubContext->ttControl(TT_EVENT_SET_REGION_ID, -1, -1, param, -1);
+            if (mSubContext != NULL)
+                mSubContext->ttControl(TT_EVENT_SET_REGION_ID, -1, -1, param, -1);
             break;
         case SUBTITLE_CTL_RESET_FOR_SEEK:
             mSubContext->resetForSeek();
