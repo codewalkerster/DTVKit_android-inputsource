@@ -19,7 +19,7 @@ LOCAL_C_INCLUDES += frameworks/base/core/jni/include \
 LOCAL_MODULE := libdtvkit_jni
 LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
 LOCAL_LICENSE_CONDITIONS := notice
-LOCAL_MULTILIB := 32
+LOCAL_MULTILIB := both
 LOCAL_HEADER_LIBRARIES := jni_headers
 
 LOCAL_SHARED_LIBRARIES := \
@@ -53,7 +53,7 @@ LOCAL_CFLAGS += -DSUPPORT_ISDBT
 endif
 
 LOCAL_C_INCLUDES += $(SUBTITLE_INCLUDES)
-LOCAL_STATIC_LIBRARIES := libsubtitleclient_static
+LOCAL_STATIC_LIBRARIES := libsubtitleclient_static libfmq
 
 LOCAL_PRELINK_MODULE := false
 LOCAL_MODULE_TAGS := optional

@@ -2,7 +2,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_PACKAGE_NAME := inputsource
-LOCAL_MULTILIB := 32
+LOCAL_MULTILIB := both
 LOCAL_AAPT_FLAGS := --auto-add-overlay \
    --extra-packages android.support.v17.leanback \
    --extra-packages com.google.android.exoplayer2
