@@ -65,6 +65,7 @@ public final class Channel {
     private int mSearchable = 1;//default searchable
     private int mBrowsable = 1;//default browsable
     private String mServiceType;
+    private String mSignalType;
     private int mIsLocked;
     private int mFrequency;
     private int mOnDemand;
@@ -91,6 +92,7 @@ public final class Channel {
     public static final String KEY_FREQUENCY = "frequency";
     public static final String KEY_FINE_TUNE = "fine_tune";
     public static final String KEY_DTVKIT_URI = "dvbUri";
+    public static final String KEY_SIGNAL_TYPE = "signal_type";
     public static final String KEY_NETWORK_ID = "network_id";
 
     public static final String FIXED_SIGNAL_TYPE_DVBC = "DVB-C";
@@ -304,6 +306,10 @@ public final class Channel {
         return mFrequency;
     }
 
+    public String getSignalType() {
+        return mSignalType;
+    }
+
     /**
      * @return The value of {@link TvContract.Channels#COLUMN_LOCKED} for the channel.
      */
@@ -454,6 +460,7 @@ public final class Channel {
         mVideoFormat = other.mVideoFormat;
         mVideoCodec = other.mVideoCodec;
         mFrequency = other.mFrequency;
+        mSignalType = other.mSignalType;
         mOriginalNetworkId = other.mOriginalNetworkId;
         mTransportStreamId = other.mTransportStreamId;
         mServiceId = other.mServiceId;
@@ -558,6 +565,7 @@ public final class Channel {
             try {
                 builder.setVideoCodec((String)data.get(KEY_VIDEO_CODEC));
                 builder.setFrequency(Integer.parseInt((String)data.get(KEY_FREQUENCY)));
+                builder.setSignalType((String)data.get(KEY_SIGNAL_TYPE));
             } catch (Exception e) {
             }
         }
@@ -719,6 +727,11 @@ public final class Channel {
 
         public Builder setFrequency(int frequency) {
             mChannel.mFrequency = frequency;
+            return this;
+        }
+
+        public Builder setSignalType(String type) {
+            mChannel.mSignalType = type;
             return this;
         }
 

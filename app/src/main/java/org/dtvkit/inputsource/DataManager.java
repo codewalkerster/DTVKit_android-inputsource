@@ -152,7 +152,7 @@ public class DataManager {
     public static final String[] VALUE_DVBT_MODE_LIST = {"1K", "2K", "4K", "8K", "16K", "32K"};
     public static final int VALUE_DVBT_MODE_1K = 0;
     public static final String KEY_DVBT_TYPE = "dvbt_type";
-    public static final String KEY_ISDB_ANTENNA_TYPE = "tv_dtv_type";
+    public static final String KEY_TV_DTV_TYPE = "tv_dtv_type";
     public static final String[] VALUE_DVBT_TYPE_LIST = {"DVB-T", "DVB-T2"};
     public static final int VALUE_DVBT_MODE_DVBT = 0;
     public static final String KEY_DVBC_MODE = "dvbc_mode";

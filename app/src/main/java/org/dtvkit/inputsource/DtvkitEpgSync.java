@@ -23,6 +23,10 @@ import com.droidlogic.fragment.ParameterManager;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -38,9 +42,10 @@ public class DtvkitEpgSync extends EpgSyncJobService {
     public static final int SIGNAL_COFDM = 2; // digital terrestrial
     public static final int SIGNAL_QAM = 4; // digital cable
     public static final int SIGNAL_ISDBT = 5;
-    private static final int SIGNAL_ATSC_T = 16;
-    private static final int SIGNAL_ATSC_C = 64;
-    // public static final int SIGNAL_ANALOG = 8;
+//  public static final int SIGNAL_ANALOG = 8;
+    public static final int SIGNAL_ATSC_T = 16;
+    public static final int SIGNAL_ATSC_C = 64;
+
     boolean mIsUK = false;
     ArrayMap<Integer, String> mChIdMap = new ArrayMap<>();
     com.droidlogic.dtvkit.inputsource.DataManager mDataManager;
@@ -175,6 +180,7 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                 mChIdMap.put(freq, chId);
             }
         }
+
         List<Channel> channels;
         int dvbSource = TvContractUtils.dvbSourceToInt(getChannelTypeFilter());
         if (dvbSource == SIGNAL_ATSC_T || dvbSource == SIGNAL_ATSC_C) {
@@ -183,12 +189,12 @@ public class DtvkitEpgSync extends EpgSyncJobService {
             channels = new ArrayList<>(getDvbChannels(syncCurrent));
         }
         if (dvbSource == SIGNAL_ISDBT || dvbSource == SIGNAL_ATSC_T || dvbSource == SIGNAL_ATSC_C) {
-            channels.addAll(getAtvChannels());
+            channels.addAll(getAtvChannels(dvbSource));
         }
         return channels;
     }
 
-    public List<Channel> getAtvChannels() {
+    private List<Channel> getAtvChannels(int source) {
         List<Channel> channels = new ArrayList<>();
         Log.i(TAG, "Get atvChannels for db sync");
         try {
@@ -210,18 +216,15 @@ public class DtvkitEpgSync extends EpgSyncJobService {
             if (services.length() == 0) {
                 services = getAtvServicesList();
             }
+            MessageDigest messageDigest = getMd5Sum();
             for (int i = 0; i < services.length(); i++) {
                 JSONObject service = services.getJSONObject(i);
-                String ATVName = service.getString("Name");
-                String ATVDisplayNumber = null;
+                String ATVName = service.optString("Name");
+                int ATVDisplayNumber = service.optInt("Lcn");
                 int vstd = service.getInt("VStd");
-                if (ATVName.length() == 0)
-                    ATVName = "xxxATV Program";
-                if (ATVName.startsWith("xxxATV Program"))
-                    ATVName = ATVName;
-                if (service.getInt("Lcn") != -1)
-                    ATVDisplayNumber=""+service.getInt("Lcn")+"-"+0;
-
+                if (ATVName.length() == 0) {
+                    ATVName = String.valueOf(ATVDisplayNumber);
+                }
                 InternalProviderData data = new InternalProviderData("ATV");
                 data.put("vfmt", service.getInt("VFmt"));
                 data.put("frequency", service.getInt("Freq"));
@@ -263,12 +266,26 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                 data.put("subt_langs", null);
                 data.put("subt_track_index", -1);
                 data.put("content_ratings", "");
-                data.put("signal_type", service.getInt("SigType") == 0 ? TvContract.Channels.TYPE_ATSC_T :TvContract.Channels.TYPE_ATSC_C);
-
+                int intType = service.getInt("SigType");
+                if (source == SIGNAL_ISDBT) {
+                    data.put("signal_type", intType == 0 ? TvContract.Channels.TYPE_ATSC_T :TvContract.Channels.TYPE_ATSC_C);
+                    intType += 6;
+                } else if (source == SIGNAL_ATSC_T || source == SIGNAL_ATSC_C) {
+                    data.put("signal_type", intType == 0 ? TvContract.Channels.TYPE_ATSC_T :TvContract.Channels.TYPE_ATSC_C);
+                } else {
+                    data.put("signal_type", TvContract.Channels.TYPE_PAL);
+                    intType = 10;
+                }
+                if (messageDigest != null) {
+                    putMd5ToInternalProviderData(messageDigest, data, service.toString());
+                }
+                if (TextUtils.isDigitsOnly(ATVName)) {
+                    ATVName = "Analog" + ATVName;
+                }
                 channels.add(new Channel.Builder()
                         .setDisplayName(ATVName)
                         .setType(TvContractUtils.videoStdToType(vstd))
-                        .setDisplayNumber(ATVDisplayNumber)
+                        .setDisplayNumber(ATVDisplayNumber + "-" + 0)
                         .setServiceType(TvContract.Channels.SERVICE_TYPE_AUDIO_VIDEO)
                         .setBrowsable(true)
                         .setSearchable(true)
@@ -277,7 +294,7 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                         .setServiceId(0)
                         .setInternalProviderData(data)
                         .setLocked(service.getBoolean("Block") ? 1: 0)
-                        .setChannelAntennaType(service.getInt("SigType"))
+                        .setChannelAntennaType(intType)
                         .build());
             }
         } catch (Exception e) {
@@ -319,7 +336,7 @@ public class DtvkitEpgSync extends EpgSyncJobService {
             }
             Log.i(TAG, "Finally getChannels size=" + services.length());
             boolean ciTest = PropSettingManager.getBoolean(PropSettingManager.CI_PROFILE_ADD_TEST, false);
-
+            MessageDigest messageDigest = getMd5Sum();
             for (int i = 0; i < services.length(); i++) {
                 JSONObject service = services.getJSONObject(i);
                 String uri = service.getString("uri");
@@ -418,6 +435,10 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                 if (service.has("category_id")) {
                     data.put("category_id", service.optJSONArray("category_id"));
                 }
+                if (messageDigest != null) {
+                    service.remove("new_service"); // it influences checksum
+                    putMd5ToInternalProviderData(messageDigest, data, service.toString());
+                }
                 String signal_type = service.optString("sig_name", TvContract.Channels.TYPE_OTHER);
                 String channelType = TvContractUtils.searchSignalTypeToChannelType(signal_type);
                 channels.add(new Channel.Builder()
@@ -435,7 +456,7 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                         .setLocked(service.optBoolean("blocked")?1:0)
                         .build());
             }
-            if (channels.size() > 0) {
+            if (!channels.isEmpty()) {
                 int numberToLog = Math.min(channels.size(), 30);
                 Log.d(TAG, "-----> (DEBUG) Last " + numberToLog + " Channels <-----");
                 for (int i = Math.max(channels.size() - 30, 0); i < channels.size(); i++) {
@@ -474,7 +495,7 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                 services = getDvbServicesList(syncCurrent ? "cur" : "all", "all");
             }
             Log.i(TAG, "Finally getChannels size=" + services.length());
-
+            MessageDigest messageDigest = getMd5Sum();
             for (int i = 0; i < services.length(); i++) {
                 JSONObject service = services.getJSONObject(i);
                 String uri = service.getString("uri");
@@ -491,13 +512,16 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                 data.put("channel_signal_type", signal);
                 data.put("scrambled", service.getBoolean("scrambled")?1:0);//to match with droidlogic_tv.jar
 
-                String signal_type;
+                String channelType;
                 if ("8vsb".equalsIgnoreCase(signal) || "16vsb".equalsIgnoreCase(signal)) {
-                    signal_type = "ATSC_T";
+                    channelType = TvContract.Channels.TYPE_ATSC_T;
                 } else {
-                    signal_type = "ATSC_C";
+                    channelType = TvContract.Channels.TYPE_ATSC_C;
                 }
-                String channelType = TvContractUtils.searchSignalTypeToChannelType(signal_type);
+                data.put("signal_type", channelType);
+                if (messageDigest != null) {
+                    putMd5ToInternalProviderData(messageDigest, data, service.toString());
+                }
                 channels.add(new Channel.Builder()
                         .setDisplayName(service.getString("name"))
                         .setType(channelType)
@@ -531,6 +555,36 @@ public class DtvkitEpgSync extends EpgSyncJobService {
             throw new UnsupportedOperationException("getChannels Failed");
         }
         return channels;
+    }
+
+    private void putMd5ToInternalProviderData(MessageDigest messageDigest, InternalProviderData data, String content) {
+        if (messageDigest == null || data == null || content == null) {
+            return;
+        }
+        StringBuilder hex = new StringBuilder();
+        byte[] byteArray = messageDigest.digest(content.getBytes(StandardCharsets.UTF_8));
+        for (byte i : byteArray) {
+            hex.append(String.format("%02x", i));
+        }
+        try {
+            data.put("md5", hex.toString());
+        } catch (InternalProviderData.ParseException e) {
+            Log.e(TAG, "putMd5 error:" + e.getMessage());
+        }
+    }
+
+    private MessageDigest getMd5Sum() {
+        MessageDigest messageDigest = null;
+        String error = "";
+        try {
+            messageDigest = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            error = e.getMessage();
+        }
+        if (messageDigest == null) {
+            Log.e(TAG, "getMD5 error:" + error);
+        }
+        return messageDigest;
     }
 
     /*param signalType should not null*/
@@ -1036,6 +1090,7 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                 Log.e(TAG, "getIpChannel no ip channel array ");
                 return null;
             }
+            MessageDigest messageDigest = getMd5Sum();
             List<Channel> ipChannelList = new ArrayList<>();
             Log.d(TAG, "IP Channel number : " + ipChannelArray.length());
             for (int i = 0; i < ipChannelArray.length(); i ++) {
@@ -1056,6 +1111,9 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                     continue;
                 } else if (TextUtils.equals("Hidden but selectable", ipChannelInfo.getString("service_attributes"))) {
                     data.put("hidden", "true");
+                }
+                if (messageDigest != null) {
+                    putMd5ToInternalProviderData(messageDigest, data, ipChannelInfo.toString());
                 }
                 //Save Ip channel to List
                 ipChannelList.add(new Channel.Builder()

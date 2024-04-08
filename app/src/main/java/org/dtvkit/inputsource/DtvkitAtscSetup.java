@@ -36,7 +36,6 @@ import com.droidlogic.dtvkit.inputsource.DtvkitEpgSync;
 import com.droidlogic.dtvkit.inputsource.PvrStatusConfirmManager;
 import com.droidlogic.fragment.ParameterManager;
 import com.droidlogic.settings.ConstantManager;
-import com.droidlogic.settings.PropSettingManager;
 import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
 import droidlogic.dtvkit.tuner.TunerAdapter;
 import org.droidlogic.dtvkit.DtvkitGlueClient;
@@ -50,7 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 
 public class DtvkitAtscSetup extends Activity {
     private static final String TAG = DtvkitAtscSetup.class.getSimpleName();
@@ -58,6 +56,7 @@ public class DtvkitAtscSetup extends Activity {
     private static final int DTV = 0;
     private static final int ATV = 1;
     private static final int DTV_ATV = 2;
+    private static final String ATSC_C = "ATSC-C";
     private static final String ATSC_T = "ATSC-T";
     private static final String ATSC_C_STD = "ATSC-C-STD";
     private static final String ATSC_C_LRC = "ATSC-C-LRC";
@@ -191,12 +190,12 @@ public class DtvkitAtscSetup extends Activity {
             JSONObject service = mServiceList.optJSONObject(i);
             int freq;
             boolean curATv;
-            if (service.has("uri")) {
-                freq = service.optInt("freq");
-                curATv = false;
-            } else {
+            if (service.has("Unikey")) {
                 freq = service.optInt("Freq");
                 curATv = true;
+            } else {
+                freq = service.optInt("freq");
+                curATv = false;
             }
             boolean isMatched = UI.mSearchMode != DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL
                     || (freq != 0 && UI.mManualFrequency == freq);
@@ -209,7 +208,10 @@ public class DtvkitAtscSetup extends Activity {
                 if (curATv) {
                     firstServiceName = service.optString("Name");
                     if (firstServiceName.length() == 0) {
-                        firstServiceName = "xxxATV Program";
+                        firstServiceName = String.valueOf(service.optInt("Lcn"));
+                    }
+                    if (TextUtils.isDigitsOnly(firstServiceName)) {
+                        firstServiceName = "Analog" + firstServiceName;
                     }
                     break;
                 } else {
@@ -390,7 +392,7 @@ public class DtvkitAtscSetup extends Activity {
             args.put(searchTvType);
             args.put(antennaType);
             if ("ANALOG".equals(searchTvType)) {
-                args.put(1000000);//afc
+                args.put(2000000);//afc
             }
             args.put(true);//clear old channels
         } else {
@@ -553,7 +555,10 @@ public class DtvkitAtscSetup extends Activity {
                         EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_AUTO :
                         EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL);
         parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE,
-                airCableType == 0 ? "ATSC-T" : "ATSC-C");
+                airCableType == 0 ? ATSC_T : ATSC_C);
+        if (UI.mSearchMode == DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL) {
+            parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, String.valueOf(UI.mManualFrequency));
+        }
 
         Intent intent = new Intent(this, com.droidlogic.dtvkit.inputsource.DtvkitEpgSync.class);
         intent.putExtra("inputId", inputId);
@@ -691,7 +696,7 @@ public class DtvkitAtscSetup extends Activity {
         // logic code
         private int mSearchMode;
         private int mSearchTvType; // both: 2, dtv: 0, atv: 1
-        private String mAntennaType = "ATSC_T";
+        private String mAntennaType = ATSC_T;
         private int mChannelNumberI;
         private int mManualFrequency;
         private long clickLastTime;
@@ -916,19 +921,39 @@ public class DtvkitAtscSetup extends Activity {
         }
 
         private String getAntennaType() {
-            return mDataManager.getStringParameters("tv_search_type");
+            String val = mDataManager.getStringParameters(ParameterManager.TV_KEY_DTVKIT_SYSTEM);
+            if (ATSC_T.equals(val)) {
+                return val;
+            } else if (ATSC_C.equals(val)) {
+                return mDataManager.getStringParameters(ParameterManager.TV_KEY_TV_SEARCH_TYPE);
+            } else {
+                val = ATSC_T;
+                mDataManager.saveStringParameters(ParameterManager.TV_KEY_DTVKIT_SYSTEM, ATSC_T);
+            }
+            return val;
         }
 
         private void setAntennaType(String type) {
-            if (!Objects.equals(type, mAntennaType)) {
-                mDataManager.saveStringParameters("tv_search_type", type);
+            if (!TextUtils.equals(type, mAntennaType)) {
+                if (type.equals(ATSC_T)) {
+                    mDataManager.saveStringParameters(ParameterManager.TV_KEY_DTVKIT_SYSTEM, ATSC_T);
+                } else {
+                    mDataManager.saveStringParameters(ParameterManager.TV_KEY_DTVKIT_SYSTEM, ATSC_C);
+                    mDataManager.saveStringParameters(ParameterManager.TV_KEY_TV_SEARCH_TYPE, type);
+                }
             }
             mAntennaType = type;
         }
 
         private int getSearchTvType() {
-            return mDataManager.getIntParameters("search_atv_dtv_flag");
+            String val = mDataManager.getPrefs("ATSC_atv_dtv_flag");
+            if (TextUtils.isEmpty(val)) {
+                return DTV;
+            } else {
+                return Integer.parseInt(val);
+            }
         }
+
         private void setSearchTvType(int tv_type) {
             if (tv_type == ATV) {
                 ll_atv_search.setVisibility(View.VISIBLE);
@@ -940,7 +965,7 @@ public class DtvkitAtscSetup extends Activity {
                 ll_atv_search.setVisibility(View.VISIBLE);
                 ll_dtv_search.setVisibility(View.VISIBLE);
             }
-            mDataManager.saveIntParameters("search_atv_dtv_flag", tv_type);
+            mDataManager.setPrefs("ATSC_atv_dtv_flag", String.valueOf(tv_type));
         }
     }
 }

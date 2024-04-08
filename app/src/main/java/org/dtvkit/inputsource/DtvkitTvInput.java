@@ -699,6 +699,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         setDnsProp();
         sendEmptyMessageToInputThreadHandler(MSG_START_CA_SETTINGS_SERVICE);
         sendEmptyMessageToInputThreadHandler(MSG_CHECK_TV_PROVIDER_READY);
+        sendEmptyMessageToInputThreadHandler(MSG_UPDATE_DTVKIT_DATABASE);
 
         CasHelper.getInstance().init(this);
     }
@@ -873,6 +874,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 .acquireContentProviderClient(TvContract.AUTHORITY);
         if (tvProvider != null) {
             result = true;
+            tvProvider.close();
             Log.d(TAG, "checkTvProviderAvailable ready");
         } else {
             mCheckTvProviderTimeOut -= 10;
@@ -944,7 +946,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
         updateRecorderNumber();
         sendEmptyMessageToInputThreadHandler(MSG_CHECK_DTVKIT_SATELLITE);
-        sendEmptyMessageToInputThreadHandler(MSG_UPDATE_DTVKIT_DATABASE);
         sendDelayedEmptyMessageToInputThreadHandler(MSG_CHECK_CHANNEL_SEARCH_STATUS, 1000);
         resetRecordingPath();
 
@@ -3554,7 +3555,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 int dvbSource = getCurrentDvbSource();
                 Channel firstDbValidChannel = getFirstChannel(dvbSource);
                 if (firstDbValidChannel == null) {
-                    if (ParameterManager.SIGNAL_ISDBT == dvbSource) {
+                    if (ParameterManager.SIGNAL_ISDBT == dvbSource
+                        || ParameterManager.SIGNAL_ATSC_T == dvbSource
+                        || ParameterManager.SIGNAL_ATSC_C == dvbSource) {
                         firstDbValidChannel = createDummyATvChannel();
                     } else {
                         //if no channel,stop play
@@ -5872,7 +5875,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 break;
                             }
                             int antennaType = 0;
-                            String dtvType = mDataManager.getStringParameters(DataManager.KEY_ISDB_ANTENNA_TYPE);
+                            String dtvType = mDataManager.getStringParameters(DataManager.KEY_TV_DTV_TYPE);
                             if (TextUtils.equals(TvContract.Channels.TYPE_ATSC_C, dtvType)) {
                                 antennaType = 1;
                             }
@@ -5977,7 +5980,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
 
         private void startNumberSearch(int channelNumber) {
-            String dtvType = mDataManager.getStringParameters(DataManager.KEY_ISDB_ANTENNA_TYPE);
+            String dtvType = mDataManager.getStringParameters(DataManager.KEY_TV_DTV_TYPE);
             String type = "AIR";
             if (TextUtils.equals(TvContract.Channels.TYPE_ATSC_C, dtvType)) {
                 type = "CABLE";
@@ -6766,12 +6769,24 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     return null;
                 }
 
-                int antennaType = 0;
-                if (dvbSource == ParameterManager.SIGNAL_ISDBT) {
-                    String dtvType = mDataManager.getStringParameters(DataManager.KEY_ISDB_ANTENNA_TYPE);
+                int ATvFlag = 10; // see DTvKitEpgSync
+                boolean ignoreDTv = false;
+                if (dvbSource == ParameterManager.SIGNAL_COFDM
+                    || dvbSource == ParameterManager.SIGNAL_QAM
+                    || dvbSource == ParameterManager.SIGNAL_QPSK) {
+                    ATvFlag = -1;
+                } else if (dvbSource == ParameterManager.SIGNAL_ISDBT) {
+                    String dtvType = mDataManager.getStringParameters(DataManager.KEY_TV_DTV_TYPE);
                     if (TextUtils.equals(TvContract.Channels.TYPE_ATSC_C, dtvType)) {
-                        antennaType = 1;
+                        ATvFlag = 7;
+                        ignoreDTv = true;
+                    } else {
+                        ATvFlag = 6;
                     }
+                } else if (dvbSource == ParameterManager.SIGNAL_ATSC_T) {
+                    ATvFlag = 0;
+                } else if (dvbSource == ParameterManager.SIGNAL_ATSC_C) {
+                    ATvFlag = 1;
                 }
 
                 while (cursor.moveToNext()) {
@@ -6779,9 +6794,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     if (!nextChannel.isSearchable()) {
                         continue;
                     }
-                    Log.i(TAG, "channel " + nextChannel);
-                    if ((nextChannel.getType().contains(signalType) && antennaType == 0)
-                        || (Channel.isATV(nextChannel) && nextChannel.getAntennaType() == antennaType)) {
+                    if (Channel.isATV(nextChannel) && nextChannel.getAntennaType() == ATvFlag) {
+                        channel = nextChannel;
+                        break;
+                    } else if (!ignoreDTv && !Channel.isATV(nextChannel) && nextChannel.getType().contains(signalType)) {
                         channel = nextChannel;
                         break;
                     }
@@ -9626,6 +9642,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
     private void checkAndUpdateLcn() {
         Log.d(TAG, "checkAndUpdateLcn");
+        if (mParameterManager == null) {
+            mParameterManager = new ParameterManager(this, DtvkitGlueClient.getInstance());
+        }
         JSONArray array = mParameterManager.getConflictLcn();
         if (mParameterManager.needConfirmLcnInformation(array)) {
             Log.d(TAG, "checkAndUpdateLcn elect all default lcn");

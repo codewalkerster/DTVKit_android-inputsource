@@ -222,7 +222,10 @@ public class DtvkitIsdbtSetup extends Activity {
                 if (curATv) {
                     firstServiceName = service.optString("Name");
                     if (firstServiceName.length() == 0) {
-                        firstServiceName = "xxxATV Program";
+                        firstServiceName = String.valueOf(service.optInt("Lcn"));
+                    }
+                    if (TextUtils.isDigitsOnly(firstServiceName)) {
+                        firstServiceName = "Analog" + firstServiceName;
                     }
                     break;
                 } else {
@@ -1238,7 +1241,7 @@ public class DtvkitIsdbtSetup extends Activity {
         }
 
         private String getAntennaType() {
-            return mDataManager.getStringParameters(DataManager.KEY_ISDB_ANTENNA_TYPE);
+            return mDataManager.getStringParameters(DataManager.KEY_TV_DTV_TYPE);
         }
         private void setAntennaType(int type) {
             String dtvType;
@@ -1250,7 +1253,7 @@ public class DtvkitIsdbtSetup extends Activity {
             }
             enOrDisableADTvType(type, mSearchMode);
             if (type != mAntennaType) {
-                mDataManager.saveStringParameters(DataManager.KEY_ISDB_ANTENNA_TYPE, dtvType);
+                mDataManager.saveStringParameters(DataManager.KEY_TV_DTV_TYPE, dtvType);
             }
             mAntennaType = type;
         }
@@ -1301,5 +1304,6 @@ public class DtvkitIsdbtSetup extends Activity {
         private void setChannelNumberI(int position) {
             mDataManager.saveIntParameters(DataManager.KEY_SEARCH_ISDBT_CHANNEL_NAME, position);
         }
+
     }
 }

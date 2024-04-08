@@ -24,6 +24,7 @@ import static com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService.SYNC_STAT
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
 import android.content.Intent;
 import android.content.OperationApplicationException;
@@ -467,6 +468,24 @@ public class EpgSyncTask {
             if (updateChannel) {
                 try {
                     final List<Channel> tvChannels = mMainService.getChannels(syncCurrent);
+                    ContentProviderClient tvProvider = null;
+                    int waitTime = 10;
+                    while (TextUtils.equals("full", syncSignalType) && tvProvider == null) {
+                        tvProvider = mMainService.getContentResolver()
+                                .acquireContentProviderClient(TvContract.AUTHORITY);
+                        if (tvProvider != null) {
+                            tvProvider.close();
+                        } else {
+                            Log.i(TAG, "wait TvProvider ready " + waitTime);
+                            waitTime--;
+                            if (waitTime > 0) {
+                                Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+                            } else {
+                                Log.w(TAG, "TvProvider not run");
+                                return ERROR_EPG_SYNC_CANCELED;
+                            }
+                        }
+                    }
                     TvContractUtils.updateChannels(mMainService, mInputId, mIsSearchedChannel, tvChannels, mBundle);
                 } catch (Exception e) {
                     e.printStackTrace();

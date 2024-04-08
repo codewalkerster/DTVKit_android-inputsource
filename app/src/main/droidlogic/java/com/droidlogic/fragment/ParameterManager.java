@@ -141,6 +141,7 @@ public class ParameterManager {
     public static final String DVBS_OPERATOR_MODE  = "dvbs_operator_mode";
     public static final String TKGS_OPERATOR_MODE  = "tkgs_operator_mode";
     public static final String TV_KEY_DTVKIT_SYSTEM = "tv_dtvkit_system";
+    public static final String TV_KEY_TV_SEARCH_TYPE = "tv_search_type";
     public static final String KEY_LAST_WATCHED_CHANNEL_ID = "key_last_watched_channel_id";
     public static final String KEY_ACTIVE_RECORD_COUNT = "key_active_record_count";
     public static final String KEY_RESET_DEFAULT_AUDIO_STREAM = "key_reset_default_audio_stream";

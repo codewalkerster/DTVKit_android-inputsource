@@ -10,6 +10,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.media.tv.TvContract;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -83,7 +84,12 @@ public class SearchGuideActivity extends Activity implements OnNextListener {
                     currentDvbSource = ParameterManager.SIGNAL_ISDBT;
                     break;
                 case ("atsc"):
-                    currentDvbSource = ParameterManager.SIGNAL_ATSC_T;
+                    String dtvType = mDataPresenter.getParameterManager().getStringParameters(ParameterManager.TV_KEY_DTVKIT_SYSTEM);
+                    if (TextUtils.equals("ATSC-C", dtvType)) {
+                        currentDvbSource = ParameterManager.SIGNAL_ATSC_C;
+                    } else {
+                        currentDvbSource = ParameterManager.SIGNAL_ATSC_T;
+                    }
                     break;
                 case ("terrestrial"):
                 default:
@@ -270,7 +276,7 @@ public class SearchGuideActivity extends Activity implements OnNextListener {
             case ParameterManager.SIGNAL_ATSC_T:
             case ParameterManager.SIGNAL_ATSC_C:
                 className = DataManager.KEY_ACTIVITY_ATSC;
-                requestCode = REQUEST_CODE_START_ISDBT_ACTIVITY;
+                requestCode = REQUEST_CODE_START_ATSC_ACTIVITY;
                 break;
             default:
                 break;

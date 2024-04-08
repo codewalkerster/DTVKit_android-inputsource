@@ -34,6 +34,7 @@ import android.os.PersistableBundle;
 import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Log;
+import android.util.LongSparseArray;
 import android.util.Pair;
 
 import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
@@ -49,8 +50,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,7 +61,7 @@ import java.util.stream.Collectors;
 public class TvContractUtils {
     private static final String TAG = "TvContractUtils";
     private static final boolean DEBUG = false;
-    private static final int BATCH_OPERATION_COUNT = 50;
+    private static final int BATCH_OPERATION_COUNT = 60;
 
     private static final int SIGNAL_QPSK  = 1; // digital satellite
     private static final int SIGNAL_COFDM = 2; // digital terrestrial
@@ -111,6 +112,7 @@ public class TvContractUtils {
         ArrayMap<String, ArrayMap<String, String>> channelUseSettingValueMap = new ArrayMap<>();
         // Operations to execute
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+        LongSparseArray<String> checkData = new LongSparseArray<>();
         // different source
         ArrayList<String> sources = new ArrayList<>();
         // 0.find sources
@@ -133,10 +135,10 @@ public class TvContractUtils {
         }
         for (String source : sources) {
             // 1.first get existed channels in tv.db
-            cacheRelatedChannel(channelMap, channelUseSettingValueMap, context, inputId,
+            cacheRelatedChannel(channelMap, checkData, channelUseSettingValueMap, context, inputId,
                     isSearched, source, extras);
             // 2.find new channel and channels that need to be updated
-            handleUpdateOrInsert(ops, channelMap, channelUseSettingValueMap, context, inputId,
+            handleUpdateOrInsert(ops, channelMap, checkData, channelUseSettingValueMap, context, inputId,
                     channels.stream()
                             .filter(channel -> source.equals(toSignalType(channel.getType())))
                             .collect(Collectors.toList()), source, extras);
@@ -148,6 +150,7 @@ public class TvContractUtils {
             }
             channelMap.clear();
             channelUseSettingValueMap.clear();
+            checkData.clear();
         }
         //5.deal insert or update channels to tv.db
         syncToDb(ops, context);
@@ -161,7 +164,7 @@ public class TvContractUtils {
 
     //1.first get existed channels in tv.db
     private static void cacheRelatedChannel(
-            ArrayList<Pair<String, Long>> channelMap,
+            ArrayList<Pair<String, Long>> channelMap, LongSparseArray<String> checkData,
             ArrayMap<String, ArrayMap<String, String>> channelUseSettingValueMap, Context context,
             String inputId, boolean isSearched, String signalType, PersistableBundle extras) {
         Uri channelsUri = TvContract.buildChannelsUriForInput(inputId);
@@ -188,8 +191,6 @@ public class TvContractUtils {
             InternalProviderData internalProviderData = null;
             String displayName = null;
             String displayNumber = null;
-            String rawDisplayName = null;
-            String rawDisplayNumber = null;
             String linkIconUri = null;
             String linkIntentUri = null;
             while (cursor != null && cursor.moveToNext()) {
@@ -214,6 +215,7 @@ public class TvContractUtils {
                     if (DEBUG) Log.i(TAG, "COLUMN_INTERNAL_PROVIDER_DATA other type");
                 }
                 if (internalProviderData != null) {
+                    checkData.put(rowId, (String) internalProviderData.get("md5"));
                     try {
                         frequency = Integer.parseInt((String)internalProviderData.get(Channel.KEY_FREQUENCY));
                     } catch (Exception e) {
@@ -222,8 +224,6 @@ public class TvContractUtils {
 
                     //frequency = Integer.parseInt((String) internalProviderData.get(Channel.KEY_FREQUENCY));
                     ciNumber = (String) internalProviderData.get(Channel.KEY_CHANNEL_CI_NUMBER);
-                    rawDisplayName = (String) internalProviderData.get(Channel.KEY_RAW_DISPLAYNAME);
-                    rawDisplayNumber = (String) internalProviderData.get(Channel.KEY_RAW_DISPLAYNUMBER);
                     boolean setRawDisplayNumber = !TextUtils.isEmpty((String) internalProviderData.get(Channel.KEY_SET_DISPLAYNUMBER));
                     boolean setRawDisplayName = "1".equals(internalProviderData.get(Channel.KEY_SET_DISPLAYNAME));
                     if (setRawDisplayNumber) {
@@ -283,9 +283,11 @@ public class TvContractUtils {
     //2.find new channel and channels that need to be updated
     private static void handleUpdateOrInsert(
             ArrayList<ContentProviderOperation> ops, ArrayList<Pair<String, Long>> channelMap,
+            LongSparseArray<String> checkData,
             ArrayMap<String, ArrayMap<String, String>> channelUseSettingValueMap, Context context,
             String inputId, List<Channel> channels, String signalType, PersistableBundle extras) {
         int numberToUpdate = 0;
+        int numberToStable = 0;
         int numberToInsert = 0;
         String searchMode = extras.getString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_MODE, null);
         // If a channel exists, update it. If not, insert a new one.
@@ -360,7 +362,7 @@ public class TvContractUtils {
                 }
             }
             ArrayMap<String, String> singleUserSettings = channelUseSettingValueMap.get(uniqueStr);
-            if (singleUserSettings != null && singleUserSettings.size() > 0) {
+            if (singleUserSettings != null && !singleUserSettings.isEmpty()) {
                 if (DEBUG) {
                     Log.d(TAG, String.format("Mapping %s to %d", uniqueStr, rowId));
                 }
@@ -409,6 +411,19 @@ public class TvContractUtils {
                     values.remove(TvContract.Channels.COLUMN_APP_LINK_ICON_URI);
                     values.remove(TvContract.Channels.COLUMN_APP_LINK_INTENT_URI);
                 }
+                // improve channels sync when boot up.
+                if (!TextUtils.equals(EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL, searchMode)) {
+                    try {
+                        String oldHex = checkData.get(rowId);
+                        String newHex = (String) channel.getInternalProviderData().get("md5");
+                        if (TextUtils.equals(oldHex, newHex)) {
+                            numberToStable++;
+                            continue;
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "updateChannels not support md5 " + e.getMessage());
+                    }
+                }
                 numberToUpdate++;
                 values.put(Channels._ID, rowId);
                 ops.add(ContentProviderOperation.newUpdate(
@@ -420,9 +435,10 @@ public class TvContractUtils {
                 }
             }
         }
-        if (numberToInsert != 0 || numberToUpdate != 0 || channelMap.size() != 0) {
+        if (numberToInsert != 0 || numberToUpdate != 0 || numberToStable != 0 || !channelMap.isEmpty()) {
             Log.i(TAG, "signalType: " + signalType
                     + ", numberToInsert:" + numberToInsert
+                    + ", numberToStable:" + numberToStable
                     + ", numberToUpdate:" + numberToUpdate
                     + ", numberToDelete:" + channelMap.size());
         }
@@ -468,6 +484,7 @@ public class TvContractUtils {
     //5.deal insert or update channels to tv.db
     private static void syncToDb(ArrayList<ContentProviderOperation> ops, Context context) {
         ContentResolver resolver = context.getContentResolver();
+        Log.d(TAG, "syncToDb Start size: " + ops.size());
         for (int i = 0; i < ops.size(); i += BATCH_OPERATION_COUNT) {
             int toIndex =
                     Math.min((i + BATCH_OPERATION_COUNT), ops.size());
@@ -480,10 +497,9 @@ public class TvContractUtils {
                 resolver.applyBatch(TvContract.AUTHORITY, batchOps);
             } catch (Exception e) {
                 Log.e(TAG, "syncToDb Failed = " + e.getMessage());
-            } finally {
-                Log.d(TAG, "syncToDb size: " + ops.size());
             }
         }
+        Log.d(TAG, "syncToDb End");
 //        if (logos != null && !logos.isEmpty()) {
 //            new InsertLogosTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, logos);
 //        }
