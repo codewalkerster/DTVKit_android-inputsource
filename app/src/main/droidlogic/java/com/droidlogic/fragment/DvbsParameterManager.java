@@ -39,7 +39,7 @@ public class DvbsParameterManager {
 
     private int mCurrentOperator = OPERATOR_DEFAULT;
     // sync with DTVKit definition
-    public static final int OPERATOR_ASTRA_HD_PLUS = 0;
+    public static final int OPERATOR_ASTRA_HD_PLUS = 5;
     public static final int OPERATOR_SKY_D = 1;
     public static final int OPERATOR_M7 = 2;
     public static final int OPERATOR_AIRTEL = 0x400;
@@ -52,11 +52,11 @@ public class DvbsParameterManager {
 
     public static final int OPERATOR_AIRTEL_BOUQUETID = 0x6070;
     public static final int OPERATOR_CANALPLUS_BOUQUETID = 0xC023;
-    public static final int OPERATOR_FRANSAT_BOUQUETID = 0x71;
 
     public static final int CMD_OPERATOR_M7 = 0x01 << 16;
     public static final int CMD_OPERATOR_ASTRA = 0x02 << 16;
     public static final int CMD_OPERATOR_TKGS = 0x04 << 16;
+    public static final int CMD_OPERATOR_FRANSAT = 0x05 << 16;
 
     public static final int CMD_ACTION_DISEQC_CONFIRM = 0x01;
     public static final int CMD_ACTION_GET_OPERATOR = 0x02;

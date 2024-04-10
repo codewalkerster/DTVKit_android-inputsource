@@ -829,9 +829,6 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
         else if (opType == DvbsParameterManager.OPERATOR_CANALPLUS) {
             args.put(DvbsParameterManager.OPERATOR_CANALPLUS_BOUQUETID);
         }
-        else if (opType == DvbsParameterManager.OPERATOR_FRANSAT) {
-            args.put(DvbsParameterManager.OPERATOR_FRANSAT_BOUQUETID);
-        }
 
         return args;
     }
