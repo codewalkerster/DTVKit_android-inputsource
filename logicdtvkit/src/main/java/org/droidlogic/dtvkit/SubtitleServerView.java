@@ -192,7 +192,7 @@ public class SubtitleServerView extends FrameLayout {
         @Override
         public void drawEx(int parserType, int src_width, int src_height,
                            int dst_x, int dst_y, int dst_width, int dst_height, int[] data) {
-            Log.v(TAG, "type= " + parserType + ", src_w= " + src_width +
+            Log.d(TAG, "type= " + parserType + ", src_w= " + src_width +
                     ", src_h= " + src_height + ", x= " + dst_x + ", y= " + dst_y +
                     ", dst_w= " + dst_width + ", dst_h= " + dst_height + ", pause= " + mPauseExDraw +
                     ", " + mTtxTransparent);
@@ -414,8 +414,7 @@ public class SubtitleServerView extends FrameLayout {
     @Override
     public String toString() {
         return super.toString() + "\n" +
-                "TAG='" + TAG + '\'' +
-                ", displayRect=" + displayRect +
+                "displayRect=" + displayRect +
                 ", imageView=" + imageView +
                 ", textView=" + textView +
                 '}';

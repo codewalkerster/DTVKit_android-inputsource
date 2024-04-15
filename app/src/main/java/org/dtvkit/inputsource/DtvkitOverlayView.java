@@ -482,22 +482,28 @@ public class DtvkitOverlayView extends FrameLayout {
     public String toString() {
         StringBuilder result = new StringBuilder();
         if (mSubServerView != null) {
-            result.append("SubServerView:").append(mSubServerView).append('\n');
+            result.append(mSubServerView).append('\n');
         }
         if (nativeOverlayView != null) {
-            result.append("nativeOverlayView:").append(nativeOverlayView).append('\n');
+            result.append(nativeOverlayView).append('\n');
         }
         if (ciOverlayView != null) {
-            result.append("ciOverlayView:").append(ciOverlayView).append('\n');
+            result.append(ciOverlayView).append('\n');
         }
         if (mRelativeLayout != null) {
-            result.append("RelativeLayout:").append(mRelativeLayout).append('\n');
+            result.append(mRelativeLayout).append('\n');
         }
         if (mCCSubView != null) {
-            result.append("CCSubView:").append(mCCSubView).append('\n');
+            result.append(mCCSubView).append('\n');
         }
         if (mCasOsm != null) {
             result.append("CasOsm:").append(mCasOsm).append('\n');
+        }
+        if (mEwbsAlarmOverlayView != null) {
+            result.append(mEwbsAlarmOverlayView).append('\n');
+        }
+        if (mHbbTvFrameLayout != null) {
+            result.append(mHbbTvFrameLayout).append('\n');
         }
         return result.toString();
     }

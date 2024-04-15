@@ -3145,7 +3145,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         protected com.droidlogic.dtvkit.inputsource.DtvkitOverlayView mView = null;
 
         private boolean mTeleTextMixNormal = true;
-        private int dvrSubtitleFlag = 0;
 
         private boolean mTimeShiftInited = false;
         private boolean mResourceOwnedByBr = true;
@@ -4014,7 +4013,13 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             Log.d(TAG, log.toString());
         }
 
-        private void updateTrackAndSelect(int isDvrPlaying, boolean clear, boolean retuneSubtitle) {
+        private void updateTrackAndSelect() {
+            if (playerState != PlayerState.PLAYING) {
+                Log.w(TAG, "updateTrackAndSelect: clear Tracks, " + playerState);
+                mTunedTracks.clear();
+                notifyTracksChanged(mTunedTracks);
+                return;
+            }
             if (Channel.isATV(mTunedChannel)) {
                 List<TvTrackInfo> info = AtvCcTool.getInstance().getAtvCcTracks();
                 notifyTracksChanged(info);
@@ -4030,22 +4035,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     }
                 }
             } else {
-                boolean retSubtitle = retuneSubtitle ?
-                    ((isDvrPlaying != 1) || (dvrSubtitleFlag != 1)) : false;
-
-                if (clear) {
-                    Log.w(TAG, "updateTrackAndSelect: clear Tracks, because not playing status");
-                    mTunedTracks.clear();
-                    notifyTracksChanged(mTunedTracks);
-                    return;
-                }
-                if (retSubtitle && (!FeatureUtil.getFeatureSupportCaptioningManager()
-                        || (mCaptioningManager != null && mCaptioningManager.isEnabled()))) {
-                    playerSetSubtitlesOn(true);
-                    if (isDvrPlaying == 1) {
-                        dvrSubtitleFlag = 1;
-                    }
-                }
                 mCurrentAudioTrackId = playerGetTracks(mTunedTracks, mTunedChannel, false);
                 notifyTracksChanged(mTunedTracks);
                 Log.i(TAG, "updateTrackAndSelect audio track selected: " + mCurrentAudioTrackId);
@@ -4883,7 +4872,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 } catch (JSONException e) {
                                     Log.d(TAG, "playing is_av JSONException = " + e.getMessage());
                                 }
-                                sendUpdateTrackMsg(PlayerState.PLAYING, false);
                                 if (mTunedChannel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO_VIDEO)) {
                                     if (mHandlerThreadHandle != null) {
                                         mHandlerThreadHandle.removeMessages(MSG_CHECK_RESOLUTION);
@@ -4908,7 +4896,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 runOnMainThread(() -> {
                                     notifyTimeShiftStatusChanged(TvInputManager.TIME_SHIFT_STATUS_AVAILABLE);
                                 });
-                                sendUpdateTrackMsg(PlayerState.PLAYING, true);
                             } else if (type.equals("dvbtimeshifting")) {
                                 if (mTunedChannel == null) {
                                     return;
@@ -4922,10 +4909,13 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             } else {
                                 if (type.equals("ATV")) {
                                     setBlockMute(false);
-                                    sendUpdateTrackMsg(PlayerState.PLAYING, false);
                                 }
                                 notifyVideoAvailable();
                             }
+                            if (mTuneInfo.isDTv) {
+                                playerSetSubtitlesOn(true);
+                            }
+                            sendUpdateTrackMsg();
                             if (mMainHandle != null) {
                                 mMainHandle.removeMessages(MSG_EVENT_SHOW_HIDE_OVERLAY);
                                 Message msg = mMainHandle.obtainMessage(MSG_EVENT_SHOW_HIDE_OVERLAY);
@@ -4963,7 +4953,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 Message msg = mMainHandle.obtainMessage(MSG_BLOCK_MUTE_OR_UNMUTE, 1, 0);
                                 mHandlerThreadHandle.sendMessage(msg);
                             }
-                            dvrSubtitleFlag = 0;
                             ContentRatingSystem system = mContentRatingsManager
                                 .getContentRatingSystem("com.android.tv" + "/" + mCurrentRatingSystem);
                             if (type.equals("ATV")) {
@@ -4999,7 +4988,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 mMainHandle.sendEmptyMessage(MSG_SET_TELETEXT_MIX_NORMAL);
                             }
                             if (type.equals("ATV")) {
-                                sendUpdateTrackMsg(PlayerState.STOPPED, false);
+                                sendUpdateTrackMsg();
                             }
                             break;
                         case "off":
@@ -5012,7 +5001,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 notifyTimeShiftStatusChanged(TvInputManager.TIME_SHIFT_STATUS_UNAVAILABLE);
                             }
                             playerState = PlayerState.STOPPED;
-                            dvrSubtitleFlag = 0;
                             if (recordedProgram != null) {
                                 /*trigger the playback exit*/
                                 currentPosition = recordedProgram.getRecordingDurationMillis();
@@ -5046,7 +5034,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 msg.arg1 = 1;
                                 mMainHandle.sendMessageDelayed(msg, 100);
                             }
-                            sendUpdateTrackMsg(PlayerState.STARTING, false);
+                            sendUpdateTrackMsg();
                             break;
                         case "scambled":
                             Log.i(TAG, "** scrambled **");
@@ -5094,7 +5082,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             notifyTimeShiftStatusChanged(TvInputManager.TIME_SHIFT_STATUS_UNAVAILABLE);
                             playerSetSubtitlesOn(false);
                             playerStopTeletext();
-                            dvrSubtitleFlag = 0;
                             break;
                     }
                 } else if (signal.equals("RecordingStatusChanged")) {
@@ -5299,7 +5286,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else if (signal.equals("DvbUpdatedChannelData")) {
                     Log.i(TAG, "DvbUpdatedChannelData");
                     //check trackInfo update
-                    sendUpdateTrackMsg(PlayerState.PLAYING, false, false);
+                    sendUpdateTrackMsg();
                 } else if (signal.equals("MhegAppStarted")) {
                     Log.i(TAG, "MhegAppStarted");
                     mIsMhepAppStarted = true;
@@ -5512,7 +5499,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else if (signal.equals("AudioTrackSelected")) {
                     // after track changed, should update sound mode again
                     notifySessionEvent(ConstantManager.ACTION_AUDIO_TRACK_SELECTED, null);
-                    sendUpdateTrackMsg(PlayerState.PLAYING, recordedProgram != null, false);
+                    sendUpdateTrackMsg();
                     // TODO: MAY be merged later, HandleAudioEvent is invalid in ATF
                     if (FeatureUtil.getFeatureSupportTunerFramework()) {
                         DtvkitTvInputSession main = getMainTunerSession();
@@ -5818,7 +5805,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         tryStopTimeshifting();
                         break;
                     case MSG_UPDATE_TRACKS_AND_SELECT:
-                        updateTrackAndSelect(msg.arg1, msg.arg2 == 1, (Boolean)msg.obj);
+                        updateTrackAndSelect();
                         break;
                     case MSG_SELECT_TRACK:
                         doSelectTrack(msg.arg1, (String) msg.obj);
@@ -6130,29 +6117,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             playerSetAudioDescriptionOn(iAudioOutputId, mAudioADAutoStart);
         }
 
-        private void sendUpdateTrackMsg(PlayerState playState, boolean isDvrPlaying) {
-            sendUpdateTrackMsg(playState, isDvrPlaying, true);
-        }
-
-        private void sendUpdateTrackMsg(PlayerState playState, boolean isDvrPlaying, boolean retuneSubtitle) {
-            if (mHandlerThreadHandle != null) {
-                mHandlerThreadHandle.removeMessages(MSG_UPDATE_TRACKS_AND_SELECT);
-                Message msg = mHandlerThreadHandle.obtainMessage(MSG_UPDATE_TRACKS_AND_SELECT);
-                Log.d(TAG, "sendUpdateTrackMsg state:" + playState);
-                if (playState != PlayerState.PLAYING) {
-                    // clear tracks
-                    msg.arg2 = 1;
-                } else {
-                    msg.arg2 = 0;
-                }
-                if (isDvrPlaying) {
-                    msg.arg1 = 1;
-                } else {
-                    msg.arg1 = 0;
-                }
-                msg.obj = (Object)retuneSubtitle;
-                mHandlerThreadHandle.sendMessage(msg);
-            }
+        private void sendUpdateTrackMsg() {
+            mHandlerThreadHandle.removeMessages(MSG_UPDATE_TRACKS_AND_SELECT);
+            mHandlerThreadHandle.sendEmptyMessage(MSG_UPDATE_TRACKS_AND_SELECT);
+            Log.d(TAG, "sendUpdateTrackMsg state:" + playerState);
         }
 
         private class MainCallback implements Handler.Callback {
