@@ -38,6 +38,8 @@ public class DtvkitEpgSync extends EpgSyncJobService {
     public static final int SIGNAL_COFDM = 2; // digital terrestrial
     public static final int SIGNAL_QAM = 4; // digital cable
     public static final int SIGNAL_ISDBT = 5;
+    private static final int SIGNAL_ATSC_T = 16;
+    private static final int SIGNAL_ATSC_C = 64;
     // public static final int SIGNAL_ANALOG = 8;
     boolean mIsUK = false;
     ArrayMap<Integer, String> mChIdMap = new ArrayMap<>();
@@ -102,6 +104,35 @@ public class DtvkitEpgSync extends EpgSyncJobService {
         return services;
     }
 
+    public static JSONArray getAtscServicesList(String signal_type, String tv_type) throws Exception {
+        JSONArray param;
+        JSONArray services = new JSONArray();
+        int index = 0;
+        final int maxTransChannelsSize = 512;
+        while (true) {
+            param = new JSONArray();
+            param.put(signal_type); // signal_type
+            param.put(tv_type); // tv_radio type
+            param.put(index);
+            param.put(maxTransChannelsSize);
+            JSONObject obj = DtvkitGlueClient.getInstance().request("Dvb.getListOfServicesByIndex", param);
+            JSONArray tmpServices = obj.optJSONArray("data");
+            if (tmpServices == null) {
+                break;
+            } else {
+                for (int i = 0; i < tmpServices.length(); i++) {
+                    services.put(tmpServices.get(i));
+                }
+                index += tmpServices.length();
+                if (tmpServices.length() < maxTransChannelsSize) {
+                    break;
+                }
+            }
+        }
+        Log.i(TAG, "Get ATSC channels : " + services.length());
+        return services;
+    }
+
     public static void setServicesToSync(JSONArray services) {
         synchronized (mLock) {
             mDTvServices = services;
@@ -144,8 +175,14 @@ public class DtvkitEpgSync extends EpgSyncJobService {
                 mChIdMap.put(freq, chId);
             }
         }
-        List<Channel> channels = new ArrayList<>(getDvbChannels(syncCurrent));
-        if (TvContractUtils.dvbSourceToInt(getChannelTypeFilter()) == SIGNAL_ISDBT) {
+        List<Channel> channels;
+        int dvbSource = TvContractUtils.dvbSourceToInt(getChannelTypeFilter());
+        if (dvbSource == SIGNAL_ATSC_T || dvbSource == SIGNAL_ATSC_C) {
+            channels = new ArrayList<>(getAtscChannels(syncCurrent));
+        } else {
+            channels = new ArrayList<>(getDvbChannels(syncCurrent));
+        }
+        if (dvbSource == SIGNAL_ISDBT || dvbSource == SIGNAL_ATSC_T || dvbSource == SIGNAL_ATSC_C) {
             channels.addAll(getAtvChannels());
         }
         return channels;
@@ -415,6 +452,83 @@ public class DtvkitEpgSync extends EpgSyncJobService {
         List<Channel> ipChannelList = getIpChannel();
         if ((null != ipChannelList) && (0 < ipChannelList.size())) {
             channels.addAll(ipChannelList);
+        }
+        return channels;
+    }
+
+    public List<Channel> getAtscChannels(boolean syncCurrent) {
+        List<Channel> channels = new ArrayList<>();
+        Log.i(TAG, "Get atsc channels for epg sync, current: " + syncCurrent);
+
+        try {
+            JSONArray services = new JSONArray();
+            synchronized (mLock) {
+                if (mDTvServices != null && mDTvServices.length() > 0) {
+                    for (int i = 0; i < mDTvServices.length(); i++) {
+                        services.put(mDTvServices.get(i));
+                    }
+                }
+                mDTvServices = null;
+            }
+            if (services.length() == 0) {
+                services = getDvbServicesList(syncCurrent ? "cur" : "all", "all");
+            }
+            Log.i(TAG, "Finally getChannels size=" + services.length());
+
+            for (int i = 0; i < services.length(); i++) {
+                JSONObject service = services.getJSONObject(i);
+                String uri = service.getString("uri");
+                int freq = service.getInt("freq");
+                boolean hidden = service.getBoolean("hidden");
+                String signal = service.getString("sig_name");
+                int lcn = service.getInt("cn");
+                String displayNumber = (lcn >> 10) + "-" + (lcn & 0x7ff);
+                InternalProviderData data = new InternalProviderData();
+                data.put("dvbUri", uri);
+                data.put("hidden", hidden);
+                data.put("frequency", freq);
+                data.put("is_data", service.getBoolean("is_data"));
+                data.put("channel_signal_type", signal);
+                data.put("scrambled", service.getBoolean("scrambled")?1:0);//to match with droidlogic_tv.jar
+
+                String signal_type;
+                if ("8vsb".equalsIgnoreCase(signal) || "16vsb".equalsIgnoreCase(signal)) {
+                    signal_type = "ATSC_T";
+                } else {
+                    signal_type = "ATSC_C";
+                }
+                String channelType = TvContractUtils.searchSignalTypeToChannelType(signal_type);
+                channels.add(new Channel.Builder()
+                        .setDisplayName(service.getString("name"))
+                        .setType(channelType)
+                        .setBrowsable(!hidden)
+                        .setSearchable(true)
+                        .setDisplayNumber(displayNumber)
+                        .setServiceType(
+                                service.getBoolean("is_data") ?
+                                        TvContract.Channels.SERVICE_TYPE_OTHER :
+                                        (service.getBoolean("radio") ?
+                                                TvContract.Channels.SERVICE_TYPE_AUDIO :
+                                                TvContract.Channels.SERVICE_TYPE_AUDIO_VIDEO))
+                        .setOriginalNetworkId(0)
+                        .setTransportStreamId(Integer.parseInt(uri.substring(7, 10), 16))
+                        .setServiceId(Integer.parseInt(uri.substring(12, 15), 16))
+                        .setInternalProviderData(data)
+                        .setLocked(service.optBoolean("blocked")?1:0)
+                        .build());
+            }
+            if (channels.size() > 0) {
+                int numberToLog = Math.min(channels.size(), 30);
+                Log.d(TAG, "-----> (DEBUG) Last " + numberToLog + " Channels <-----");
+                for (int i = Math.max(channels.size() - 30, 0); i < channels.size(); i++) {
+                    Log.d(TAG, "** " + channels.get(i).getDisplayNumber()
+                            + " " + channels.get(i).getDisplayName()
+                            + ", " + channels.get(i).getServiceType());
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "getChannels Exception = " + e.getMessage());
+            throw new UnsupportedOperationException("getChannels Failed");
         }
         return channels;
     }

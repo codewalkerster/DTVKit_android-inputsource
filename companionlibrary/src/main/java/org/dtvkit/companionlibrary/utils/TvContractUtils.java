@@ -66,6 +66,8 @@ public class TvContractUtils {
     private static final int SIGNAL_COFDM = 2; // digital terrestrial
     private static final int SIGNAL_QAM   = 4; // digital cable
     private static final int SIGNAL_ISDBT = 5;
+    private static final int SIGNAL_ATSC_T = 16;
+    private static final int SIGNAL_ATSC_C = 64;
     private static final int ATV_VIDEO_STD_PAL  = 1;
     private static final int ATV_VIDEO_STD_NTSC = 2;
     private static final int ATV_VIDEO_STD_SECAM = 3;
@@ -125,6 +127,8 @@ public class TvContractUtils {
             sources.add("DVB-C");
             sources.add("DVB-S");
             sources.add("ISDB-T");
+            sources.add("ATSC-T");
+            sources.add("ATSC-C");
             sources.add("ATV");
         }
         for (String source : sources) {
@@ -1005,6 +1009,10 @@ public class TvContractUtils {
             case Channels.TYPE_PAL:
             case Channels.TYPE_SECAM:
                 return "ATV";
+            case Channels.TYPE_ATSC_T:
+                return "ATSC-T";
+            case Channels.TYPE_ATSC_C:
+                return "ATSC-C";
             default:
                 return type;
         }
@@ -1050,6 +1058,14 @@ public class TvContractUtils {
             case "ISDB_C":
                 result = TvContract.Channels.TYPE_ISDB_C;
                 break;
+            case "ATSC-T":
+            case "ATSC_T":
+                result = TvContract.Channels.TYPE_ATSC_T;
+                break;
+            case "ATSC-C":
+            case "ATSC_C":
+                result = TvContract.Channels.TYPE_ATSC_C;
+                break;
             default:
                 break;
         }
@@ -1078,6 +1094,10 @@ public class TvContractUtils {
                 return new String[]{Channels.TYPE_ISDB_C};
             case "ATV":
                 return new String[]{Channels.TYPE_NTSC, Channels.TYPE_PAL, Channels.TYPE_SECAM};
+            case "ATSC-T":
+                return new String[] {Channels.TYPE_ATSC_T};
+            case "ATSC-C":
+                return new String[] {Channels.TYPE_ATSC_C};
             default:
                 break;
         }
@@ -1099,6 +1119,11 @@ public class TvContractUtils {
             case SIGNAL_ISDBT:
                 result = TvContract.Channels.TYPE_ISDB_T;
                 break;
+            case SIGNAL_ATSC_T:
+                result = TvContract.Channels.TYPE_ATSC_T;
+                break;
+            case SIGNAL_ATSC_C:
+                result = TvContract.Channels.TYPE_ATSC_C;
             default:
                 break;
         }
@@ -1116,6 +1141,10 @@ public class TvContractUtils {
             source = SIGNAL_QPSK;
         } else if (handle.contains("ISDB_T")) {
             source = SIGNAL_ISDBT;
+        } else if (handle.contains("ATSC_T")) {
+            source = SIGNAL_ATSC_T;
+        } else if (handle.contains("ATSC_C")) {
+            source = SIGNAL_ATSC_C;
         }
         return source;
     }
@@ -1152,6 +1181,12 @@ public class TvContractUtils {
                 break;
             case SIGNAL_ISDBT:
                 result = "ISDB-T";
+                break;
+            case SIGNAL_ATSC_T:
+                result = "ATSC-T";
+                break;
+            case SIGNAL_ATSC_C:
+                result = "ATSC-C";
                 break;
             default:
                 break;

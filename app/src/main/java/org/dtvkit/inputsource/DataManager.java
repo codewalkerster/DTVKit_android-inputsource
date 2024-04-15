@@ -137,6 +137,7 @@ public class DataManager {
     public static final String KEY_ACTIVITY_DVBT = "com.droidlogic.dtvkit.inputsource.DtvkitDvbtSetup";
     public static final String KEY_ACTIVITY_DVBS = "com.droidlogic.dtvkit.inputsource.DtvkitDvbsSetup";
     public static final String KEY_ACTIVITY_ISDBT = "com.droidlogic.dtvkit.inputsource.DtvkitIsdbtSetup";
+    public static final String KEY_ACTIVITY_ATSC = "com.droidlogic.dtvkit.inputsource.DtvkitAtscSetup";
     public static final String KEY_ACTIVITY_SETTINGS = "com.droidlogic.settings.DtvkitDvbSettings";
     public static final int SELECT_DVBC = 0;
     public static final int SELECT_DVBT = 1;

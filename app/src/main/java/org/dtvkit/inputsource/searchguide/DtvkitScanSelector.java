@@ -27,6 +27,7 @@ public class DtvkitScanSelector extends com.droidlogic.dtvkit.inputsource.search
     public static final int REQUEST_CODE_START_DVBS_ACTIVITY = 3;
     public static final int REQUEST_CODE_START_SETTINGS_ACTIVITY = 4;
     public static final int REQUEST_CODE_START_ISDBT_ACTIVITY = 5;
+    public static final int REQUEST_CODE_START_ATSC_ACTIVITY = 6;
 
     public static final String SEARCH_TYPE_MANUAL_AUTO = "search_manual_auto";
     public static final String SEARCH_TYPE_DVBS_DVBT_DVBC = "search_dvbs_dvbt_dvbc";

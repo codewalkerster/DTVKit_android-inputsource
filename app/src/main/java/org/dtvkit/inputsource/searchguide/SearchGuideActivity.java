@@ -1,5 +1,6 @@
 package com.droidlogic.dtvkit.inputsource.searchguide;
 
+import static com.droidlogic.dtvkit.inputsource.searchguide.DtvkitScanSelector.REQUEST_CODE_START_ATSC_ACTIVITY;
 import static com.droidlogic.dtvkit.inputsource.searchguide.DtvkitScanSelector.REQUEST_CODE_START_DVBC_ACTIVITY;
 import static com.droidlogic.dtvkit.inputsource.searchguide.DtvkitScanSelector.REQUEST_CODE_START_DVBS_ACTIVITY;
 import static com.droidlogic.dtvkit.inputsource.searchguide.DtvkitScanSelector.REQUEST_CODE_START_DVBT_ACTIVITY;
@@ -79,6 +80,9 @@ public class SearchGuideActivity extends Activity implements OnNextListener {
                     break;
                 case ("isdb"):
                     currentDvbSource = ParameterManager.SIGNAL_ISDBT;
+                    break;
+                case ("atsc"):
+                    currentDvbSource = ParameterManager.SIGNAL_ATSC_T;
                     break;
                 case ("terrestrial"):
                 default:
@@ -234,8 +238,16 @@ public class SearchGuideActivity extends Activity implements OnNextListener {
     private void startActivityForSource(int currentDvbSource, int selector) {
         Intent intent = new Intent(getIntent());
         final String pvrStatus = intent.getStringExtra(ConstantManager.KEY_LIVETV_PVR_STATUS);
-        Log.i(TAG, "setCurrentSource:" + currentDvbSource);
-        mDataPresenter.getParameterManager().setCurrentDvbSource(currentDvbSource);
+        int newDvbSource = currentDvbSource;
+        int mwDtvSource = mDataPresenter.getParameterManager().getCurrentDvbSource();
+        if (currentDvbSource == ParameterManager.SIGNAL_ATSC_T &&
+                mwDtvSource == ParameterManager.SIGNAL_ATSC_C) {
+            newDvbSource = mwDtvSource;
+        }
+        if (newDvbSource != mwDtvSource) {
+            Log.i(TAG, "setCurrentSource:" + currentDvbSource);
+            mDataPresenter.getParameterManager().setCurrentDvbSource(currentDvbSource);
+        }
         int requestCode = 0;
         String className = null;
         switch (currentDvbSource) {
@@ -256,6 +268,10 @@ public class SearchGuideActivity extends Activity implements OnNextListener {
                 className = DataManager.KEY_ACTIVITY_ISDBT;
                 requestCode = REQUEST_CODE_START_ISDBT_ACTIVITY;
                 break;
+            case ParameterManager.SIGNAL_ATSC_T:
+            case ParameterManager.SIGNAL_ATSC_C:
+                className = DataManager.KEY_ACTIVITY_ATSC;
+                requestCode = REQUEST_CODE_START_ISDBT_ACTIVITY;
             default:
                 break;
         }
@@ -302,6 +318,7 @@ public class SearchGuideActivity extends Activity implements OnNextListener {
             case REQUEST_CODE_START_DVBT_ACTIVITY:
             case REQUEST_CODE_START_DVBS_ACTIVITY:
             case REQUEST_CODE_START_ISDBT_ACTIVITY:
+            case REQUEST_CODE_START_ATSC_ACTIVITY:
                 if (resultCode == RESULT_OK) {
                     setResult(RESULT_OK, data);
                 } else {

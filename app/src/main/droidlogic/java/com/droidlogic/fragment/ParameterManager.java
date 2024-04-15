@@ -192,6 +192,8 @@ public class ParameterManager {
     public static final int SIGNAL_QAM   = 4; // digital cable
     public static final int SIGNAL_ISDBT  = 5;
     public static final int SIGNAL_ANALOG = 8;
+    public static final int SIGNAL_ATSC_T  = 16;
+    public static final int SIGNAL_ATSC_C  = 64;
 
     public static final int DAYLIGHT_SAVING_MODE_OFF = 0;
     public static final int DAYLIGHT_SAVING_MODE_ON = 1;

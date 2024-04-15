@@ -43,6 +43,7 @@
     <string name="strSearchDvbcDescription">DVB-C channel tuner setup</string>
     <string name="strSearchDvbtDescription">DVB-T channel tuner setup</string>
     <string name="strSearchIsdbtDescription">ISDB-T channel tuner setup</string>
+    <string name="strSearchAtscDescription">ATSC channel tuner setup</string>
     <string name="strStartSearch">Start Search</string>
     <string name="strManualSearch">Manual Search</string>
     <string name="strAutoSearch">Auto Search</string>

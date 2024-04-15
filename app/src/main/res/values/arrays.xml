@@ -101,6 +101,14 @@
         <item>Cable</item>
     </string-array>
 
+    <string-array name="public_atsc_antenna_type_entries">
+        <item>ATSC-T</item>
+        <item>ATSC-C-STD</item>
+        <item>ATSC-C-LRC</item>
+        <item>ATSC-C-HRC</item>
+        <item>ATSC-C-AUTO</item>
+    </string-array>
+
     <string-array name="public_adtv_type_entries">
         <item>DTV</item>
         <item>ATV</item>
