@@ -41,6 +41,7 @@ import org.dtvkit.inputsource.searchguide.TKGSLocatorListFragment;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -330,6 +331,20 @@ public class SearchGuideActivity extends Activity implements OnNextListener {
                 break;
         }
         finish();
+        syncDatabase(resultCode);
+    }
+
+    /* for ac off/on test */
+    private void syncDatabase(int resultCode) {
+        if (resultCode == RESULT_OK) {
+            new Thread(() -> {
+                try {
+                    Runtime.getRuntime().exec("sync");
+                } catch (IOException e) {
+                    Log.e(TAG, "error: " + e.getMessage());
+                }
+            }).start();
+        }
     }
 
     @Override
