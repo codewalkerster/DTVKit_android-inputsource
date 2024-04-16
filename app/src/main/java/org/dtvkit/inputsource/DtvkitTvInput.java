@@ -5026,24 +5026,13 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                             mTuneInfo.dvbUri = dvbUri;
                             playerState = PlayerState.STARTING;
-                            if (mIsPip) {
-                                Log.d(TAG, "starting no need to start mheg");
-                                if (!isAv) {
-                                    Log.d(TAG, "starting not av program and notify to pip view");
-                                    Bundle pipTuningNext = new Bundle();
-                                    pipTuningNext.putString(ConstantManager.KEY_PIP_ACTION, ConstantManager.VALUE_PIP_ACTION_TUNE_NEXT);
-                                    notifySessionEvent(ConstantManager.EVENT_PIP_INFO, pipTuningNext);
-                                    notifyChannelRetuned(null);
-                                }
-                                return;
-                            }
                             if (mTunedChannel != null) {
-                                if (TvContractUtils.getBooleanFromChannelInternalProviderData(
-                                        mTunedChannel, Channel.KEY_IS_DATA_SERVICE, false)) {
-                                    if (!isAv) {
-                                        Log.d(TAG, "data_service isAv=false can not play well!");
-                                        mHandlerThreadHandle.postDelayed(() -> sendBundleToAppByTif("signal_data_service", null), 1000);
-                                    }
+                                if (!isAv) {
+                                    boolean isDateService = TvContractUtils.getBooleanFromChannelInternalProviderData(
+                                        mTunedChannel, Channel.KEY_IS_DATA_SERVICE, false);
+                                    Log.d(TAG, "isAv=false can not play well!");
+                                    mHandlerThreadHandle.postDelayed(() ->
+                                        sendBundleToAppByTif(isDateService ? "signal_data_service" : "signal_is_not_av", null), 1000);
                                 }
                             } else {
                                 Log.d(TAG, "on signal starting null mTunedChannel");
