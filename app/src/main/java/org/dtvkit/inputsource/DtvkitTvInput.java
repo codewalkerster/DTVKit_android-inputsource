@@ -5585,6 +5585,17 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     if (FeatureUtil.getFeatureSupportTunerFramework()) {
                         mHandlerThreadHandle.sendEmptyMessageDelayed(MSG_UPDATE_UTC_TIME, 500);
                     }
+                } else if (signal.equals("OadSwUpdateFound")) {
+                    try {
+                        Bundle parameters = new Bundle();
+                        parameters.putInt("hwmode", data.getInt("hwmode"));
+                        parameters.putInt("hwversion", data.getInt("hwversion"));
+                        parameters.putInt("swmode", data.getInt("swmode"));
+                        parameters.putInt("swversion", data.getInt("swversion"));
+                        sendBundleToAppByTif("OadSwUpdateFound", parameters);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         };
