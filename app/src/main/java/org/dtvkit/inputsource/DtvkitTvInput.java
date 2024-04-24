@@ -4866,7 +4866,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                     return;
                                 }
                                 try {
-                                    if (!data.getJSONObject("content").getBoolean("is_av")) {
+                                    if (data.getJSONObject("content").getBoolean("is_av")) {
+                                        timeshiftAvailable.setYes(false);
+                                    } else {
                                         timeshiftAvailable.setNo(false);
                                     }
                                 } catch (JSONException e) {
