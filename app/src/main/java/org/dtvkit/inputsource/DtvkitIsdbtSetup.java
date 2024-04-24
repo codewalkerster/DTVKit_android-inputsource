@@ -376,6 +376,9 @@ public class DtvkitIsdbtSetup extends Activity {
                 return false;
             } else {
                 int parameter = getParameter();
+                if (parameter < 0) {
+                    Toast.makeText(this, R.string.manual_search_range, Toast.LENGTH_SHORT).show();
+                }
                 if (UI.mSearchTvType == SEARCH_TV_TYPE.ATV) {
                     if (parameter >= 0) {
                         args.put(UI.mAntennaType);
@@ -417,7 +420,9 @@ public class DtvkitIsdbtSetup extends Activity {
             if (!TextUtils.isEmpty(value)/* && TextUtils.isDigitsOnly(value)*/) {
                 //float for frequency
                 float toFloat = Float.parseFloat(value);
-                parameter = (int)(toFloat * 1000.0f);//khz
+                if (toFloat >= 50.0f && toFloat <= 810.0f) {
+                    parameter = (int) (toFloat * 1000.0f);//khz
+                }
             }
         }
         return parameter;
@@ -949,29 +954,36 @@ public class DtvkitIsdbtSetup extends Activity {
             et_manual_frequency.addTextChangedListener(new TextWatcher() {
                 private String mText;
                 private int mCursor;
+                private boolean charAdd = true;
 
                 @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after){ }
+                public void beforeTextChanged(CharSequence s, int start, int count, int after){
+//                    Log.i(TAG,"beforeTextChanged text[" + s.toString() + "] start[" + start
+//                            + "] count[" + count +"]" + "] after[" + after +"]");
+                }
 
                 @Override
                 public void onTextChanged(CharSequence text, int start, int before, int count){
-                    Log.i(TAG,"text[" + text.toString() + "] start[" + start + "] count[" + count +"]");
+                    Log.i(TAG,"onTextChanged text[" + text.toString() + "] start[" + start
+                            + "] before[" + before +"]" + "] count[" + count +"]");
                     mCursor = start;
                     mText = text.toString();
+                    charAdd = count > 0;
                 }
 
                 @Override
                 public void afterTextChanged(Editable s) {
-                    if (!mText.equals("") && mCursor == 0) {
+//                    Log.i(TAG, "afterTextChanged text[" + s.toString());
+                    if (!mText.contains(".") && charAdd) {
                         et_manual_frequency.removeTextChangedListener(this);
-                        int index = et_manual_frequency.getSelectionStart();
                         if (isInManualATV()) {
-                            s.insert(index, ".25");
+                            s.append(".25");
+                            et_manual_frequency.setSelection(mCursor + 1);
                         } else {
-                            s.insert(index, ".143");
+                            s.append(".143");
+                            et_manual_frequency.setSelection(mCursor + 1);
                         }
                         et_manual_frequency.addTextChangedListener(this);
-                        et_manual_frequency.setSelection(1);
                     }
                 }
             });
