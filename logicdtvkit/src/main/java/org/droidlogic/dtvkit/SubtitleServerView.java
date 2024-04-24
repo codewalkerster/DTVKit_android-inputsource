@@ -45,7 +45,7 @@ public class SubtitleServerView extends FrameLayout {
     boolean mTtxTransparent = false;
 
     static final int SUBTITLE_SUB_TYPE_TTX = 8;
-    static final int SUBTITLE_SUB_TYPE_ARIB = 16;
+    static final int SUBTITLE_SUB_TYPE_ARIB = 12;
     static final int MSG_SUBTITLE_SHOW_CLOSED_CAPTION = 5;
     protected static final int MSG_SET_TELETEXT_MIX_NORMAL = 6;
     protected static final int MSG_SET_TELETEXT_MIX_TRANSPARENT = 7;
