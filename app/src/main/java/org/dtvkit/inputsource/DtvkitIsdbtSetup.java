@@ -428,6 +428,22 @@ public class DtvkitIsdbtSetup extends Activity {
         return parameter;
     }
 
+    private int getChannelNumberSearchFreqency() {
+        if (DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL != UI.mSearchMode) {
+            return -1;
+        }
+        int freq = -1;
+        String chName = (String) UI.spinner_manual_number.getSelectedItem();
+        if (!TextUtils.isEmpty(chName)) {
+            freq = Integer.parseInt(chName.substring(chName.lastIndexOf(" ") + 1, chName.indexOf("Hz")));
+            Log.d(TAG, "getChannelFreq = " + freq);
+        }
+        if (freq < 0) {
+            Log.w(TAG, "getChannelFreq failed");
+        }
+        return freq;
+    }
+
     private int getChannelIndex() {
         int index = -1;
         String chName = (String) UI.spinner_manual_number.getSelectedItem();
@@ -645,8 +661,12 @@ public class DtvkitIsdbtSetup extends Activity {
         //EpgSyncJobService.requestImmediateSync(this, inputId, true, new ComponentName(this, DtvkitEpgSync.class)); // 12 hours
         Bundle parameters = new Bundle();
         int isFrequencySearch = mDataManager.getIntParameters(DataManager.KEY_IS_FREQUENCY);
-        if (DataManager.VALUE_FREQUENCY_MODE == isFrequencySearch && DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL == UI.mSearchMode) {
-            parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, getParameter() * 1000);
+        if (DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL == UI.mSearchMode) {
+            if (UI.mSearchMethod == DataManager.VALUE_FREQUENCY_MODE) {
+                parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, getParameter() * 1000);
+            } else {
+                parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, getChannelNumberSearchFreqency());
+            }
         }
         parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_MODE, DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL != UI.mSearchMode ? EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_AUTO : EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL);
         parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE, "ISDB-T");

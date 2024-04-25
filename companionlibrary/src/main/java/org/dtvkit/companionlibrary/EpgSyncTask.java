@@ -122,12 +122,12 @@ public class EpgSyncTask {
                         }
                     }
                 }
+                Log.d(TAG, "BUNDLE_KEY_SYNC_PARAMETERS -> " + parameters);
             }
             String signalType = persistableBundle.getString(BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE);
             if (TextUtils.isEmpty(signalType)) {
                 String type = TvContractUtils.toSignalType(EpgSyncJobService.getChannelTypeFilter());
                 persistableBundle.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE, type);
-                Log.d(TAG, "BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE -> " + type);
             }
             boolean syncChannel = intent.getBooleanExtra(BUNDLE_KEY_SYNC_NEED_UPDATE_CHANNEL, true);
             if (syncChannel) {
