@@ -1255,7 +1255,7 @@ public class DtvkitIsdbtSetup extends Activity {
         }
 
         private String getSearchTvType() {
-            return getPrefs("ISDB_search_tv_type");
+            return mDataManager.getPrefs("ISDB_search_tv_type");
         }
         private void setSearchTvType(SEARCH_TV_TYPE tv_type) {
             if (tv_type == SEARCH_TV_TYPE.ATV) {
@@ -1269,7 +1269,7 @@ public class DtvkitIsdbtSetup extends Activity {
                 ll_dtv_search.setVisibility(View.VISIBLE);
             }
             updateSearchModeContent(true);
-            setPrefs("ISDB_search_tv_type", tv_type.toString());
+            mDataManager.setPrefs("ISDB_search_tv_type", tv_type.toString());
         }
 
         private int getSearchMethod() {
@@ -1299,23 +1299,6 @@ public class DtvkitIsdbtSetup extends Activity {
         }
         private void setChannelNumberI(int position) {
             mDataManager.saveIntParameters(DataManager.KEY_SEARCH_ISDBT_CHANNEL_NAME, position);
-        }
-
-        private final String PREFS_NAME = "search_pref";
-        private String getPrefs(String key){
-            SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-            return sp.getString(key, "");
-        }
-
-        private void setPrefs(String key, String value){
-            SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-            SharedPreferences.Editor editor = sp.edit();
-            if (value == null) {
-                editor.remove(key);
-            } else {
-                editor.putString(key, value);
-            }
-            editor.apply();
         }
     }
 }

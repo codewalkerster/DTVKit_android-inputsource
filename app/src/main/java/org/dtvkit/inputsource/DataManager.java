@@ -1,19 +1,11 @@
 package com.droidlogic.dtvkit.inputsource;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.util.Log;
-//import android.provider.Settings;
+
+import static android.content.Context.MODE_PRIVATE;
 
 import com.droidlogic.app.DataProviderManager;
 
@@ -397,5 +389,22 @@ public class DataManager {
             result = defValue;
         }
         return result;
+    }
+
+    private final String PREFS_NAME = "search_pref";
+    public String getPrefs(String key){
+        SharedPreferences sp = mContext.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sp.getString(key, "");
+    }
+
+    public void setPrefs(String key, String value){
+        SharedPreferences sp = mContext.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        if (value == null) {
+            editor.remove(key);
+        } else {
+            editor.putString(key, value);
+        }
+        editor.apply();
     }
 }

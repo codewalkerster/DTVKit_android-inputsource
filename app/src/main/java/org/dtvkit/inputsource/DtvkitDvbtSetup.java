@@ -84,6 +84,9 @@ public class DtvkitDvbtSetup extends Activity {
     private AutoNumberEditText mDvbcFreqAutoEdit = null;
     private String[] DVBC_AUTO_SCANTYPE = {"network", "quick", "full", "blind"};
 
+    private final String KEY_DVBC_AUTO_SCAN_TYPE = "DVBC_AUTO_SCAN_TYPE";
+    private final String KEY_DVBC_AUTO_OPERATOR_INDEX = "DVBC_AUTO_OPERATOR_INDEX";
+
     protected HandlerThread mHandlerThread = null;
     protected Handler mThreadHandler = null;
 
@@ -171,7 +174,7 @@ public class DtvkitDvbtSetup extends Activity {
             Tuner tuner = new Tuner(this, null, TvInputService.PRIORITY_HINT_USE_CASE_TYPE_SCAN);
             mTunerAdapter = new TunerAdapter(tuner, TunerAdapter.TUNER_TYPE_SCAN);
         }
-
+        mDataManager = new DataManager(this);
         mParameterManager = new ParameterManager(this, DtvkitGlueClient.getInstance());
         final Button optionSet = findViewById(R.id.option_set_btn);
         optionSet.setOnClickListener(new View.OnClickListener() {
@@ -214,7 +217,6 @@ public class DtvkitDvbtSetup extends Activity {
             }
         });
         startSearch.requestFocus();
-        mDataManager = new DataManager(this);
         mPvrStatusConfirmManager = new PvrStatusConfirmManager(this, mDataManager);
         Intent intent = getIntent();
         if (intent != null) {
@@ -486,7 +488,16 @@ public class DtvkitDvbtSetup extends Activity {
             } else {
                 //dvbc_operator_container.setVisibility(View.VISIBLE);
                 dvbc_auto_scan_type_container.setVisibility(View.VISIBLE);
-                int autoScanTypePos = dvbc_auto_scan_type_spinner.getSelectedItemPosition();
+                int autoScanTypePos = 0;
+                if (init) {
+                    String type = mDataManager.getPrefs(KEY_DVBC_AUTO_SCAN_TYPE);
+                    if (!TextUtils.isEmpty(type) && TextUtils.isDigitsOnly(type)) {
+                        autoScanTypePos = Integer.parseInt(type);
+                        dvbc_auto_scan_type_spinner.setSelection(autoScanTypePos);
+                    }
+                } else  {
+                    autoScanTypePos = dvbc_auto_scan_type_spinner.getSelectedItemPosition();
+                }
                 int visibility = View.GONE;
                 if (autoScanTypePos < 2) {
                     visibility = View.VISIBLE;
@@ -739,7 +750,15 @@ public class DtvkitDvbtSetup extends Activity {
                 dvbc_auto_scan_type_spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                        initOrUpdateView(false);
+                        String value = mDataManager.getPrefs(KEY_DVBC_AUTO_SCAN_TYPE);
+                        int oldPos = 0;
+                        if (!TextUtils.isEmpty(value) && TextUtils.isDigitsOnly(value)) {
+                            oldPos = Integer.parseInt(value);
+                        }
+                        if (i != oldPos) {
+                            initOrUpdateView(false);
+                            mDataManager.setPrefs(KEY_DVBC_AUTO_SCAN_TYPE, String.valueOf(i));
+                        }
                     }
 
                     @Override
@@ -777,22 +796,36 @@ public class DtvkitDvbtSetup extends Activity {
                     }
                 } catch (Exception e) {
                 }
-                if (operatorStrList.size() > 0) {
+                if (!operatorStrList.isEmpty()) {
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, operatorStrList);
                     operator_spinner.setAdapter(adapter);
                     operator_spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
                         @Override
                         public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                             updateDvbcOperator(i);
+                            mDataManager.setPrefs(KEY_DVBC_AUTO_OPERATOR_INDEX, String.valueOf(i));
                         }
 
                         @Override
                         public void onNothingSelected(AdapterView<?> adapterView) {
                         }
                     });
+                    String ret = mDataManager.getPrefs(KEY_DVBC_AUTO_OPERATOR_INDEX);
+                    int idx = 0;
+                    if (!TextUtils.isEmpty(ret) && TextUtils.isDigitsOnly(ret)) {
+                        idx = Integer.parseInt(ret);
+                    }
+                    if (operatorStrList.size() > idx) {
+                        operator_spinner.setSelection(idx);
+                    }
                 }
                 if (mInAutomaticMode) {
-                    dvbc_auto_scan_type_spinner.setSelection(2);
+                    String ret = mDataManager.getPrefs(KEY_DVBC_AUTO_SCAN_TYPE);
+                    int idx = 0;
+                    if (!TextUtils.isEmpty(ret) && TextUtils.isDigitsOnly(ret)) {
+                        idx = Integer.parseInt(ret);
+                    }
+                    dvbc_auto_scan_type_spinner.setSelection(idx);
                 }
                 dvbc_symbol_edit.addTextChangedListener (new TextWatcher(){
                     @Override
