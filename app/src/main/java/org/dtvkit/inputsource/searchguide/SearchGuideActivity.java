@@ -245,10 +245,8 @@ public class SearchGuideActivity extends Activity implements OnNextListener {
                 mwDtvSource == ParameterManager.SIGNAL_ATSC_C) {
             newDvbSource = mwDtvSource;
         }
-        if (newDvbSource != mwDtvSource) {
-            Log.i(TAG, "setCurrentSource:" + currentDvbSource);
-            mDataPresenter.getParameterManager().setCurrentDvbSource(currentDvbSource);
-        }
+        Log.i(TAG, "setCurrentSource:" + newDvbSource);
+        mDataPresenter.getParameterManager().setCurrentDvbSource(newDvbSource);
         int requestCode = 0;
         String className = null;
         switch (currentDvbSource) {
@@ -273,6 +271,7 @@ public class SearchGuideActivity extends Activity implements OnNextListener {
             case ParameterManager.SIGNAL_ATSC_C:
                 className = DataManager.KEY_ACTIVITY_ATSC;
                 requestCode = REQUEST_CODE_START_ISDBT_ACTIVITY;
+                break;
             default:
                 break;
         }
