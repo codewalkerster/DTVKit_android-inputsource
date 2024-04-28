@@ -246,7 +246,7 @@ public class SatelliteWrap {
         boolean ret = false;
         try {
             JSONArray array = new JSONArray();
-            mDtvkitGlueClient.request("dvbs.autoDiseqcStop", array);
+            mDtvkitGlueClient.request("Dvbs.autoDiseqcStop", array);
             ret = true;
         } catch (Exception e) {
             e.printStackTrace();
