@@ -204,12 +204,12 @@ public class DtvkitIsdbtSetup extends Activity {
             JSONObject service = mServiceList.optJSONObject(i);
             int freq;
             boolean curATv;
-            if (service.has("uri")) {
-                freq = service.optInt("freq");
-                curATv = false;
-            } else {
+            if (service.has("Unikey")) {
                 freq = service.optInt("Freq");
                 curATv = true;
+            } else {
+                freq = service.optInt("freq");
+                curATv = false;
             }
             boolean isMatched = UI.mSearchMode != DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL
                     || (freq != 0 && UI.mManualFrequency == freq);
@@ -803,6 +803,7 @@ public class DtvkitIsdbtSetup extends Activity {
             }
             if (UI.mSearchMode == DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL) {
                 UI.mManualFrequency = result[2];
+                Log.d(TAG, "dealOnSignal Manual Frequency = " + result[2]);
             }
         }
     }
