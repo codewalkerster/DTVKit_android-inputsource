@@ -3076,19 +3076,19 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             } else {
                 if (!isPipSession() && Channel.isATV(oldChannel) != Channel.isATV(newChannel)) {
                     if (false == FeatureUtil.getFeatureSupportTunerFramework()) {
-                        mMainHardware.setSurface(mSurface, Channel.isATV(mTunedChannel) ? mMainStreamConfig[1] : mMainStreamConfig[0]);
+                        mMainHardware.setSurface(mSurface, Channel.isATV(newChannel) ? mMainStreamConfig[1] : mMainStreamConfig[0]);
                     }
                 }
-                if (Channel.isATV(mTunedChannel)) {
-                    playResult = playerPlay_ATV(mTunedChannel);
-                    setATVMtsMode(mContext);
+                if (Channel.isATV(newChannel)) {
+                    playResult = playerPlay_ATV(newChannel);
+                    setATVMtsMode(mContext, newChannel.getInternalProviderData().getInt("audio_out_mode"));
                 } else {
                     playResult = playerPlay(INDEX_FOR_MAIN, dvbUri, mAudioADAutoStart,
                             mainMuteStatus, 0, previousUriStr, nextUriStr).equals("ok");
                 }
                 if (!isPipSession() && Channel.isATV(oldChannel) != Channel.isATV(newChannel)) {
                     mSystemControlManager.SetCurrentSourceInfo(
-                            Channel.isATV(mTunedChannel) ? SystemControlManager.SourceInput.TV : SystemControlManager.SourceInput.DTV, 0, 0);
+                            Channel.isATV(newChannel) ? SystemControlManager.SourceInput.TV : SystemControlManager.SourceInput.DTV, 0, 0);
                 }
             }
             if (playResult) {
@@ -4395,8 +4395,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 playerSeekTo(seekTime / 1000);
             } else if (ConstantManager.ACTION_ATV_SET_MTS_OUTPUT_MODE.equals(action) && data != null) {
                 int value = data.getInt("mts_output_mode", 0);
-                DataProviderManager.putIntValue(mContext, ConstantManager.ACTION_ATV_SET_MTS_MODE, value);
-                setATVMtsMode(mContext);
+                setATVMtsMode(mContext, value);
             } else if (ConstantManager.ACTION_ATV_GET_MTS_INPUT_MODE.equals(action)) {
                 int value = TvMTSSetting.getInstance().getAtvMTSInModeValue();
                 DataProviderManager.putIntValue(mContext, action, value);
@@ -8244,14 +8243,14 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
     }
 
-    private void setATVMtsMode(Context context) {
+    private void setATVMtsMode(Context context, int value) {
         int setmode = 0;
-        int savedmode = DataProviderManager.getIntValue(context, ConstantManager.ACTION_ATV_SET_MTS_MODE, playerGetAtvMtsMode());
+        int savedmode = Math.max(0, value);
         List<TvMTSSetting.Mode> supportMode = mTvMTSSetting.getAtvMTSMode().getOutList();
         Collections.sort(supportMode);
         for (TvMTSSetting.Mode mode : supportMode) {
-            setmode = mode.getValue();
-            if (setmode == savedmode) {
+            if (mode.getValue() == savedmode) {
+                setmode = mode.getValue();
                 break;
             }
         }
