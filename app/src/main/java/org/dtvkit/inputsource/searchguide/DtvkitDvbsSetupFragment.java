@@ -763,7 +763,8 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
             || opType == DvbsParameterManager.OPERATOR_AIRTEL
             || opType == DvbsParameterManager.OPERATOR_SUNDIRECT
             || opType == DvbsParameterManager.OPERATOR_CANALPLUS
-            || opType == DvbsParameterManager.OPERATOR_TIVUSAT) {
+            || opType == DvbsParameterManager.OPERATOR_TIVUSAT
+            || opType == DvbsParameterManager.OPERATOR_CANALDIGITAL) {
             args.put("quick");
             args.put(opType);
             args.put("fti");

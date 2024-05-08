@@ -48,6 +48,7 @@ public class DvbsParameterManager {
     public static final int OPERATOR_CANALPLUS = 0x0500;
     public static final int OPERATOR_TIVUSAT = 0x0600;
     public static final int OPERATOR_FRANSAT = 0x0800;
+    public static final int OPERATOR_CANALDIGITAL = 0x0901;
     public static final int OPERATOR_DEFAULT = 0xFFFF;
 
     public static final int OPERATOR_AIRTEL_BOUQUETID = 0x6070;

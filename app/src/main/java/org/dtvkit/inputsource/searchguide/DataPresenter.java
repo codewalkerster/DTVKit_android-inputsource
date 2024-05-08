@@ -102,6 +102,8 @@ public class DataPresenter {
             mOperateType = DvbsParameterManager.OPERATOR_TIVUSAT;
         } else if (operateType.contains("Fransat")) {
             mOperateType = DvbsParameterManager.OPERATOR_FRANSAT;
+        } else if (operateType.contains("CanalDigital")) {
+            mOperateType = DvbsParameterManager.OPERATOR_CANALDIGITAL;
         } else {
             mOperateType = DvbsParameterManager.OPERATOR_DEFAULT;
         }
