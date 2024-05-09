@@ -91,7 +91,7 @@ public class DtvkitBackGroundSearch {
 
     boolean isCurrentSignalSupportBackgroundSearch() {
         return (mCurrentDvbSource == ParameterManager.SIGNAL_COFDM
-                || mCurrentDvbSource == ParameterManager.SIGNAL_QAM
+                || mCurrentDvbSource == ParameterManager.SIGNAL_QAM || mCurrentDvbSource == ParameterManager.SIGNAL_ISDBT
                 || (mCurrentDvbSource == ParameterManager.SIGNAL_QPSK && "TKGS".equals(mDataManager.getStringParameters(ParameterManager.DVBS_OPERATOR_MODE))));
 
     }
@@ -111,6 +111,10 @@ public class DtvkitBackGroundSearch {
                 ret = "Dvbs.startDvbUpdate";
             }
             break;
+            case ParameterManager.SIGNAL_ISDBT: {
+                ret = "Isdbt.startSearch";
+                break;
+            }
             default:
                 break;
         }
@@ -122,15 +126,20 @@ public class DtvkitBackGroundSearch {
         switch (mCurrentDvbSource) {
             case ParameterManager.SIGNAL_COFDM: {
                 ret = "Dvbt.finishSearch";
+                break;
             }
-            break;
             case ParameterManager.SIGNAL_QAM: {
                 ret = "Dvbc.finishSearch";
+                break;
             }
-            break;
-            case ParameterManager.SIGNAL_QPSK:
+            case ParameterManager.SIGNAL_QPSK: {
                 ret = "Dvbs.finishSearch";
                 break;
+            }
+            case ParameterManager.SIGNAL_ISDBT: {
+                ret = "Isdbt.finishSearch";
+                break;
+            }
             default:
                 break;
         }
@@ -150,6 +159,8 @@ public class DtvkitBackGroundSearch {
             case ParameterManager.SIGNAL_QPSK:
                 args.put("standby");
                 args.put(0x0301);
+            case ParameterManager.SIGNAL_ISDBT:
+                args.put(true);
             default:
                 break;
         }
@@ -437,7 +448,8 @@ public class DtvkitBackGroundSearch {
     }
 
     private void responseOnSignal(String signal, JSONObject data) {
-        if (signal.equals("DvbtStatusChanged") || signal.equals("DvbcStatusChanged") || signal.equals("DvbsStatusChanged")) {
+        if (signal.equals("DvbtStatusChanged") || signal.equals("DvbcStatusChanged")
+            || signal.equals("DvbsStatusChanged") || signal.equals("IsdbtStatusChanged")) {
             int progress = getSearchProcess(data);
             if (progress < 0 || progress > 100) {
                 Log.d(TAG, "Invalid progress " + progress + ", low level scan has been terminated");

@@ -9715,9 +9715,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 int dvbSource = getCurrentDvbSource();
                 Log.d(TAG, "mode = " + mode + ", signal type= " + dvbSource);
                 if (dvbSource != ParameterManager.SIGNAL_COFDM
-                        && dvbSource != ParameterManager.SIGNAL_QAM
+                        && dvbSource != ParameterManager.SIGNAL_QAM && dvbSource != ParameterManager.SIGNAL_ISDBT
                         && (dvbSource != ParameterManager.SIGNAL_QPSK || !"TKGS".equals(mDataManager.getStringParameters(ParameterManager.DVBS_OPERATOR_MODE)))) {
-                    Log.d(TAG, "only dvbt/c/TKGS will do automatic search.");
+                    Log.d(TAG, "only dvbt/c/TKGS and ISDB-T will do automatic search.");
                     return;
                 }
                 JSONArray activeRecordings = recordingGetActiveRecordings();
