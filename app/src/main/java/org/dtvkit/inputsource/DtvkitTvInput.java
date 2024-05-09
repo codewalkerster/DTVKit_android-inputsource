@@ -5879,13 +5879,11 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             if (mTuneInfo.frequency == 0) {
                                 break;
                             }
-                            int antennaType = 0;
+                            int dvbSource = TvContractUtils.dvbSourceToInt(EpgSyncJobService.getChannelTypeFilter());
                             String dtvType = mDataManager.getStringParameters(DataManager.KEY_TV_DTV_TYPE);
-                            if (TextUtils.equals(TvContract.Channels.TYPE_ATSC_C, dtvType)) {
-                                antennaType = 1;
-                            }
                             for (Channel nextChannel : channelList) {
-                                if (Channel.isATV(nextChannel) && nextChannel.getAntennaType() == antennaType
+                                if (Channel.isATV(nextChannel)
+                                    && TvContractUtils.isATvMatchSource(dvbSource, dtvType, nextChannel.getAntennaType())
                                     && nextChannel.getFrequency() == freq) {
                                     channel = nextChannel;
                                     break;

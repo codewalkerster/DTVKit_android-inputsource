@@ -1180,6 +1180,23 @@ public class TvContractUtils {
         return type;
     }
 
+    public static boolean isATvMatchSource(int dvbSource, String tvType, int flag) {
+        int intType = 6;
+        if (dvbSource == SIGNAL_ISDBT) {
+            if (TvContract.Channels.TYPE_ATSC_C.equals(tvType)) {
+                intType = 7;
+            } else {
+                intType = 6;
+            }
+        } else if (dvbSource == SIGNAL_ATSC_T) {
+            intType = 0;
+        } else if (dvbSource == SIGNAL_ATSC_C) {
+            intType = 1;
+        } else {
+            intType = 10;
+        }
+        return flag == intType;
+    }
 
     /* tv_dtvkit_system in database.db is DVB-T format, NOT TYPE_DVB_T */
     public static String dvbSourceToDbString(int source) {
