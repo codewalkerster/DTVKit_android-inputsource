@@ -632,6 +632,10 @@ public class DtvkitIsdbtSetup extends Activity {
         UI.updateSearchButton(true);
         UI.setSearchStatus("Finishing search");
         UI.setSearchProgressIndeterminate(true);
+        if (!mStartSearch) {
+            Log.w(TAG, "stopped...");
+            return;
+        }
         stopMonitoringSearch();
         stopSearch();
         //update search results as After the search is finished, the lcn will be reordered
@@ -657,12 +661,8 @@ public class DtvkitIsdbtSetup extends Activity {
         } catch (Exception ignored) {}
         UI.setSearchStatus("Updating guide");
         startMonitoringSync();
-        // If the intent that started this activity is from Live Channels app
-        String inputId = this.getIntent().getStringExtra(TvInputInfo.EXTRA_INPUT_ID);
-        Log.i(TAG, String.format("inputId: %s", inputId));
-        //EpgSyncJobService.requestImmediateSync(this, inputId, true, new ComponentName(this, DtvkitEpgSync.class)); // 12 hours
+
         Bundle parameters = new Bundle();
-        int isFrequencySearch = mDataManager.getIntParameters(DataManager.KEY_IS_FREQUENCY);
         if (DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL == UI.mSearchMode) {
             if (UI.mSearchMethod == DataManager.VALUE_FREQUENCY_MODE) {
                 parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, getParameter() * 1000);
@@ -674,7 +674,7 @@ public class DtvkitIsdbtSetup extends Activity {
         parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE, "ISDB-T");
 
         Intent intent = new Intent(this, com.droidlogic.dtvkit.inputsource.DtvkitEpgSync.class);
-        intent.putExtra("inputId", inputId);
+        intent.putExtra("inputId", EpgSyncJobService.DTVKIT_INPUTID);
         intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_FROM, TAG);
         intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_CHANNEL, (mFoundServiceNumber > 0));
         intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_PARAMETERS, parameters);

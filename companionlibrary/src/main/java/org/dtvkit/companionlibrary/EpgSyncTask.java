@@ -60,7 +60,8 @@ public class EpgSyncTask {
     private final String TAG = EpgSyncTask.class.getSimpleName();
     private final boolean DEBUG = false;
     private final ThreadFactory sThreadFactory = new NamedThreadFactory("EpgSyncTask");
-    private final ExecutorService EPG_EXECUTOR = Executors.newFixedThreadPool(2, sThreadFactory);
+    private final ExecutorService CHANNEL_EXECUTOR = Executors.newFixedThreadPool(1, sThreadFactory);
+    private final ExecutorService EPG_EXECUTOR = Executors.newFixedThreadPool(1, sThreadFactory);
     private final EpgSyncJobService mMainService;
     private FutureTask<String> mChannelTask;
     private FutureTask<String> mEventTask;
@@ -137,7 +138,7 @@ public class EpgSyncTask {
                             + ", reason:" + intent.getStringExtra(BUNDLE_KEY_SYNC_FROM));
                 }
                 mChannelTask = new FutureTask<>(new EpgCallable(persistableBundle));
-                EPG_EXECUTOR.execute(mChannelTask);
+                CHANNEL_EXECUTOR.execute(mChannelTask);
             } else {
                 if (mEventTask != null) {
                     Log.i(TAG, "cancel EventTask " + mEventTask.cancel(true));
