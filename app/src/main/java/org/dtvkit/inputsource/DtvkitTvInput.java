@@ -6424,7 +6424,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         private void setTimeshiftResume() {
             Log.i(TAG, "setTimeShiftResume ");
-            playerState = PlayerState.PLAYING;
             if (playerResume()) {
                 playSpeed = 1;
             }
