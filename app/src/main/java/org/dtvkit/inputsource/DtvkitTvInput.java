@@ -954,6 +954,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             if ((subFlg & SUBTITLE_CTL_HK_CC) == SUBTITLE_CTL_HK_CC) {
                 CustomerFont.initFontInTread(getApplicationContext());
                 hasInitFont = true;
+                //enable colosed caption
+                try {
+                    JSONArray args = new JSONArray();
+                    args.put(true);
+                    DtvkitGlueClient.getInstance().request("Dvb.enableClosedCaption", args);
+                } catch (Exception ignore){}
             }
         }
         if (AtvCcTool.getInstance().supportAtv()) {

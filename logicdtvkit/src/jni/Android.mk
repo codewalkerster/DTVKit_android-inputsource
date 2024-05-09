@@ -24,7 +24,6 @@ LOCAL_HEADER_LIBRARIES := jni_headers
 
 LOCAL_SHARED_LIBRARIES := \
     android.hidl.memory@1.0 \
-    vendor.amlogic.hardware.subtitleserver@1.0 \
     libbase \
     libcutils \
     libutils \
@@ -43,15 +42,9 @@ else
     libdtvkithidlclient
 endif
 
-SUBTITLE_INCLUDES := \
-    vendor/amlogic/common/frameworks/services/subtitleserver/client
-
 ifeq ($(PRODUCT_DTVKIT_SUPPORT_ISDBT),true)
 LOCAL_CFLAGS += -DSUPPORT_ISDBT
 endif
-
-LOCAL_C_INCLUDES += $(SUBTITLE_INCLUDES)
-LOCAL_STATIC_LIBRARIES := libsubtitleclient_static libfmq
 
 LOCAL_PRELINK_MODULE := false
 LOCAL_MODULE_TAGS := optional
