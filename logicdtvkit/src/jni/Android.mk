@@ -43,8 +43,6 @@ else
     libdtvkithidlclient
 endif
 
-LOCAL_LDLIBS := -lfmq_vendor
-
 SUBTITLE_INCLUDES := \
     vendor/amlogic/common/frameworks/services/subtitleserver/client
 
