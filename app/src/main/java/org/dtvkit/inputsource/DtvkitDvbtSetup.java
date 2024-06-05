@@ -103,6 +103,8 @@ public class DtvkitDvbtSetup extends Activity {
     private int isFrequencyMode = 0;
     private boolean mUpdateSearchFlag = false;
     private TunerAdapter mTunerAdapter = null;
+    // operatorList for dvb-c only
+    private JSONArray mOperatorList;
 
     private final DtvkitGlueClient.SignalHandler mHandler = new DtvkitGlueClient.SignalHandler() {
         @Override
@@ -228,6 +230,9 @@ public class DtvkitDvbtSetup extends Activity {
                 mDataManager.saveIntParameters(DataManager.KEY_PUBLIC_SEARCH_MODE, DataManager.VALUE_PUBLIC_SEARCH_MODE_AUTO);
             }
             Log.d(TAG, "onCreate mIsDvbt = " + mIsDvbt + ", status = " + status + ", isAutomaticMode= " + mInAutomaticMode);
+        }
+        if (!mIsDvbt) {
+            mOperatorList = mParameterManager.getOperatorsTypeList(ParameterManager.SIGNAL_QAM);
         }
         ((TextView)findViewById(R.id.dvb_search)).setText(mIsDvbt ? R.string.strSearchDvbtDescription : R.string.strSearchDvbcDescription);
         initHandler();
@@ -780,12 +785,11 @@ public class DtvkitDvbtSetup extends Activity {
                             0, 44, 870, "MHz", listener);
                 } catch (Exception e) {
                 }
-                JSONArray operatorList = mParameterManager.getOperatorsTypeList(ParameterManager.SIGNAL_QAM);
                 List<String> operatorStrList = new ArrayList<>();
                 try {
-                    if (operatorList != null && operatorList.length() > 0) {
-                        for (int i = 0; i < operatorList.length(); i++) {
-                            JSONObject operator = (JSONObject) operatorList.get(i);
+                    if (mOperatorList != null && mOperatorList.length() > 0) {
+                        for (int i = 0; i < mOperatorList.length(); i++) {
+                            JSONObject operator = (JSONObject) mOperatorList.get(i);
                             if (operator != null) {
                                 String name = operator.optString("operators_name");
                                 if (!TextUtils.isEmpty(name)) {
@@ -804,6 +808,26 @@ public class DtvkitDvbtSetup extends Activity {
                         public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                             updateDvbcOperator(i);
                             mDataManager.setPrefs(KEY_DVBC_AUTO_OPERATOR_INDEX, String.valueOf(i));
+                            String operator = (String) adapterView.getSelectedItem();
+                            Log.i(TAG, "operator_spinner :" + operator + ", i=" + i + ", l=" + l);
+                            try {
+                                if (mOperatorList != null && mOperatorList.length() > 0) {
+                                    for (int j = 0; j < mOperatorList.length(); j++) {
+                                        JSONObject object = (JSONObject) mOperatorList.get(j);
+                                        if (object != null) {
+                                            if (object.optString("operators_name").equals(operator)) {
+                                                mParameterManager.setOperatorType(ParameterManager.SIGNAL_QAM,
+                                                        object.getInt("operators_value"));
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (Exception e) {
+                            }
+                            if (checkBoxLcn.getVisibility() == View.VISIBLE) {
+                                checkBoxLcn.setChecked(mParameterManager.getAutomaticOrderingEnabled());
+                            }
                         }
 
                         @Override
@@ -866,9 +890,8 @@ public class DtvkitDvbtSetup extends Activity {
     }
 
     private void updateDvbcOperator(int index) {
-        JSONArray operatorList = mParameterManager.getOperatorsTypeList(ParameterManager.SIGNAL_QAM);
-        if (operatorList != null && operatorList.length() > index) {
-            JSONObject operator = operatorList.optJSONObject(index);
+        if (mOperatorList != null && mOperatorList.length() > index) {
+            JSONObject operator = mOperatorList.optJSONObject(index);
             if (operator != null) {
                 int networkID = operator.optInt("Networkid", 0);
                 int symbolRate = operator.optInt("SymbolRate", 0);
@@ -896,33 +919,8 @@ public class DtvkitDvbtSetup extends Activity {
     private JSONArray initDvbcScanParamsEx() {
         Spinner dvbc_auto_scan_type_spinner = (Spinner) findViewById(R.id.dvbc_auto_scan_type_spinner);
         String scanType = DVBC_AUTO_SCANTYPE[dvbc_auto_scan_type_spinner.getSelectedItemPosition()];
-        Spinner operator_spinner = (Spinner) findViewById(R.id.dvbc_operator_spinner);
-        ArrayAdapter<String> operatorAdpater = (ArrayAdapter<String>) operator_spinner.getAdapter();
-        String operator = "";
-        if (operatorAdpater != null) {
-            operator = (String) operatorAdpater.getItem(operator_spinner.getSelectedItemPosition());
-
-            JSONArray operatorList = mParameterManager.getOperatorsTypeList(ParameterManager.SIGNAL_QAM);
-            try {
-                if (operatorList != null && operatorList.length() > 0) {
-                    for (int i = 0; i < operatorList.length(); i++) {
-                        JSONObject object = (JSONObject) operatorList.get(i);
-                        if (object != null) {
-                            if (object.optString("operators_name").equals(operator))
-                            {
-                                JSONArray args = new JSONArray();
-                                args.put(ParameterManager.SIGNAL_QAM);
-                                args.put(object.getInt("operators_value"));
-                                DtvkitGlueClient.getInstance().request("Dvb.SetOperatorsType", args);
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-            }
-        }
-
+        Spinner operator_spinner = findViewById(R.id.dvbc_operator_spinner);
+        String operator = (String) operator_spinner.getAdapter().getItem(operator_spinner.getSelectedItemPosition());
         JSONArray array = new JSONArray();
         array.put(scanType);
         array.put(operator);

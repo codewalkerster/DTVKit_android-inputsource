@@ -1864,7 +1864,7 @@ public class ParameterManager {
         } catch (Exception e) {
             Log.e(TAG, "getOperatorsTypeList Exception = " + e.getMessage());
         }
-            return operatorsType;
+        return operatorsType;
     }
 
     public int getOperatorTypeIndex(int tunerType) {
@@ -1945,17 +1945,10 @@ public class ParameterManager {
     }
 
     public void setAutomaticOrderingEnabled(boolean bOrdering) {
-        JSONObject resultObj = null;
         try {
             JSONArray args = new JSONArray();
             args.put(bOrdering);
-            JSONObject obj = DtvkitGlueClient.getInstance().request("Dvb.SetAutomaticOrderingEnabled", args);
-            if (resultObj != null) {
-                Log.d(TAG, "setAutomaticOrderingEnabled resultObj:" + resultObj.toString());
-            } else {
-                Log.d(TAG, "setAutomaticOrderingEnabled then get null");
-            }
-
+            DtvkitGlueClient.getInstance().request("Dvb.SetAutomaticOrderingEnabled", args);
         } catch (Exception e) {
             Log.d(TAG, "setAutomaticOrderingEnabled Exception " + e.getMessage() + ", trace=" + e.getStackTrace());
         }
