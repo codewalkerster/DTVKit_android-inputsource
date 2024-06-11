@@ -5042,8 +5042,11 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                     boolean isDateService = TvContractUtils.getBooleanFromChannelInternalProviderData(
                                         mTunedChannel, Channel.KEY_IS_DATA_SERVICE, false);
                                     Log.d(TAG, "isAv=false can not play well!");
-                                    mHandlerThreadHandle.postDelayed(() ->
-                                        sendBundleToAppByTif(isDateService ? "signal_data_service" : "signal_is_not_av", null), 1000);
+                                    if (isDateService) {
+                                        mHandlerThreadHandle.postDelayed(() -> sendBundleToAppByTif("signal_data_service", null), 1000);
+                                    } else {
+                                        mHandlerThreadHandle.post(() -> sendBundleToAppByTif("signal_is_not_av", null));
+                                    }
                                 }
                             } else {
                                 Log.d(TAG, "on signal starting null mTunedChannel");
@@ -5084,9 +5087,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         case "recording":
                             if (timeshiftRecorderState != RecorderState.RECORDING) {
                                 timeshiftRecorderState = RecorderState.RECORDING;
-                                startPosition = /*System.currentTimeMillis()*/PropSettingManager.getCurrentStreamTime(true);
-                                originalStartPosition = PropSettingManager.getCurrentStreamTime(false);//keep the original time
                                 runOnMainThread(() -> {
+                                    startPosition = /*System.currentTimeMillis()*/PropSettingManager.getCurrentStreamTime(true);
+                                    originalStartPosition = PropSettingManager.getCurrentStreamTime(false);//keep the original time
                                     Log.i(TAG, "recording originalStartPosition as date = "
                                         + ConvertSettingManager.convertLongToDate(originalStartPosition)
                                         + ", startPosition = "
