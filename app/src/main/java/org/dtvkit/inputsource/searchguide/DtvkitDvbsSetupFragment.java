@@ -261,6 +261,7 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
                         mPvrStatusConfirmManager.showDialogToAppoint(getActivity(), false);
                     } else {
                         if (mStartSearch) {
+                            mSearch.setEnabled(false);
                             sendFinishSearch(true);
                             updateSearchUi(true, true, "Finishing search");
                         } else {
