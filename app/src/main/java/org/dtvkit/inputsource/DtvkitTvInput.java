@@ -4857,6 +4857,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 mTuneInfo.update = false;
                                 sendMsgTsUpdate();
                             }
+
+                            //enable subtitle for:
+                            //every live playing
+                            //first playing state of timeshift and playback
+                            boolean retuneSubtitle = true;
+
                             PlayerState oldplayerState = playerState;
                             playerState = PlayerState.PLAYING;
                             if (type.equals("dvblive")) {
@@ -4898,6 +4904,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 if (oldplayerState != PlayerState.PLAYING) {
                                     Message msg = mMainHandle.obtainMessage(MSG_BLOCK_MUTE_OR_UNMUTE, 0, 0);
                                     mHandlerThreadHandle.sendMessage(msg);
+                                } else {
+                                    retuneSubtitle = playerGetSubtitlesOn();
                                 }
                                 startPosition = originalStartPosition = 0; // start position is always 0 when playing back recorded program
                                 currentPosition = playerGetElapsedAndTruncated(data)[0];
@@ -4916,13 +4924,24 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 } else {
                                     notifyVideoAvailable();
                                 }
+
+                                JSONObject content = data.optJSONObject("content");
+                                if (content != null) {
+                                    int elapsed = content.optInt("elapsed");
+                                    int length = content.optInt("length");
+                                    if (elapsed > 0 || length > 0) {
+                                        //not the first time into timeshift
+                                        retuneSubtitle = playerGetSubtitlesOn();
+                                        Log.d("QINKAITEST", "Not the first playing state of timeshift, subtitle state:" + retuneSubtitle);
+                                    }
+                                }
                             } else {
                                 if (type.equals("ATV")) {
                                     setBlockMute(false);
                                 }
                                 notifyVideoAvailable();
                             }
-                            if (mTuneInfo.isDTv) {
+                            if (mTuneInfo.isDTv && retuneSubtitle) {
                                 playerSetSubtitlesOn(true);
                             }
                             sendUpdateTrackMsg();
