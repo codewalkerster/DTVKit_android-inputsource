@@ -227,6 +227,8 @@ public class ParameterManager {
     public static final String TV_AV1_KEY = "AV1InputService";
     public static final String TV_AV2_KEY = "AV2InputService";
 
+    public static final String TV_KEY_BACKGROUND_SEARCH_REGION_SELECTION = "key_background_search_region_selection";
+
     public static final int TV_SIG_TUNE_UNLOCKED = 0;
     public static final int TV_SIG_TUNE_LOCKED = 1;
     public static final int TV_SIG_PARENTAL_LOCKED = 2;

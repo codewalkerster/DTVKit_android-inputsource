@@ -810,6 +810,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     if (DataProviderManager.getBooleanValue(this, "is_channel_searching", false)) {
                         DataProviderManager.putBooleanValue(this,ConstantManager.KEY_IS_SEARCHING, false);
                     }
+                    if (mDataManager.getIntParameters(ParameterManager.TV_KEY_BACKGROUND_SEARCH_REGION_SELECTION) == 1) {
+                        mDataManager.saveIntParameters(ParameterManager.TV_KEY_BACKGROUND_SEARCH_REGION_SELECTION, 0);
+                    }
                     break;
                 }
 
@@ -9801,6 +9804,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             case DtvkitBackGroundSearch.SINGLE_FREQUENCY_STATUS_SAVE_FINISH: {
                                 Log.d(TAG, "waiting for doing something");
                                 if (mode == 1 || intent.getBooleanExtra("tkgs_standby_search", false)) { //standby mode
+                                    mDataManager.saveIntParameters(ParameterManager.TV_KEY_BACKGROUND_SEARCH_REGION_SELECTION, 0);
                                     isBgScanning = false;
                                     releaseWakeLock();
                                 }
@@ -9813,6 +9817,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                             case DtvkitBackGroundSearch.SINGLE_FREQUENCY_SET_TARGET_REGION: {
                                 mNeedSetTargetRegion = true;
+                                mDataManager.saveIntParameters(ParameterManager.TV_KEY_BACKGROUND_SEARCH_REGION_SELECTION, 1);
                                 break;
                             }
                         }
