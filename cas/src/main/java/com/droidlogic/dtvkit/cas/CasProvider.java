@@ -31,7 +31,7 @@ public class CasProvider extends ContentProvider {
     public static final String DB_NAME = "cas.db";
     /* versions:*/
     /* 1 = initial provider */
-    public static final int DB_VERSION = 1;
+    public static final int DB_VERSION = 2;
     public static final int MATCH_MEMORY_ID_MASK = 0x100;
     public static final int MATCH_MEMORY_STAR_MASK = 0x200;
     public static final int MATCH_MAX_ID_NO_AUTOINCREMENT = 0x10;
@@ -103,7 +103,7 @@ public class CasProvider extends ContentProvider {
                         "message_type INTEGER, attributed INTEGER, enhanced INTEGER, " +
                         "duration INTEGER, flashing INTEGER, banner INTEGER, " +
                         "coverage_code INTEGER, fingerprint_type INTEGER, scroll INTEGER, " +
-                        "text BLOB, option BLOB, flag1 INTEGER);";
+                        "text BLOB, option BLOB, flag1 INTEGER, received_time INTEGER);";
                 String SQL_CREATE_TABLE_SO_USER_MESSAGE = "create table if not exists " +
                         TABLE_SO_USER_MESSAGE +
                         "(_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -115,6 +115,11 @@ public class CasProvider extends ContentProvider {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            if (!isMemoryTable) {
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_SCREEN_MESSAGES);
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_SO_USER_MESSAGE);
+                onCreate(db);
+            }
         }
     }
 

@@ -75,6 +75,7 @@ public class CasProviderManager {
         values.put("text", message);
         values.put("option", option);
         values.put("flag1", msgType == 1 ? 1 : flag1);//force message default set to 1
+        values.put("received_time", System.currentTimeMillis());
         if (msgType <= 1) {
             try (Cursor cursor = context.getContentResolver().query(
                     uri,
@@ -125,6 +126,7 @@ public class CasProviderManager {
 
     private boolean skipCheckDuplicatedId(@NonNull String id) {
         return "cas.irdeto.info.parental_pin".equals(id) ||
+                id.contains("cas.irdeto.control") ||
                 "cas.irdeto.info.live_status".equals(id) ||
                 "cas.irdeto.info.record_status".equals(id) ||
                 "cas.irdeto.info.playback_status".equals(id) ||

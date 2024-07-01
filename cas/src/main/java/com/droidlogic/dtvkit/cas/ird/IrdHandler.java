@@ -79,6 +79,12 @@ public class IrdHandler extends CasHandler {
     private static final int CAS_MSG_TYPE_FSU_TUNE = 6;
     private static final int CAS_MSG_TYPE_FSU_RET = 7;
     private static final int CAS_MSG_TYPE_PARENTAL_PIN = 8;
+    private static final int CAS_MSG_TYPE_RESET_IRD = 9;
+    private static final int CAS_MSG_TYPE_RESET_CHANNEL = 10;
+    private static final int CAS_MSG_TYPE_RESCAN_CHANNEL = 11;
+    private static final int CAS_MSG_TYPE_RECONNECT_SERVICE = 12;
+    private static final int CAS_MSG_TYPE_FORCE_INSTALL_PIN = 13;
+    private static final int CAS_MSG_TYPE_FORCE_TUNE_SERVICE = 14;
     private static final int CAS_MSG_TYPE_ECM_MONITOR_STATUS = 15;
     private static final int CAS_MSG_TYPE_EMM_MONITOR_STATUS = 16;
     private static final int CAS_MSG_TYPE_SECURE_DL_STATUS = 17;
@@ -389,6 +395,42 @@ public class IrdHandler extends CasHandler {
             }
             case CAS_MSG_TYPE_PARENTAL_PIN: {
                 String id = "cas.irdeto.info.parental_pin";
+                mThreadHandler.post(() ->
+                        mCasProviderManager.putCasSettingsValue(mContext, id, casEvent.toString()));
+                break;
+            }
+            case CAS_MSG_TYPE_RESET_IRD: {
+                String id = "cas.irdeto.control.reset_ird";
+                mThreadHandler.post(() ->
+                        mCasProviderManager.putCasSettingsValue(mContext, id, casEvent.toString()));
+                break;
+            }
+            case CAS_MSG_TYPE_RESET_CHANNEL: {
+                String id = "cas.irdeto.control.reset_channel";
+                mThreadHandler.post(() ->
+                        mCasProviderManager.putCasSettingsValue(mContext, id, casEvent.toString()));
+                break;
+            }
+            case CAS_MSG_TYPE_RESCAN_CHANNEL: {
+                String id = "cas.irdeto.control.rescan_channel";
+                mThreadHandler.post(() ->
+                        mCasProviderManager.putCasSettingsValue(mContext, id, casEvent.toString()));
+                break;
+            }
+            case CAS_MSG_TYPE_RECONNECT_SERVICE: {
+                String id = "cas.irdeto.control.reconnect_service";
+                mThreadHandler.post(() ->
+                        mCasProviderManager.putCasSettingsValue(mContext, id, casEvent.toString()));
+                break;
+            }
+            case CAS_MSG_TYPE_FORCE_INSTALL_PIN: {
+                String id = "cas.irdeto.control.force_installer_pin";
+                mThreadHandler.post(() ->
+                        mCasProviderManager.putCasSettingsValue(mContext, id, casEvent.toString()));
+                break;
+            }
+            case CAS_MSG_TYPE_FORCE_TUNE_SERVICE: {
+                String id = "cas.irdeto.control.force_tune_service";
                 mThreadHandler.post(() ->
                         mCasProviderManager.putCasSettingsValue(mContext, id, casEvent.toString()));
                 break;
