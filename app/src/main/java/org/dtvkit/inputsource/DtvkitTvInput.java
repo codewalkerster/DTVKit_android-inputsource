@@ -4877,6 +4877,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                     notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_AUDIO_ONLY);
                                 } else {
                                     notifyVideoAvailable();
+                                    sendBundleToAppByTif(ConstantManager.KEY_TVINPUTINFO_VIDEO_CODEC, getRealVideoCodec());
                                 }
                                 if (mIsPip) {
                                     Log.d(TAG, "dvblive PIP only need video status");
@@ -7883,44 +7884,31 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             }
 
             String videoCodec = tunedChannel != null ? tunedChannel.getVideoCodec() : "";
-            TvTrackInfo videoInfo = getVideoStreamInfo();
-            if (videoInfo != null) {
-                String realCodec = "";
-                if (videoInfo.getExtra() != null) {
-                    realCodec = videoInfo.getExtra().getString("encoding");
-                }
-                // Workaround: stream changed, PMT not update cause wrong codec.
-                if (!TextUtils.isEmpty(realCodec) && !TextUtils.equals(realCodec, videoCodec)) {
-                    Log.d(TAG, "fix video_codec from " + videoCodec + " to " + realCodec);
-                    videoCodec = realCodec;
-                }
-            }
             //set value
-            bundle.putString(ConstantManager.KEY_TVINPUTINFO_VIDEO_CODEC, videoCodec != null ? videoCodec : "");
+            bundle.putString(ConstantManager.KEY_TVINPUTINFO_VIDEO_CODEC, videoCodec);
+            track.setEncoding(videoCodec);
             track.setExtra(bundle);
             //build track
             tracks.add(track.build());
-            Log.d(TAG, "getVideoTrackInfoList track bundle = " + bundle.toString());
+            Log.d(TAG, "getVideoTrackInfoList track bundle = " + bundle);
         } catch (Exception e) {
             Log.e(TAG, "getVideoTrackInfoList Exception = " + e.getMessage());
         }
         return tracks;
     }
 
-    private TvTrackInfo getVideoStreamInfo() {
-        TvTrackInfo.Builder track = new TvTrackInfo.Builder(TvTrackInfo.TYPE_VIDEO, "0");
+    private Bundle getRealVideoCodec() {
+        Bundle bundle = new Bundle();
         try {
             JSONArray args = new JSONArray();
             args.put(0);
             JSONObject stream = DtvkitGlueClient.getInstance()
                     .request("Player.getVideoStreamInfo", args).getJSONObject("data");
-            Bundle extra = new Bundle();
-            extra.putString("encoding", stream.optString(ConstantManager.KEY_TVINPUTINFO_VIDEO_CODEC));
-            track.setExtra(extra);
+            bundle.putString(ConstantManager.KEY_TVINPUTINFO_VIDEO_CODEC, stream.getString("video_codec"));
         } catch (Exception e) {
             Log.e(TAG, "getVideoStreamInfo Exception = " + e.getMessage());
         }
-        return track.build();
+        return bundle;
     }
 
     //return: selected audio track id
