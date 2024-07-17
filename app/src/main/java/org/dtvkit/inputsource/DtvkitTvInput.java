@@ -5604,9 +5604,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 return;
                             }
                             Bundle parameters = new Bundle();
+                            parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, freq);
+                            parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_MODE, EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL);
                             Intent intent = new Intent(outService, DtvkitEpgSync.class);
                             intent.putExtra("inputId", mInputId);
                             intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_FROM, signal);
+                            intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_CHANNEL, true);
                             intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_PARAMETERS, parameters);
                             startService(intent);
                             sendEmptyMessageToInputThreadHandler(MSG_START_MONITOR_SYNCING);
