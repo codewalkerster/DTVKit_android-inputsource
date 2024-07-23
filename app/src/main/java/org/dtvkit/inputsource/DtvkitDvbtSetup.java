@@ -231,9 +231,6 @@ public class DtvkitDvbtSetup extends Activity {
             }
             Log.d(TAG, "onCreate mIsDvbt = " + mIsDvbt + ", status = " + status + ", isAutomaticMode= " + mInAutomaticMode);
         }
-        if (!mIsDvbt) {
-            mOperatorList = mParameterManager.getOperatorsTypeList(ParameterManager.SIGNAL_QAM);
-        }
         ((TextView)findViewById(R.id.dvb_search)).setText(mIsDvbt ? R.string.strSearchDvbtDescription : R.string.strSearchDvbcDescription);
         initHandler();
         if (mInAutomaticMode) {
@@ -250,6 +247,15 @@ public class DtvkitDvbtSetup extends Activity {
                     setStrengthAndQualityStatus(String.format(Locale.ENGLISH, "Strength: %d%%", strength), String.format(Locale.ENGLISH, "Quality: %d%%", quality));
                 }
             });
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart");
+        if (!mIsDvbt) {
+            mOperatorList = mParameterManager.getOperatorsTypeList(ParameterManager.SIGNAL_QAM);
         }
     }
 
@@ -842,6 +848,9 @@ public class DtvkitDvbtSetup extends Activity {
                     if (operatorStrList.size() > idx) {
                         operator_spinner.setSelection(idx);
                     }
+                } else {
+                    operator_spinner.setAdapter(null);
+                    operator_spinner.setOnItemSelectedListener(null);
                 }
                 if (mInAutomaticMode) {
                     String ret = mDataManager.getPrefs(KEY_DVBC_AUTO_SCAN_TYPE);
@@ -920,7 +929,10 @@ public class DtvkitDvbtSetup extends Activity {
         Spinner dvbc_auto_scan_type_spinner = (Spinner) findViewById(R.id.dvbc_auto_scan_type_spinner);
         String scanType = DVBC_AUTO_SCANTYPE[dvbc_auto_scan_type_spinner.getSelectedItemPosition()];
         Spinner operator_spinner = findViewById(R.id.dvbc_operator_spinner);
-        String operator = (String) operator_spinner.getAdapter().getItem(operator_spinner.getSelectedItemPosition());
+        String operator = "";
+        if (operator_spinner.getAdapter() != null) {
+            operator = (String) operator_spinner.getAdapter().getItem(operator_spinner.getSelectedItemPosition());
+        }
         JSONArray array = new JSONArray();
         array.put(scanType);
         array.put(operator);
