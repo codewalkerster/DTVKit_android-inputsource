@@ -119,8 +119,7 @@ import java.util.Collections;
 import android.media.tv.tuner.Tuner;
 import droidlogic.dtvkit.tuner.TunerAdapter;
 
-public class DtvkitTvInput extends TvInputService implements SystemControlEvent.DisplayModeListener,
-        SystemControlEvent.AudioEventListener {
+public class DtvkitTvInput extends TvInputService implements SystemControlEvent.DisplayModeListener {
     private static final String TAG = "DtvkitTvInput";
 
     private static final int ASPECT_MODE_AUTO = 0;
@@ -935,7 +934,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         sendGetRecordingListMsg("initDtvkitTvInput");
         mSystemControlEvent = SystemControlEvent.getInstance(null);
         mSystemControlEvent.setDisplayModeListener(this);
-        mSystemControlEvent.SetAudioEventListener(this);
         if (mSystemControlManager != null) {
             mSystemControlManager.setListener(mSystemControlEvent);
         }
@@ -1148,18 +1146,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
         if (FeatureUtil.getFeatureSupportHbbTV()) {
             mHbbTvManager = HbbTvManager.getInstance();
-        }
-    }
-
-    @Override
-    public void HandleAudioEvent(int cmd, int param1, int param2, int param3) {
-        if (cmd == AudioSystemCmdManager.AUDIO_SERVICE_CMD_START_DECODE) {
-            // good chance to sync ad mix & volume to audio_hal
-            Log.d(TAG, "HandleAudioEvent cmd " + "AUDIO_START_DECODE");
-            DtvkitTvInputSession main = getMainTunerSession();
-            if (main != null && main.readyToPlay()) {
-                main.playerSetAdParams(300);
-            }
         }
     }
 
@@ -5533,13 +5519,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     // after track changed, should update sound mode again
                     notifySessionEvent(ConstantManager.ACTION_AUDIO_TRACK_SELECTED, null);
                     sendUpdateTrackMsg();
-                    // TODO: MAY be merged later, HandleAudioEvent is invalid in ATF
-                    if (FeatureUtil.getFeatureSupportTunerFramework()) {
-                        DtvkitTvInputSession main = getMainTunerSession();
-                        if (main != null && main.readyToPlay()) {
-                            main.playerSetAdParams(0);
-                        }
-                    }
+                    playerSetAdParams(0);
                 } else if (signal.equals("TkgsStartTuneUpdate")) {
                     mMainHandle.post(()->showToast(R.string.string_tune_update_tip));
                 } else if (signal.equals("TkgsFinishTuneUpdate")) {
