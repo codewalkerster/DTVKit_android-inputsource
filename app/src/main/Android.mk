@@ -2,7 +2,6 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_PACKAGE_NAME := inputsource
-LOCAL_MULTILIB := both
 LOCAL_AAPT_FLAGS := --auto-add-overlay \
    --extra-packages android.support.v17.leanback \
    --extra-packages com.google.android.exoplayer2
@@ -30,7 +29,10 @@ LOCAL_STATIC_JAVA_LIBRARIES += \
    guava-android-31
 
 ifeq ($(PRODUCT_SUPPORT_TUNER_FRAMEWORK), true)
+    LOCAL_MULTILIB := 32
     LOCAL_REQUIRED_MODULES += droidlogic.dtvkit.atf.wrapper
+else
+    LOCAL_MULTILIB := both
 endif
 LOCAL_STATIC_JAVA_LIBRARIES += droidlogic.dtvkit.atf.aidl
 

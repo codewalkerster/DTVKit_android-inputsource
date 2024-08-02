@@ -19,7 +19,6 @@ LOCAL_C_INCLUDES += frameworks/base/core/jni/include \
 LOCAL_MODULE := libdtvkit_jni
 LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
 LOCAL_LICENSE_CONDITIONS := notice
-LOCAL_MULTILIB := both
 LOCAL_HEADER_LIBRARIES := jni_headers
 
 LOCAL_SHARED_LIBRARIES := \
@@ -34,9 +33,11 @@ LOCAL_SHARED_LIBRARIES := \
     libhidlmemory \
 
 ifeq ($(PRODUCT_SUPPORT_TUNER_FRAMEWORK), true)
+    LOCAL_MULTILIB := 32
     LOCAL_SHARED_LIBRARIES += libdtvkitserver
     LOCAL_CFLAGS += -DSUPPORT_TUNER_FRAMEWORK
 else
+    LOCAL_MULTILIB := both
     LOCAL_SHARED_LIBRARIES += \
     vendor.amlogic.hardware.dtvkitserver@1.0 \
     libdtvkithidlclient
