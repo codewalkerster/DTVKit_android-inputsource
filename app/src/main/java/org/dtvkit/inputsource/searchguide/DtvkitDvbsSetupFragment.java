@@ -765,26 +765,31 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
             || opType == DvbsParameterManager.OPERATOR_SUNDIRECT
             || opType == DvbsParameterManager.OPERATOR_CANALPLUS
             || opType == DvbsParameterManager.OPERATOR_TIVUSAT
-            || opType == DvbsParameterManager.OPERATOR_CANALDIGITAL) {
-            args.put("quick");
-            args.put(opType);
-            args.put("fti");
-        } else if(opType == DvbsParameterManager.OPERATOR_TKGS) {
+            || opType == DvbsParameterManager.OPERATOR_CANALDIGITAL
+            || opType == DvbsParameterManager.OPERATOR_KABELIO) {
+            args.put("quick"); // arg1
+            args.put(opType);  // arg2
+            args.put("fti");   // arg3
+        } else if (opType == DvbsParameterManager.OPERATOR_TKGS) {
             Log.i(TAG,"mSearchByManualTKGS " + mSearchByManualTKGS);
-            args.put("quick");
-            args.put(opType);
-            args.put(mSearchByManualTKGS ? "manual" :  "fti");
-        } else if(opType == DvbsParameterManager.OPERATOR_FRANSAT) {
-            args.put("quick");
-            args.put(opType);
-            args.put("automatic"); // TODO: manual
-        } else {
+            args.put("quick");  // arg1
+            args.put(opType);   // arg2
+            args.put(mSearchByManualTKGS ? "manual" :  "fti"); // arg3
+        } else if (opType == DvbsParameterManager.OPERATOR_FRANSAT) {
+            args.put("quick");  // arg1
+            args.put(opType);   // arg2
+            args.put("automatic"); // arg3 TODO: manual
+        } else if (opType == DvbsParameterManager.OPERATOR_DEFAULT){
             /*[scanmode, network, {lnblist: [{lnb:1},{lnb:2},..]}]*/
             int id = mDataManager.getIntParameters(DataManager.KEY_SEARCH_MODE);
             searchMode = DataManager.KEY_SEARCH_MODE_LIST[id];
             Log.i(TAG, "initSearchParameter searchMode = " + searchMode);
             args.put(searchMode);//arg1
             args.put(mDataManager.getIntParameters(DataManager.KEY_DVBS_NIT) == 1);//arg2
+        }
+        else {
+            Log.e(TAG, "operator not supported");
+            return null;
         }
         // handle lnb list
         List<String> lnbList = mDvbsParameterManager.getLnbWrap().getLnbIdList();
@@ -822,9 +827,9 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
             Log.e(TAG, "initSearchParameter error = " + e.getMessage());
             return null;
         }
-        args.put(lnbArgs.toString());//arg3
+        args.put(lnbArgs.toString());//arg3 for default and arg4 for operator
 
-        // some operators require bouquet id
+        // arg5 for operator extra mode, ex. "network", "operator"
         if (opType == DvbsParameterManager.OPERATOR_AIRTEL) {
             args.put(DvbsParameterManager.OPERATOR_AIRTEL_BOUQUETID);
         }
