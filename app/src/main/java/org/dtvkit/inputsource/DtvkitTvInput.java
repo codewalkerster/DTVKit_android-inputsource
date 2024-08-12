@@ -192,7 +192,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     }
 
     private enum PlayerState {
-        STOPPED, STARTING, PLAYING, BLOCKED, SCRAMBLED,
+        STOPPED, STARTING, PLAYING, BLOCKED, SCRAMBLED, BAD_SIGNAL,
     }
 
     private enum RecorderState {
@@ -4990,6 +4990,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                             break;
                         case "badsignal":
+                            playerState = PlayerState.BAD_SIGNAL;
                             notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_WEAK_SIGNAL);
                             writeSysFs("/sys/class/video/disable_video", "2");
                             if (mIsPip) {
@@ -5309,7 +5310,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else if (signal.equals("MhegAppStarted")) {
                     Log.i(TAG, "MhegAppStarted");
                     mIsMhepAppStarted = true;
-                    if (mTunedChannel != null) {
+                    if (mTunedChannel != null && playerState != PlayerState.BAD_SIGNAL) {
                         if (mTunedChannel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO)) {
                             notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_AUDIO_ONLY);
                         } else {
