@@ -55,6 +55,7 @@ import com.droidlogic.dtvkit.inputsource.searchguide.DtvkitDvbsSetupFragment;
 import com.droidlogic.dtvkit.inputsource.searchguide.OnNextListener;
 import com.droidlogic.dtvkit.inputsource.searchguide.SearchStageFragment;
 import com.droidlogic.dtvkit.inputsource.searchguide.SimpleListFragment;
+import com.droidlogic.settings.PropSettingManager;
 
 import org.droidlogic.dtvkit.DtvkitGlueClient;
 import org.json.JSONArray;
@@ -871,7 +872,7 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
             }
             mStartSearch = success;
             if (success) {
-                DataProviderManager.putBooleanValue(getActivity(), ConstantManager.KEY_IS_SEARCHING, true);
+                PropSettingManager.setProp(PropSettingManager.TV_SEARCHING_STATUS, "1");
                 startMonitoringSearch();
                 mFoundServiceNumber = 0;
                 mServiceList = null;
@@ -915,7 +916,7 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
         intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_CHANNEL, (mFoundServiceNumber > 0));
         intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_PARAMETERS, parameters);
         getActivity().startService(intent);
-        DataProviderManager.putBooleanValue(getActivity(), ConstantManager.KEY_IS_SEARCHING, false);
+        PropSettingManager.setProp(PropSettingManager.TV_SEARCHING_STATUS, "0");
     }
 
     private void startMonitoringSearch() {

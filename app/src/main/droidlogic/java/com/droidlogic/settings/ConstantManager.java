@@ -143,7 +143,6 @@ public class ConstantManager {
     //hbbtv
     public static final String ACTION_HBBTV_APPLICATION_RUNNING = "hbbtv_running";
     //search
-    public static final String KEY_IS_SEARCHING = "is_channel_searching";
     public static final String KEY_LCN_STATE = "dvb_lcn_state";
     //fvp
     public static final String ACTION_START_FVP_APP = "action_start_fvp_app";

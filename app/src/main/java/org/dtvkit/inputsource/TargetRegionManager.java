@@ -3,6 +3,7 @@ package com.droidlogic.dtvkit.inputsource;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.WindowManager;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class TargetRegionManager {
+    private final static String TAG = "TargetRegionManager";
     public static final int TARGET_REGION_COUNTRY = 0;
     public static final int TARGET_REGION_PRIMARY = 1;
     public static final int TARGET_REGION_SECONDARY = 2;
@@ -66,6 +68,7 @@ public class TargetRegionManager {
             || mSpinnerTertiary == null) {
             return;
         }
+        Log.d(TAG, "Show Dialog");
         mSpinnerCountry.setOnItemSelectedListener(new InnerItemSelectedListener(TARGET_REGION_COUNTRY));
         mSpinnerPrimary.setOnItemSelectedListener(new InnerItemSelectedListener(TARGET_REGION_PRIMARY));
         mSpinnerSecondary.setOnItemSelectedListener(new InnerItemSelectedListener(TARGET_REGION_SECONDARY));
@@ -214,7 +217,7 @@ public class TargetRegionManager {
                 break;
         }
         if (updateRegions) {
-            if (regions != null && regions.size() >0) {
+            if (regions != null && !regions.isEmpty()) {
                 List<String> regionList = new ArrayList<>(regions.keySet());
                 updateRegions(target_id, regionList.toArray(new String[0]));
             } else {
@@ -284,7 +287,7 @@ public class TargetRegionManager {
     }
 
     private class InnerItemSelectedListener implements AdapterView.OnItemSelectedListener {
-        private int mTargetId;
+        private final int mTargetId;
 
         InnerItemSelectedListener(int target_id) {
             mTargetId = target_id;

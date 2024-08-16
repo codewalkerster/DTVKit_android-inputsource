@@ -31,6 +31,7 @@ import android.media.tv.TvInputManager.HardwareCallback;
 import android.media.tv.TvInputService;
 import android.media.tv.TvStreamConfig;
 import android.media.tv.TvTrackInfo;
+import android.media.tv.tuner.Tuner;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
@@ -72,6 +73,7 @@ import com.droidlogic.dtvkit.companionlibrary.model.Program;
 import com.droidlogic.dtvkit.companionlibrary.model.RecordedProgram;
 import com.droidlogic.dtvkit.companionlibrary.utils.TvContractUtils;
 import com.droidlogic.dtvkit.inputsource.DataManager;
+import com.droidlogic.dtvkit.inputsource.DtvkitBackGroundSearch;
 import com.droidlogic.dtvkit.inputsource.parental.ContentRatingSystem;
 import com.droidlogic.dtvkit.inputsource.parental.ContentRatingsManager;
 import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
@@ -87,10 +89,8 @@ import org.droidlogic.dtvkit.DtvkitGlueClient;
 import org.droidlogic.dtvkit.IndentingPrintWriter;
 import org.droidlogic.dtvkit.TvChannelSetting;
 import org.droidlogic.dtvkit.TvMTSSetting;
-
 import org.dtvkit.inputsource.caption.AtvCcTool;
 import org.dtvkit.inputsource.caption.CustomerFont;
-
 import org.dtvkit.inputsource.cas.CasHelper;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -104,9 +104,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -114,9 +114,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.Collections;
-import android.media.tv.tuner.Tuner;
+
 import droidlogic.dtvkit.tuner.TunerAdapter;
 
 public class DtvkitTvInput extends TvInputService implements SystemControlEvent.DisplayModeListener {
@@ -192,7 +190,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     }
 
     private enum PlayerState {
-        STOPPED, STARTING, PLAYING, BLOCKED, SCRAMBLED, BAD_SIGNAL,
+        STOPPED, STARTING, PLAYING, BLOCKED, SCRAMBLED,
     }
 
     private enum RecorderState {
@@ -217,7 +215,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
     SystemControlManager mSystemControlManager;
 
-    private String intentAction = "com.droidlogic.dtvkit.inputsource.AutomaticSearching";
     private AutomaticSearchingReceiver mAutomaticSearchingReceiver = null;
     public final int SUBTITLE_CTL_HK_DVB_SUB = 0x02;
     public final int SUBTITLE_CTL_HK_TTX_SUB = 0x04;
@@ -675,7 +672,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         mAutomaticSearchingReceiver = new AutomaticSearchingReceiver();
         IntentFilter automaticSearch = new IntentFilter();
-        automaticSearch.addAction(intentAction);
+        automaticSearch.addAction(DtvkitBackGroundSearch.AUTOMATIC_SEARCHING_ACTION);
         registerReceiver(mAutomaticSearchingReceiver, automaticSearch, 2/*RECEIVER_EXPORTED*/);
 
         IntentFilter ciTest = new IntentFilter();
@@ -713,7 +710,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     protected static final int MSG_START_MONITOR_SYNCING = 6;
     protected static final int MSG_STOP_MONITOR_SYNCING = 7;
     protected static final int MSG_CHECK_PIN_CODE_CHANGED = 8;
-    protected static final int MSG_CHECK_CHANNEL_SEARCH_STATUS = 9;
 
     protected static final int PERIOD_RIGHT_NOW = 0;
     protected static final int PERIOD_CHECK_TV_PROVIDER_DELAY = 200;
@@ -804,17 +800,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     // move to livetv
                     break;
                 }
-                case MSG_CHECK_CHANNEL_SEARCH_STATUS: {
-                    //Power off and on during channel search, the status in the search are not updated, update here
-                    if (DataProviderManager.getBooleanValue(this, "is_channel_searching", false)) {
-                        DataProviderManager.putBooleanValue(this,ConstantManager.KEY_IS_SEARCHING, false);
-                    }
-                    if (mDataManager.getIntParameters(ParameterManager.TV_KEY_BACKGROUND_SEARCH_REGION_SELECTION) == 1) {
-                        mDataManager.saveIntParameters(ParameterManager.TV_KEY_BACKGROUND_SEARCH_REGION_SELECTION, 0);
-                    }
-                    break;
-                }
-
                 default:
                     break;
             }
@@ -947,7 +932,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
         updateRecorderNumber();
         sendEmptyMessageToInputThreadHandler(MSG_CHECK_DTVKIT_SATELLITE);
-        sendDelayedEmptyMessageToInputThreadHandler(MSG_CHECK_CHANNEL_SEARCH_STATUS, 1000);
         resetRecordingPath();
 
         int subFlg = getSubtitleFlag();
@@ -4990,7 +4974,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                             break;
                         case "badsignal":
-                            playerState = PlayerState.BAD_SIGNAL;
                             notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_WEAK_SIGNAL);
                             writeSysFs("/sys/class/video/disable_video", "2");
                             if (mIsPip) {
@@ -5312,7 +5295,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 } else if (signal.equals("MhegAppStarted")) {
                     Log.i(TAG, "MhegAppStarted");
                     mIsMhepAppStarted = true;
-                    if (mTunedChannel != null && playerState != PlayerState.BAD_SIGNAL) {
+                    if (mTunedChannel != null) {
                         if (mTunedChannel.getServiceType().equals(TvContract.Channels.SERVICE_TYPE_AUDIO)) {
                             notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_AUDIO_ONLY);
                         } else {
@@ -9652,284 +9635,34 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
     }
 
-    private void showAutomaticSearchConfirmDialog(final Context context, boolean isDvbt) {
-        if (context == null) {
-            return;
-        }
-
-        final AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        final AlertDialog alert = builder.create();
-        final View dialogView = View.inflate(context, R.layout.confirm_search, null);
-        final TextView title = dialogView.findViewById(R.id.dialog_title);
-        final Button confirm = dialogView.findViewById(R.id.confirm);
-        final Button cancel = dialogView.findViewById(R.id.cancel);
-
-        title.setText(R.string.notice_automatic_scan);
-        confirm.requestFocus();
-        cancel.setOnClickListener(v -> alert.dismiss());
-        confirm.setOnClickListener(v -> {
-            alert.dismiss();
-            Intent intent = new Intent();
-            intent.putExtra(TvInputInfo.EXTRA_INPUT_ID, mInputId);
-            intent.setClassName(DataManager.KEY_PACKAGE_NAME, DataManager.KEY_ACTIVITY_DVBT);
-            intent.putExtra(DataManager.KEY_IS_DVBT, isDvbt);
-            intent.putExtra(DataManager.KEY_START_SCAN_FOR_AUTOMATIC, true);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-        });
-        //prevent exit key
-        alert.setCancelable(false);
-        alert.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-        alert.setView(dialogView);
-        alert.show();
-        WindowManager.LayoutParams params = alert.getWindow().getAttributes();
-        params.width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                500, context.getResources().getDisplayMetrics());
-        params.height = WindowManager.LayoutParams.WRAP_CONTENT;
-        alert.getWindow().setAttributes(params);
-        alert.getWindow().setBackgroundDrawableResource(R.drawable.dialog_background);
-    }
-
     public class AutomaticSearchingReceiver extends BroadcastReceiver {
         private static final String TAG = "AutomaticSearchingReceiver";
-        //hold wake lock for 5s to ensure the coming recording schedules
-        private static final String WAKE_LOCK_NAME = "AutomaticSearchingReceiver";
-        private Context mContext;
-        private PowerManager.WakeLock mWakeLock = null;
-        private PendingIntent mAlarmIntent = null;
         private DtvkitBackGroundSearch dtvkitBgSearch = null;
-        private boolean isBgScanning = false;
-        private String mUserMsg = "";
-        private boolean mNeedSetTargetRegion = false;
-
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "Automatic searching onReceive");
             if (intent == null) return;
-
-            mContext = context;
-            String action = intent.getAction();
-            Log.d(TAG, "Automatic searching action =" + action);
-            if (action.equals(intentAction)) {
-                int mode = mParameterManager.getIntParameters(mParameterManager.AUTO_SEARCHING_MODE);
-                int dvbSource = getCurrentDvbSource();
-                Log.d(TAG, "mode = " + mode + ", signal type= " + dvbSource);
-                if (dvbSource != ParameterManager.SIGNAL_COFDM
-                        && dvbSource != ParameterManager.SIGNAL_QAM && dvbSource != ParameterManager.SIGNAL_ISDBT
-                        && (dvbSource != ParameterManager.SIGNAL_QPSK || !"TKGS".equals(mDataManager.getStringParameters(ParameterManager.DVBS_OPERATOR_MODE)))) {
-                    Log.d(TAG, "only dvbt/c/TKGS and ISDB-T will do automatic search.");
-                    return;
-                }
-                JSONArray activeRecordings = recordingGetActiveRecordings();
-                if (activeRecordings != null && activeRecordings.length() > 0) {
-                    Log.i(TAG,"Recording in progress, give up channel search");
-                    return;
-                }
-
-                if (intent.getBooleanExtra("tkgs_standby_search", false)) {
-                    if (dvbSource != ParameterManager.SIGNAL_QPSK) {
-                        Log.i(TAG,"Currently not in DVBS format, finish");
-                        return;
-                    }
-                }
-                if (dvbSource != ParameterManager.SIGNAL_QPSK) {
-                    //if need to light the screen please run the interface below
-                    if (mode == 2) {//operate mode
-                        checkSystemWakeUp(context);
-                    }
-                    //avoid suspend when execute appointed pvr record
-                    if (mode == 1) { //standby mode
-                        if (isScreenOn(context)) {
-                            Log.i(TAG, "Not in sleep mode, skip standby scan.");
-                            return;
-                        }
-                        acquireWakeLock(context);
-                    }
-
-                    String strRepetition = intent.getStringExtra("repetition");
-                    if (!TextUtils.isEmpty(strRepetition)) {
-                        int repetition = Integer.parseInt(strRepetition);
-                    }
-                    setNextAlarm(context);
-                    if (mode == 2) {
-                        showAutomaticSearchConfirmDialog(context, dvbSource == ParameterManager.SIGNAL_COFDM);
-                        return;
-                    }
-                } else {
-                    if (isScreenOn(context)) {
-                        Log.i(TAG, "Not in sleep mode, skip standby scan.");
-                        return;
-                    }
-                    acquireWakeLock(context);
-                    setNextAlarm(context);
-                }
-                final DtvkitBackGroundSearch.BackGroundSearchCallback backGroundSearchCallback = (mess) -> {
-                    if (mess != null) {
-                        Log.d(TAG, "onMessageCallback " + mess);
-                        String status = null;
-                        try {
-                            status = mess.getString(DtvkitBackGroundSearch.SINGLE_FREQUENCY_STATUS_ITEM);
-                        } catch (Exception e) {
-                            Log.i(TAG, "onMessageCallback SINGLE_FREQUENCY_STATUS_ITEM Exception " + e.getMessage());
-                        }
-
-                        switch (status) {
-                            case DtvkitBackGroundSearch.SINGLE_FREQUENCY_STATUS_SEARCH_TERMINATE:
-                            case DtvkitBackGroundSearch.SINGLE_FREQUENCY_STATUS_SAVE_FINISH: {
-                                Log.d(TAG, "waiting for doing something");
-                                if (mode == 1 || intent.getBooleanExtra("tkgs_standby_search", false)) { //standby mode
-                                    mDataManager.saveIntParameters(ParameterManager.TV_KEY_BACKGROUND_SEARCH_REGION_SELECTION, 0);
-                                    isBgScanning = false;
-                                    releaseWakeLock();
-                                }
-                                break;
-                            }
-                            case DtvkitBackGroundSearch.SINGLE_FREQUENCY_TKGS_USER_MSG: {
-                                Log.i(TAG,"show TKGS user msg");
-                                mUserMsg = mParameterManager.getTKGSUserMessage();
-                                break;
-                            }
-                            case DtvkitBackGroundSearch.SINGLE_FREQUENCY_SET_TARGET_REGION: {
-                                mNeedSetTargetRegion = true;
-                                mDataManager.saveIntParameters(ParameterManager.TV_KEY_BACKGROUND_SEARCH_REGION_SELECTION, 1);
-                                break;
-                            }
-                        }
-                    }
-                };
-
-                dtvkitBgSearch = new DtvkitBackGroundSearch(context, dvbSource, mInputId, backGroundSearchCallback);
-                dtvkitBgSearch.startBackGroundAutoSearch();
-                isBgScanning = true;
+            int dvbSource = getCurrentDvbSource();
+            int recordingNum = recordingGetNumActiveRecordings();
+            if (recordingNum > 0) {
+                Log.i(TAG, "Recording in progress, give up channel search");
+                return;
             }
+            dtvkitBgSearch = new DtvkitBackGroundSearch(context, dvbSource, mInputId, mDataManager, mParameterManager);
+            dtvkitBgSearch.handleAlarm(intent);
         }
 
         public boolean isBackGroundSearching() {
-            return isBgScanning;
+            if (dtvkitBgSearch != null) {
+                return dtvkitBgSearch.isBackGroundSearching();
+            } else {
+                return false;
+            }
         }
 
         public void onReceiveScreenOn() {
-            if (isBgScanning && dtvkitBgSearch != null && !mNeedSetTargetRegion) {
+            if (dtvkitBgSearch != null) {
                 dtvkitBgSearch.handleScreenOn();
-            }
-            if (!TextUtils.isEmpty(mUserMsg)) {
-                showTKGSUserMsgDialog(mContext, mUserMsg);
-                mUserMsg = "";
-            }
-            if (mNeedSetTargetRegion) {
-                dtvkitBgSearch.showDialogForSetTargetRegion(mContext);
-                mNeedSetTargetRegion = false;
-            }
-        }
-
-        private void checkSystemWakeUp(Context context) {
-            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-            boolean isScreenOpen = powerManager.isScreenOn();
-            Log.d(TAG, "checkSystemWakeUp isScreenOpen = " + isScreenOpen);
-            //Resume if the system is suspending
-            if (!isScreenOpen) {
-                Log.d(TAG, "checkSystemWakeUp wakeUp the android.");
-                long time = SystemClock.uptimeMillis();
-                wakeUp(powerManager, time);
-            }
-        }
-
-        private void wakeUp(PowerManager powerManager, long time) {
-            try {
-                Class<?> cls = Class.forName("android.os.PowerManager");
-                Method method = cls.getMethod("wakeUp", long.class);
-                method.invoke(powerManager, time);
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.d(TAG, "wakeUp Exception = " + e.getMessage());
-            }
-        }
-
-        private void goToSleep(PowerManager powerManager, long time) {
-            try {
-                Class<?> cls = Class.forName("android.os.PowerManager");
-                Method method = cls.getMethod("goToSleep", long.class);
-                method.invoke(powerManager, time);
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.d(TAG, "goToSleep Exception = " + e.getMessage());
-            }
-        }
-
-        private synchronized void acquireWakeLock(Context context) {
-            if (mWakeLock == null) {
-                PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-                mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_NAME);
-                if (mWakeLock != null) {
-                    Log.d(TAG, "acquireWakeLock " + WAKE_LOCK_NAME + " " + mWakeLock);
-                    if (mWakeLock.isHeld()) {
-                        mWakeLock.release();
-                    }
-                    mWakeLock.acquire();
-                }
-            }
-            // Deep standby, need to hold lock from kernel
-            if (android.os.SystemProperties.get("persist.sys.power.key.action", "0").equals("3")) {
-                mParameterManager.acquireWakeLock();
-            }
-        }
-
-
-        private synchronized void releaseWakeLock() {
-            if (mWakeLock != null) {
-                Log.d(TAG, "releaseWakeLock " + WAKE_LOCK_NAME + " " + mWakeLock);
-                if (mWakeLock.isHeld()) {
-                    mWakeLock.release();
-                }
-                mWakeLock = null;
-            }
-            if (android.os.SystemProperties.get("persist.sys.power.key.action", "0").equals("3")) {
-                mParameterManager.releaseWakeLock();
-            }
-        }
-
-        private boolean isScreenOn(Context context) {
-            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-            return powerManager.isScreenOn();
-        }
-
-        private void setNextAlarm(Context context) {
-            Intent intent = new Intent(intentAction);
-            if (getCurrentDvbSource()== ParameterManager.SIGNAL_QPSK && "TKGS".equals(mDataManager.getStringParameters(ParameterManager.DVBS_OPERATOR_MODE))) {
-                if (mAlarmIntent != null) {
-                    mAlarmManager.cancel(mAlarmIntent);
-                }
-                intent.putExtra("tkgs_standby_search", true);
-                mAlarmIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-                long current = System.currentTimeMillis();
-                long alarmTime = current + TimeUnit.HOURS.toMillis(8);
-                Log.d(TAG, "setNextAlarm current =" + new Date(current).toString() + "   alarmTime =" + new Date(alarmTime).toString());
-                mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmTime, mAlarmIntent);
-            } else {
-                String hour = mParameterManager.getStringParameters(mParameterManager.AUTO_SEARCHING_HOUR);
-                String minute = mParameterManager.getStringParameters(mParameterManager.AUTO_SEARCHING_MINUTE);
-                int mode = mParameterManager.getIntParameters(mParameterManager.AUTO_SEARCHING_MODE);
-                int repetition = mParameterManager.getIntParameters(mParameterManager.AUTO_SEARCHING_REPETITION);
-                intent.putExtra("mode", mode + "");
-                intent.putExtra("repetition", repetition + "");
-                if (mAlarmIntent != null) {
-                    mAlarmManager.cancel(mAlarmIntent);
-                }
-                mAlarmIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-                Calendar cal = Calendar.getInstance();
-                long current = System.currentTimeMillis();
-                cal.setTimeInMillis(current);
-                cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(hour));
-                cal.set(Calendar.MINUTE, Integer.parseInt(minute));
-                if (repetition == 0) {
-                    long alarmTime = cal.getTimeInMillis() + AlarmManager.INTERVAL_DAY;
-                    Log.d(TAG, "daily =" + new Date(alarmTime));
-                    mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmTime/*wakeAt*/, mAlarmIntent);
-                } else if (repetition == 1) {
-                    long alarmTime = cal.getTimeInMillis() + AlarmManager.INTERVAL_DAY * 7;
-                    Log.d(TAG, "weekly =" + new Date(alarmTime));
-                    mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmTime/*wakeAt*/, mAlarmIntent);
-                }
             }
         }
     }
@@ -10063,7 +9796,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
     private void updateTKGSAlarmTime() {
         if (getCurrentDvbSource()== ParameterManager.SIGNAL_QPSK && "TKGS".equals(mDataManager.getStringParameters(ParameterManager.DVBS_OPERATOR_MODE))) {
-            Intent intent = new Intent(intentAction);
+            Intent intent = new Intent(DtvkitBackGroundSearch.AUTOMATIC_SEARCHING_ACTION);
             intent.putExtra("tkgs_standby_search", true);
             PendingIntent mAlarmIntent = PendingIntent.getBroadcast(DtvkitTvInput.this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
             if (mAlarmIntent != null) {

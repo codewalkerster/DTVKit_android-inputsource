@@ -1,66 +1,63 @@
 package com.droidlogic.settings;
 
-import android.util.Log;
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.tv.TvInputInfo;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
-import android.widget.Spinner;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
-import android.widget.EditText;
-import android.widget.Toast;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.text.TextUtils;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.util.TypedValue;
-import android.view.WindowManager;
-import android.os.Handler;
-import android.os.Message;
-import android.content.Context;
+import android.widget.Spinner;
 import android.widget.TextView;
-import android.content.IntentFilter;
-import android.content.ContentResolver;
-import android.net.Uri;
-import android.content.BroadcastReceiver;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
+import android.widget.Toast;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.TimeZone;
-
+import com.amlogic.hbbtv.HbbTvManager;
+import com.droidlogic.app.DataProviderManager;
 import com.droidlogic.app.SystemControlManager;
+import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
+import com.droidlogic.dtvkit.companionlibrary.utils.TvContractUtils;
+import com.droidlogic.dtvkit.inputsource.DtvkitBackGroundSearch;
+import com.droidlogic.dtvkit.inputsource.R;
+import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
 import com.droidlogic.fragment.ParameterManager;
+import com.droidlogic.fragment.PasswordCheckUtil;
 
 import org.droidlogic.dtvkit.DtvkitGlueClient;
-import com.droidlogic.dtvkit.inputsource.R;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import android.content.ComponentName;
-import android.media.tv.TvInputInfo;
-import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
-import com.droidlogic.dtvkit.inputsource.DtvkitEpgSync;
-import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
-import com.droidlogic.dtvkit.companionlibrary.utils.TvContractUtils;
-
-import com.droidlogic.app.DataProviderManager;
-import com.droidlogic.settings.SysSettingManager;
-import com.droidlogic.settings.PropSettingManager;
-import com.droidlogic.fragment.PasswordCheckUtil;
-import com.amlogic.hbbtv.HbbTvManager;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 public class DtvkitDvbSettings extends Activity {
 
@@ -94,7 +91,6 @@ public class DtvkitDvbSettings extends Activity {
     protected static final int PERIOD_SHOW_DONE_TIME_OUT = 10000;
     protected static final int PERIOD_RIGHT_NOW = 0;
 
-    private String intentAction = "com.droidlogic.dtvkit.inputsource.AutomaticSearching";
     private int mAutoSearchingMode = 0;
     private int mRepetition        = 0;
     private String mHour           = "4";
@@ -926,21 +922,17 @@ public class DtvkitDvbSettings extends Activity {
         modeList.add("operate");
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, modeList);
         adapter.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
+        mAutoSearchingMode = mParameterManager.getIntParameters(ParameterManager.AUTO_SEARCHING_MODE);
         mode.setAdapter(adapter);
-        mode.setSelection(mParameterManager.getIntParameters(mParameterManager.AUTO_SEARCHING_MODE));
+        mode.setSelection(mAutoSearchingMode);
 
         mode.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 Log.d(TAG, "mode onItemSelected position = " + position);
-                if (mAutoSearchingMode == position) {
-
-                } else {
-                    mAutoSearchingMode = position;
-                }
-
+                mAutoSearchingMode = position;
                 Log.d(TAG, "mAutoSearchingMode =" + mAutoSearchingMode);
-                mParameterManager.saveIntParameters(mParameterManager.AUTO_SEARCHING_MODE, mAutoSearchingMode);
+                mParameterManager.saveIntParameters(ParameterManager.AUTO_SEARCHING_MODE, mAutoSearchingMode);
             }
 
             @Override
@@ -955,18 +947,15 @@ public class DtvkitDvbSettings extends Activity {
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, repList);
         adapter.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
         repetition.setAdapter(adapter);
-        repetition.setSelection(mParameterManager.getIntParameters(mParameterManager.AUTO_SEARCHING_REPETITION));
+        mRepetition = mParameterManager.getIntParameters(ParameterManager.AUTO_SEARCHING_REPETITION);
+        repetition.setSelection(mRepetition);
         repetition.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 Log.d(TAG, "repetition onItemSelected position = " + position);
-                if (mRepetition == position) {
-
-                } else {
-                    mRepetition = position;
-                }
+                mRepetition = position;
                 Log.d(TAG, "mRepetition =" + mRepetition);
-                mParameterManager.saveIntParameters(mParameterManager.AUTO_SEARCHING_REPETITION, mRepetition);
+                mParameterManager.saveIntParameters(ParameterManager.AUTO_SEARCHING_REPETITION, mRepetition);
             }
 
             @Override
@@ -975,7 +964,6 @@ public class DtvkitDvbSettings extends Activity {
             }
         });
 
-        hour.setText(mParameterManager.getStringParameters(mParameterManager.AUTO_SEARCHING_HOUR));
         hour.addTextChangedListener(new TextWatcher() {
             @Override
             public void onTextChanged(CharSequence s, int start, int before,int count) {
@@ -1000,21 +988,25 @@ public class DtvkitDvbSettings extends Activity {
             @Override
             public void afterTextChanged(Editable s) {
                 Log.d(TAG, "hour afterTextChanged = " +s.toString());
-                if (mHour.equals(s.toString())) {
-
-                } else {
-                    mHour = s.toString();
-                }
+                mHour = s.toString();
                 if (mHour.equals(""))
                     return;
                 int value = Integer.parseInt(mHour);
                 if (value < 24 && value >= 0)
-                    mParameterManager.saveStringParameters(mParameterManager.AUTO_SEARCHING_HOUR, mHour);
+                    mParameterManager.saveStringParameters(ParameterManager.AUTO_SEARCHING_HOUR, mHour);
             }
 
         });
-
-        minute.setText(mParameterManager.getStringParameters(mParameterManager.AUTO_SEARCHING_MINUTE));
+        if (TextUtils.equals("user", Build.TYPE)) {
+            mHour = mParameterManager.getStringParameters(ParameterManager.AUTO_SEARCHING_HOUR);
+            mMinute = mParameterManager.getStringParameters(ParameterManager.AUTO_SEARCHING_MINUTE);
+        } else {
+            Date date = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(3));
+            mHour = Integer.toString(date.getHours());
+            mMinute = Integer.toString(date.getMinutes());
+        }
+        hour.setText(mHour);
+        minute.setText(mMinute);
 
         minute.addTextChangedListener(new TextWatcher() {
             @Override
@@ -1039,17 +1031,13 @@ public class DtvkitDvbSettings extends Activity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (mMinute.equals(s.toString())) {
-
-                } else {
-                    mMinute = s.toString();
-                }
+                mMinute = s.toString();
                 Log.d(TAG, "mMinute = " + mMinute);
                 if (mMinute.equals(""))
                     return;
                 int value = Integer.parseInt(mMinute);
                 if (value < 60 && value >= 0)
-                    mParameterManager.saveStringParameters(mParameterManager.AUTO_SEARCHING_MINUTE, mMinute);
+                    mParameterManager.saveStringParameters(ParameterManager.AUTO_SEARCHING_MINUTE, mMinute);
             }
 
         });
@@ -1076,17 +1064,21 @@ public class DtvkitDvbSettings extends Activity {
     }
 
     private void updateAlarmTime() {
-        String hour = mParameterManager.getStringParameters(mParameterManager.AUTO_SEARCHING_HOUR);
-        String minute = mParameterManager.getStringParameters(mParameterManager.AUTO_SEARCHING_MINUTE);
-        int mode  = mParameterManager.getIntParameters(mParameterManager.AUTO_SEARCHING_MODE);
-        int repetition = mParameterManager.getIntParameters(mParameterManager.AUTO_SEARCHING_REPETITION);
+        if (mHour.isEmpty() || mMinute.isEmpty()) {
+            Toast.makeText(DtvkitDvbSettings.this, "input time is wrong, Setting cancel", 1).show();
+            return;
+        }
+        String hour = mHour;
+        String minute = mMinute;
+        int mode  = mAutoSearchingMode;
+        int repetition = mRepetition;
 
-        Log.d(TAG, "mode:" + mode + "hour:" + hour + "minute = " + minute + "repetition =" + repetition);
+        Log.d(TAG, "mode:" + mode + " hour:" + hour + " minute = " + minute + " repetition =" + repetition);
         if (mode == 0) {
             Log.d(TAG, "automatic searching function is off");
             return;
         }
-        Intent intent = new Intent(intentAction);
+        Intent intent = new Intent(DtvkitBackGroundSearch.AUTOMATIC_SEARCHING_ACTION);
         intent.putExtra("mode", mode+"");
         intent.putExtra("repetition", repetition+"");
         if (mAlarmIntent != null) {

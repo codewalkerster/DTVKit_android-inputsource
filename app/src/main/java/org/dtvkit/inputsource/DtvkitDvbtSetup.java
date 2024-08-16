@@ -1170,7 +1170,6 @@ public class DtvkitDvbtSetup extends Activity {
     private void startSearch() {
         setSearchStatus("Searching", "");
         DataProviderManager.putIntValue(this, ConstantManager.KEY_LCN_STATE, mParameterManager.getAutomaticOrderingEnabled() ? 1 : 0);
-        DataProviderManager.putBooleanValue(this,ConstantManager.KEY_IS_SEARCHING, true);
         setSearchProgressIndeterminate(false);
         startMonitoringSearch();
         mFoundServiceNumber = 0;
@@ -1214,6 +1213,7 @@ public class DtvkitDvbtSetup extends Activity {
                 Log.d(TAG, "command = " + command + ", args = " + args.toString());
                 DtvkitGlueClient.getInstance().request(command, args);
                 mStartSearch = true;
+                PropSettingManager.setProp(PropSettingManager.TV_SEARCHING_STATUS, "1");
                 mParameterManager.saveChannelIdForSource(-1);
             } else {
                 stopMonitoringSearch();
@@ -1460,7 +1460,7 @@ public class DtvkitDvbtSetup extends Activity {
         } else {
             updateChannelList();
         }
-        DataProviderManager.putBooleanValue(this,ConstantManager.KEY_IS_SEARCHING, false);
+        PropSettingManager.setProp(PropSettingManager.TV_SEARCHING_STATUS, "0");
     }
 
     private void updateChannelList() {

@@ -19,6 +19,8 @@ import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
 import com.droidlogic.settings.ConstantManager;
 import com.droidlogic.fragment.ParameterManager;
 import com.droidlogic.app.DataProviderManager;
+import com.droidlogic.settings.PropSettingManager;
+
 import org.droidlogic.dtvkit.DtvkitGlueClient;
 
 import org.dtvkit.inputsource.fvp.ClmManager;
@@ -585,7 +587,7 @@ public class DtvKitDVBTCScanPresenter {
     }
 
     private void setDataProviderScanStatus(boolean isScan) {
-        DataProviderManager.putBooleanValue(mContext, ConstantManager.KEY_IS_SEARCHING, isScan);
+        PropSettingManager.setProp(PropSettingManager.TV_SEARCHING_STATUS, isScan ? "1" : "0");
     }
 
     private void startProviderSyncMonitor() {
