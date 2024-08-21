@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
+import android.os.PowerManager;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -49,6 +50,7 @@ public class DtvkitSettingService extends Service {
     protected HbbTvUISetting mHbbTvUISetting;
     protected DtvKitScheduleManager mDtvKitScheduleManager;
     public static final String SYS_TESTMODE_ENABLE = "persist.vendor.sys.testmode.enable";
+    private PowerManager.WakeLock mRecordingWakeLock;
 
     @Override
     public void onCreate() {
@@ -314,12 +316,16 @@ public class DtvkitSettingService extends Service {
 
         @Override
         public void acquireWakeLock() throws RemoteException {
-            mParameterManager.acquireWakeLock();
+            PowerManager pm = getSystemService(PowerManager.class);
+            mRecordingWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TIS:Recording");
+            mRecordingWakeLock.acquire(180*60*1000L /*180 minutes*/);
         }
 
         @Override
         public void releaseWakeLock() throws RemoteException {
-            mParameterManager.releaseWakeLock();
+            if (mRecordingWakeLock != null && mRecordingWakeLock.isHeld()) {
+                mRecordingWakeLock.release();
+            }
         }
 
         @Override
