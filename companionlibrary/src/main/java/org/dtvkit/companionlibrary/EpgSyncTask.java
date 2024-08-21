@@ -247,6 +247,9 @@ public class EpgSyncTask {
                         return "ERROR_EPG_SYNC_CANCELED";
                     }
                     int ret = updatePrograms(channelUri, programs);
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException ignored) {}
                 }
             }
             Log.i(TAG, "EventTask costTime=" + (System.currentTimeMillis() - startSystemMills) + "ms");
