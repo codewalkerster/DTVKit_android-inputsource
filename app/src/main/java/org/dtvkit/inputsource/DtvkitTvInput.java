@@ -160,8 +160,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     protected int mAudioADVolume = 100;
     private static int iAudioOutputId = 0;
 
-    /*teletext subtitle status when open teletext page*/
-    protected boolean mSubFlagTtxPage = false;
     /*teletext region id*/
     private int mRegionId = 0;
     private String mDynamicDbSyncTag = "";
@@ -3765,7 +3763,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             return true;
         }
 
-        private void doSelectTrack(int type, String trackId) {
+        private void doSelectTrack(int type, final String trackId) {
             Log.i(TAG, "doSelectTrack " + type + ", " + trackId);
             if (type == TvTrackInfo.TYPE_AUDIO) {
                 if (mResourceOwnedByBr) {
@@ -3790,47 +3788,35 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     AtvCcTool.getInstance().selectCCTrack(getApplicationContext(), trackId);
                     notifyTrackSelected(type, trackId);
                 } else {
-                    String sourceTrackId = trackId;
+                    int subTrackId = -1;
                     int subType = 4;//default sub
                     int isTele = 0;//default subtitle
                     if (!TextUtils.isEmpty(trackId) && !TextUtils.isDigitsOnly(trackId)) {
                         String[] nameValuePairs = trackId.split("&");
-                        if (nameValuePairs.length >= 3) {
-                            String[] nameValue = nameValuePairs[0].split("=");
-                            String[] typeValue = nameValuePairs[1].split("=");
-                            String[] teleValue = nameValuePairs[2].split("=");
-                            if (nameValue.length == 2 && TextUtils.equals(nameValue[0], "id")
-                                    && TextUtils.isDigitsOnly(nameValue[1])) {
-                                trackId = nameValue[1];//parse id
+                        for (String item : nameValuePairs) {
+                            String[] mapped = item.split("=");
+                            if (mapped.length == 2) {
+                                if (TextUtils.equals(mapped[0], "id")
+                                        && TextUtils.isDigitsOnly(mapped[1])) {
+                                    subTrackId = Integer.parseInt(mapped[1]);
+                                } else if (TextUtils.equals(mapped[0], "type")
+                                        && TextUtils.isDigitsOnly(mapped[1])) {
+                                    subType = Integer.parseInt(mapped[1]);
+                                } else if (TextUtils.equals(mapped[0], "teletext")
+                                        && TextUtils.isDigitsOnly(mapped[1])) {
+                                    isTele = Integer.parseInt(mapped[1]);
+                                }
                             }
-                            if (typeValue.length == 2 && TextUtils.equals(typeValue[0], "type")
-                                    && TextUtils.isDigitsOnly(typeValue[1])) {
-                                subType = Integer.parseInt(typeValue[1]);//parse type
-                            }
-                            if (teleValue.length == 2 && TextUtils.equals(teleValue[0], "teletext")
-                                    && TextUtils.isDigitsOnly(teleValue[1])) {
-                                isTele = Integer.parseInt(teleValue[1]);//parse type
-                            }
-                        }
-                        if (TextUtils.isEmpty(trackId) || !TextUtils.isDigitsOnly(trackId)) {
-                            //notifyTrackSelected(type, sourceTrackId);
-                            Log.d(TAG, "need trackId that only contains number sourceTrackId = "
-                                    + sourceTrackId + ", trackId = " + trackId);
-                            return;
                         }
                     }
                     if ((!FeatureUtil.getFeatureSupportCaptioningManager()
-                            || (mCaptioningManager != null && mCaptioningManager.isEnabled()))
-                            && selectSubtitleOrTeletext(isTele, subType, trackId)) {
-                        notifyTrackSelected(type, sourceTrackId);
-                        if (mHbbTvManager != null) {
-                            mHbbTvManager.notifyTrackSelectedToHbbtv(type, sourceTrackId);
-                        }
-                    } else {
-                        Log.d(TAG, "onSelectTrack mCaptioningManager closed or invalid sub");
-                        notifyTrackSelected(type, null);
-                        if (mHbbTvManager != null) {
-                            mHbbTvManager.notifyTrackSelectedToHbbtv(type, null);
+                            || (mCaptioningManager != null && mCaptioningManager.isEnabled()))) {
+                        if (selectSubtitleOrTeletext(isTele, subType, subTrackId)) {
+                            boolean notifyOrig = subTrackId >= 0;
+                            notifyTrackSelected(type, notifyOrig ? trackId : null);
+                            if (mHbbTvManager != null) {
+                                mHbbTvManager.notifyTrackSelectedToHbbtv(type, notifyOrig ? trackId : null);
+                            }
                         }
                     }
                 }
@@ -3910,81 +3896,72 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                  }
             });
         }
-        private boolean selectSubtitleOrTeletext(int isTele, int type, String indexId) {
-            boolean result;
-            Log.d(TAG, "selectSubtitleOrTeletext isTele = " + isTele
-                    + ", type = " + type + ", indexId = " + indexId);
-            if (TextUtils.isEmpty(indexId)) {//stop
-                if (playerGetSubtitlesOn()) {
+
+        // return old status
+        private boolean controlSubtitle(boolean start, int indexId) {
+            boolean opened = playerGetSubtitlesOn();
+            Log.d(TAG, "controlSubtitle " + opened + "2" + start + ", " + indexId);
+            if (start) {
+                if (!opened) {
+                    playerSetSubtitlesOn(true);
+                    if ((mCusFeatureSubtitleCfg & 0x08) == 0x08) {
+                        if (!isSubtitleEnabled()) {
+                            enableSubtitle(true);
+                        }
+                    }
+                }
+                playerSelectSubtitleTrack(indexId);
+            } else {
+                if (opened) {
                     playerSetSubtitlesOn(false);//close if opened
-                    Log.d(TAG, "selectSubtitleOrTeletext off setSubOff");
                     if ((mCusFeatureSubtitleCfg & 0x08) == 0x08) {
                         if (isSubtitleEnabled()) {
                             enableSubtitle(false);
                         }
                     }
                 }
-                if (playerIsTeletextOn()) {
-                    boolean setTeleOff = playerSetTeletextOn(false, -1);//close if opened
-                    Log.d(TAG, "selectSubtitleOrTeletext off setTeleOff = " + setTeleOff);
-                    //reloadHbbTvApplication();
-                    if (mSubFlagTtxPage) {
-                        Log.d(TAG, "selectSubtitleOrTeletext ttx page exit, restart ttx sub");
-                        playerSetSubtitlesOn(true);
-                        mSubFlagTtxPage = false;
-                    }
-                    if (mMainHandle != null) {
-                        mMainHandle.removeMessages(MSG_SET_TELETEXT_MIX_NORMAL);
-                        mMainHandle.sendEmptyMessage(MSG_SET_TELETEXT_MIX_NORMAL);
-                    }
-                }
-                boolean stopSub = playerSelectSubtitleTrack(0xFFFF);
-                boolean stopTele = playerSelectTeletextTrack(0xFFFF);
-                Log.d(TAG, "selectSubtitleOrTeletext stopSub = " + stopSub + ", stopTele = " + stopTele);
-                result = true;
-            } else if (TextUtils.isDigitsOnly(indexId)) {
-                if (type == 4) {//sub
-                    if (playerIsTeletextOn()) {
-                        boolean setTeleOff = playerSetTeletextOn(false, -1);
-                        Log.d(TAG, "selectSubtitleOrTeletext onSub setTeleOff = " + setTeleOff);
-                    }
-                    if ((mCusFeatureSubtitleCfg & 0x08) == 0x08) {
-                        if (!isSubtitleEnabled()) {
-                            enableSubtitle(true);
-                        }
-                    }
-                    if (!playerGetSubtitlesOn()) {
-                        playerSetSubtitlesOn(true);
-                        Log.d(TAG, "selectSubtitleOrTeletext onSub setSubOn");
-                    }
-                    boolean startSub = playerSelectSubtitleTrack(Integer.parseInt(indexId));
-                    Log.d(TAG, "selectSubtitleOrTeletext startSub = " + startSub);
-                } else if (type == 6) {//teletext
-                    if (playerGetSubtitlesOn()) {
-                        playerSetSubtitlesOn(false);
-                        mSubFlagTtxPage = true;
-                        Log.d(TAG, "selectSubtitleOrTeletext onTele setSubOff");
-                    }
-                    if (!playerIsTeletextOn()) {
-                        boolean setTeleOn = playerSetTeletextOn(true, Integer.parseInt(indexId));
-                        Log.d(TAG, "selectSubtitleOrTeletext start setTeleOn = " + setTeleOn);
-                        //closeHbbtvTeleTextApplication();
-                    } else {
-                        boolean startTele = false;
-                        if ((getSubtitleFlag() & SUBTITLE_CTL_HK_TTX_PAG) == SUBTITLE_CTL_HK_TTX_PAG) {
-                            startTele = playerSetTeletextOn(true, Integer.parseInt(indexId));
-                        } else {
-                            startTele = playerSelectTeletextTrack(Integer.parseInt(indexId));
-                        }
-                        Log.d(TAG, "selectSubtitleOrTeletext set setTeleOn = " + startTele);
-                    }
-                }
-                result = true;
-            } else {
-                result = false;
-                Log.d(TAG, "selectSubtitleOrTeletext unknown case");
             }
-            return result;
+            return opened;
+        }
+
+        // return old status
+        private boolean controlTTx(boolean start, int indexId) {
+            boolean opened = playerIsTeletextOn();
+            Log.d(TAG, "controlTTx " + opened + "2" + start + ", " + indexId);
+            if (start) {
+                if (!opened) {
+                    playerSetTeletextOn(true, indexId);
+                } else if ((getSubtitleFlag() & SUBTITLE_CTL_HK_TTX_PAG) == SUBTITLE_CTL_HK_TTX_PAG) {
+                    playerSetTeletextOn(true, indexId);
+                } else {
+                    playerSelectTeletextTrack(indexId);
+                }
+            } else {
+                if (opened) {
+                    playerSetTeletextOn(false, -1);
+                }
+                // when ttx stop, stack will re-tune subtitle if needed
+            }
+            return opened;
+        }
+
+        // when ttx off, close ttx again, don't update selected track
+        private boolean selectSubtitleOrTeletext(int isTele, int type, int indexId) {
+            Log.d(TAG, "selectSubtitleOrTeletext isTTx = " + isTele
+                    + ", type = " + type + ", indexId = " + indexId);
+            if (type == 4) {
+                //sub
+                controlSubtitle(indexId >= 0, indexId);
+            } else if (type == 6) {
+                //teletext
+                boolean oldState = controlTTx(indexId >= 0, indexId);
+                if (indexId < 0) {
+                    mMainHandle.removeMessages(MSG_SET_TELETEXT_MIX_NORMAL);
+                    mMainHandle.sendEmptyMessage(MSG_SET_TELETEXT_MIX_NORMAL);
+                    return oldState;
+                }
+            }
+            return true;
         }
 
         private void initSubtitleOrTeletextIfNeed() {
@@ -4659,13 +4636,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 if (mView.handleKeyUp(keyCode, event)) {
                     used = true;
                 } else if (keyCode == KeyEvent.KEYCODE_ZOOM_OUT) {
-                    if (playerIsTeletextOn()) {
-                        playerStopTeletext();
+                    if (controlTTx(false, 0)) {
                         notifyTrackSelected(TvTrackInfo.TYPE_SUBTITLE, null);
                         reloadHbbTvApplication();
                     } else {
+                        controlTTx(true, -1);
                         closeHbbtvTeleTextApplication();
-                        playerStartTeletext(-1);
                         if (playerIsTeletextStarted()) {
                             notifyTrackSelected(TvTrackInfo.TYPE_SUBTITLE, playerGetSelectedTeleTextTrackId());
                         } else {
@@ -4716,7 +4692,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             switch (keyCode) {
                 case KeyEvent.KEYCODE_BACK:
                     Log.d(TAG, "dealTeletextKeyCode close teletext");
-                    playerSetTeletextOn(false, -1);
+                    controlTTx(false, 0);
                     notifyTrackSelected(TvTrackInfo.TYPE_SUBTITLE, null);
                     if (!mTeleTextMixNormal) {
                         mTeleTextMixNormal = true;
@@ -4724,12 +4700,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         Message msg = mHandlerThreadHandle.obtainMessage(MSG_SET_RECTANGLE);
                         msg.arg1 = 0;
                         mHandlerThreadHandle.sendMessage(msg);
-                    }
 
-                    Log.d(TAG, "dealTeletextKeyCode mSubFlagTtxPage:" + mSubFlagTtxPage);
-                    if (mSubFlagTtxPage) {
-                        playerSetSubtitlesOn(true);
-                        mSubFlagTtxPage = false;
                     }
                     break;
                 case KeyEvent.KEYCODE_PROG_RED:
@@ -8134,6 +8105,14 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             JSONArray args1 = new JSONArray();
             args1.put(index);
             JSONArray teletextStreams = DtvkitGlueClient.getInstance().request("Player.getListOfTeletextStreams", args1).getJSONArray("data");
+            if (teletextStreams.length() > 0) {
+                TvTrackInfo.Builder track = new TvTrackInfo.Builder(TvTrackInfo.TYPE_SUBTITLE, "id=-1&type=6&teletext=1&flag=none");
+                Bundle bundle = new Bundle();
+                bundle.putInt(ConstantManager.KEY_TRACK_PID, -1);
+                bundle.putBoolean(ConstantManager.KEY_TVINPUTINFO_SUBTITLE_IS_TELETEXT, true);
+                track.setExtra(bundle);
+                teleTracks.add(track.build());
+            }
             undefinedIndex = 0;
             for (int i = 0; i < teletextStreams.length(); i++) {
                 Bundle bundle = new Bundle();
