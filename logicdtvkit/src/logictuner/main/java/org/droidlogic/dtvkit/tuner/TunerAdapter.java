@@ -45,6 +45,8 @@ public class TunerAdapter {
     public static int TUNER_TYPE_LIVE_2               = 6;
     public static int TUNER_TYPE_BACKGROUND           = 7;
 
+    private static int TRY_SCAN_FOR_TUNER_RESOURCE_COUNT = 15;
+
     private Tuner mTuner;
     private CallbackExecutor mFrontendExecutor;
     private CallbackExecutor mDemuxExecutor;
@@ -191,6 +193,23 @@ public class TunerAdapter {
             mNativeScanCallback = new NativeScanCallback(this, mTunerClientId);
         }
         int result = mTuner.scan(settings, scanType, mFrontendExecutor, mNativeScanCallback);
+        if (Tuner.RESULT_UNAVAILABLE == result) {
+            if (DEBUG) Log.d(TAG, "may be not have tuner resource so try again");
+            int count = TRY_SCAN_FOR_TUNER_RESOURCE_COUNT;
+            do {
+                result = mTuner.scan(settings, scanType, mFrontendExecutor, mNativeScanCallback);
+                if (Tuner.RESULT_UNAVAILABLE == result) {
+                    try {
+                        Thread.sleep(100L);
+                        if (DEBUG) Log.d(TAG, "scan try count : " + count + " result : " + result);
+                    } catch (InterruptedException ignored) {
+                    }
+                } else {
+                    break;
+                }
+                count--;
+            } while (count > 0);
+        }
         if (DEBUG) Log.d(TAG, "scan result : " + result);
         return result;
     }
