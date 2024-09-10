@@ -18,6 +18,7 @@ public class PropSettingManager {
     public static final String TV_PIP_STREAM_TIME = "vendor.sys.tv.stream.realtime1";//for pip
     public static final String PVR_RECORD_MODE = "vendor.tv.dtv.dvr.mode";//used in dtvkit pvr
     public static final String TIMESHIFT_DISABLE = "vendor.tv.dtv.tf.disable";
+    public static final String TIMESHIFT_DURATION_PROP = "vendor.tv.dtv.tf.duration";
     public static final String ENABLE_PIP_SUPPORT = "vendor.tv.dtv.enable.pip";
     public static final String ENABLE_FCC_SUPPORT = "vendor.tv.dtv.enable.fcc";
     public static final String ENABLE_MULTI_FREQUENCY_SUPPORT = "multi_frequency";

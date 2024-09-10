@@ -4566,6 +4566,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     currentPosition = elapsed + originalStartPosition + diff;
                 comments = "timeshifting." + ", (elapsed:" + elapsed + ", (length:" + length
                         + ", (playSpeed:" + playSpeed + ", diff:" + diff + ")ms";
+                if (length > 0) {
+                    PropSettingManager.setProp(PropSettingManager.TIMESHIFT_DURATION_PROP, String.valueOf(length));
+                }
             } else if (startPosition == TvInputManager.TIME_SHIFT_INVALID_TIME) {
                 currentPosition = TvInputManager.TIME_SHIFT_INVALID_TIME;
                 comments = "Invalid time.";
@@ -5073,6 +5076,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             if (timeshiftRecorderState != RecorderState.RECORDING) {
                                 timeshiftRecorderState = RecorderState.RECORDING;
                                 runOnMainThread(() -> {
+                                    PropSettingManager.setProp(PropSettingManager.TIMESHIFT_DURATION_PROP, "0");
                                     startPosition = /*System.currentTimeMillis()*/PropSettingManager.getCurrentStreamTime(true);
                                     originalStartPosition = PropSettingManager.getCurrentStreamTime(false);//keep the original time
                                     Log.i(TAG, "recording originalStartPosition as date = "
@@ -5085,6 +5089,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             break;
                         case "off":
                             timeshiftRecorderState = RecorderState.STOPPED;
+                            PropSettingManager.setProp(PropSettingManager.TIMESHIFT_DURATION_PROP, "0");
                             tryStopTimeshifting(); // stop if "off" is not caused by user behaviour
                             startPosition = originalStartPosition = TvInputManager.TIME_SHIFT_INVALID_TIME;
                             notifyTimeShiftStatusChanged(TvInputManager.TIME_SHIFT_STATUS_UNAVAILABLE);
