@@ -559,6 +559,7 @@ public class DtvkitAtscSetup extends Activity {
         if (UI.mSearchMode == DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL) {
             parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, String.valueOf(UI.mManualFrequency));
         }
+        parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_HYBRID_MODE, UI.mSearchTvType);
 
         Intent intent = new Intent(this, com.droidlogic.dtvkit.inputsource.DtvkitEpgSync.class);
         intent.putExtra("inputId", inputId);

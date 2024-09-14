@@ -5578,6 +5578,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                             Bundle parameters = new Bundle();
                             parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, freq);
+                            parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_HYBRID_MODE, mTuneInfo.isDTv ? 0 : 1);
                             parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_MODE, EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL);
                             Intent intent = new Intent(outService, DtvkitEpgSync.class);
                             intent.putExtra("inputId", mInputId);

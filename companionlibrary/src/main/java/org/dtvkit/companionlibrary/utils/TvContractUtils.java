@@ -118,11 +118,17 @@ public class TvContractUtils {
         // 0.find sources
         String syncSignalType = extras.getString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE, "full");
         String searchMode = extras.getString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_MODE, null);
+        int hybridTvMode = extras.getInt(EpgSyncJobService.BUNDLE_KEY_SYNC_HYBRID_MODE, 0);
         boolean syncCurrent = !TextUtils.equals("full", syncSignalType);
         if (syncCurrent) {
-            sources.add(syncSignalType);
-            if (!syncSignalType.contains("DVB")) {
+            Log.i(TAG, "hybridTvMode:" + hybridTvMode);
+            if (hybridTvMode == 2) {
+                sources.add(syncSignalType);
                 sources.add("ATV");
+            } else if (hybridTvMode == 1) {
+                sources.add("ATV");
+            } else {
+                sources.add(syncSignalType);
             }
         } else {
             sources.add("DVB-T");

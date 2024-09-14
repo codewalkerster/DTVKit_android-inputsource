@@ -107,6 +107,7 @@ public abstract class EpgSyncJobService extends Service {
     public static final String BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL = "MANUAL";
     public static final String BUNDLE_VALUE_SYNC_SEARCHED_MODE_AUTO = "AUTO";
     public static final String BUNDLE_VALUE_SYNC_SEARCHED_MODE_UPDATE = "UPDATE";
+    public static final String BUNDLE_KEY_SYNC_HYBRID_MODE = "BUNDLE_KEY_SYNC_HYBRID_MODE";
     public static final String BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE = "BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE";
     public static final String BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY = "BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY";
     public static final String BUNDLE_KEY_SYNC_REASON = "BUNDLE_KEY_SYNC_REASON";
