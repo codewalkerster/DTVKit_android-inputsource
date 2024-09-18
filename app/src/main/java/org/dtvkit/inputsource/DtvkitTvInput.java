@@ -207,7 +207,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     private int numActiveRecordings = 0;
 
     private static long mDtvkitTvInputSessionCount = 0;
-    private long mDtvkitRecordingSessionCount = 0;
+    private static long mDtvkitRecordingSessionCount = 0;
     private boolean recordingPending = false;
 
     private DataManager mDataManager;
@@ -1959,7 +1959,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     }
 
     class DtvkitRecordingSession extends RecordingSession {
-        private static final String TAG = "DtvkitRecordingSession";
+        private final String TAG = "DtvkitRecordingSession" + "@" + mDtvkitRecordingSessionCount;
         private Uri mChannelUri;
         private Uri mProgramUri;
         private Channel mChannel = null;

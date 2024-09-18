@@ -237,7 +237,7 @@ int Am_tuner_getTunerClientIdByType(int requestTunerType) {
                 tunerBackgroundClientId = iter->first;//save backgournd tuner clientId
             }
             if (requestTunerType == tunerType) {
-                tunerClientId = iter->first;
+                tunerClientId = iter->first; //for multiple record task, last dvr record tuner is valid,so not need break.
             }
         }
     }
@@ -306,15 +306,30 @@ jobject Am_tuner_getDvrTunerByType(int tunerType) {
     }
 
     bool attached = false;
-    int tunerClientId = Am_tuner_getTunerClientIdByType(tunerType);
+    JNIEnv *env = Am_tuner_getJNIEnv(&attached);
+    int tunerClientId = TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID;
+    for (std::map<jint, jobject>::iterator iter = gTunerMap.begin(); iter != gTunerMap.end(); iter++) {
+        jobject tuner = iter->second;
+        if (NULL != tuner) {
+            ALOGD("clientId :%d, type : %d, tuner :%p,", iter->first, (int)env->GetIntField(tuner, gTunerFields.tunerType), tuner);
+            if (TUNER_TYPE_DVR_RECORD == tunerType) {
+                if (tunerType == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
+                    tunerClientId = iter->first;//for multiple record task, last dvr record tuner is valid.
+                }
+            } else {
+                if (tunerType == (int)env->GetIntField(tuner, gTunerFields.tunerType)) {
+                    tunerClientId = iter->first;
+                    break;
+                }
+            }
+        }
+    }
     if (TUNER_CONSTANT_INVALID_TUNER_CLIENT_ID == tunerClientId) {
         ALOGE("end:%s, not have tuner", __FUNCTION__);
+        ReleaseEnv(attached);
         return NULL;
     }
-
-    JNIEnv *env = Am_tuner_getJNIEnv(&attached);
     jobject tuner = getTuner(tunerClientId);
-
     if ((NULL == env) || (NULL == tuner)) {
         ReleaseEnv(attached);
         ALOGE("%s: input parameter error", __FUNCTION__);
