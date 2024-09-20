@@ -1,4 +1,4 @@
-package com.droidlogic.dtvkit.inputsource;
+package com.droidlogic.dtvkit.inputsource.searchguide;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -32,6 +32,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.droidlogic.app.DataProviderManager;
+import com.droidlogic.dtvkit.inputsource.DataManager;
+import com.droidlogic.dtvkit.inputsource.PvrStatusConfirmManager;
+import com.droidlogic.dtvkit.inputsource.R;
 import com.droidlogic.settings.ConstantManager;
 import org.droidlogic.dtvkit.DtvkitGlueClient;
 import com.droidlogic.fragment.ParameterManager;

@@ -1,4 +1,4 @@
-package com.droidlogic.dtvkit.inputsource;
+package com.droidlogic.dtvkit.inputsource.searchguide;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class DtvkitDvbsSetup extends Activity {
+public class DtvkitDvbsSetup extends DtvkitActivity {
     private static final String TAG = DtvkitDvbsSetup.class.getSimpleName();
     private SearchStageFragment fragment = null;
     private DataPresenter mDataPresenter = null;

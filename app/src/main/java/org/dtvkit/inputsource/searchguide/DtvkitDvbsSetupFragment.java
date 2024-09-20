@@ -40,7 +40,7 @@ import android.widget.Toast;
 import com.droidlogic.app.DataProviderManager;
 import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
 import com.droidlogic.dtvkit.inputsource.DataManager;
-import com.droidlogic.dtvkit.inputsource.DtvkitDvbScanSelect;
+import com.droidlogic.dtvkit.inputsource.searchguide.DtvkitDvbScanSelect;
 import com.droidlogic.dtvkit.inputsource.DtvkitEpgSync;
 import com.droidlogic.dtvkit.inputsource.DtvkitRequest;
 import com.droidlogic.dtvkit.inputsource.PvrStatusConfirmManager;
@@ -63,7 +63,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 

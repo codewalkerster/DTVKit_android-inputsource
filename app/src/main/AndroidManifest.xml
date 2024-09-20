@@ -69,37 +69,37 @@
             </intent-filter>
         </activity>-->
         <activity android:exported="true"
-             android:name=".DtvkitDvbScanSelect">
+             android:name="searchguide.DtvkitDvbScanSelect">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
         <activity android:exported="false"
-             android:name=".DtvkitDvbcSetup">
+             android:name=".searchguide.DtvkitDvbcSetup">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
         <activity android:exported="false"
-             android:name=".DtvkitDvbsSetup">
+             android:name=".searchguide.DtvkitDvbsSetup">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
         <activity android:exported="false"
-             android:name=".DtvkitIsdbtSetup">
+             android:name=".searchguide.DtvkitIsdbtSetup">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
         <activity android:exported="false"
-             android:name=".DtvkitDvbtSetup">
+             android:name=".searchguide.DtvkitDvbtSetup">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
         <activity android:exported="false"
-            android:name=".DtvkitAtscSetup">
+            android:name=".searchguide.DtvkitAtscSetup">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
@@ -169,9 +169,10 @@
             android:exported="true">
         </service>
         <activity android:exported="true"
-             android:name="com.droidlogic.dtvkit.inputsource.FvpScanActivity">
+             android:name=".searchguide.FvpScanActivity">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <action android:name="droidlogic.intent.action.FVP_SCAN" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <meta-data android:name="com.vewd.core.browser_service_package"

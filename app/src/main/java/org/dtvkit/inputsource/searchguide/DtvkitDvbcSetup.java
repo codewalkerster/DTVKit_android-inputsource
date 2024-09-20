@@ -1,12 +1,10 @@
-package com.droidlogic.dtvkit.inputsource;
+package com.droidlogic.dtvkit.inputsource.searchguide;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.tv.TvContract;
 import android.media.tv.TvInputInfo;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
@@ -19,6 +17,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
+import com.droidlogic.dtvkit.inputsource.R;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,7 +26,7 @@ import org.droidlogic.dtvkit.DtvkitGlueClient;
 
 import java.util.Locale;
 
-public class DtvkitDvbcSetup extends Activity {
+public class DtvkitDvbcSetup extends DtvkitActivity {
     private static final String TAG = "DtvkitDvbcSetup";
 
     private final DtvkitGlueClient.SignalHandler mHandler = new DtvkitGlueClient.SignalHandler() {

@@ -1,4 +1,4 @@
-package com.droidlogic.dtvkit.inputsource;
+package com.droidlogic.dtvkit.inputsource.searchguide;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -41,11 +41,15 @@ import android.widget.Toast;
 import com.droidlogic.app.DataProviderManager;
 import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
 import com.droidlogic.dtvkit.inputsource.DataManager;
+import com.droidlogic.dtvkit.inputsource.DtvKitScanSignalPresenter;
 import com.droidlogic.dtvkit.inputsource.DtvkitEpgSync;
+import com.droidlogic.dtvkit.inputsource.PvrStatusConfirmManager;
+import com.droidlogic.dtvkit.inputsource.R;
+import com.droidlogic.dtvkit.inputsource.TargetRegionManager;
 import com.droidlogic.fragment.ParameterManager;
 import com.droidlogic.settings.ConstantManager;
 import com.droidlogic.settings.PropSettingManager;
-import org.dtvkit.inputsource.fvp.ClmDialogFragment;
+
 import org.dtvkit.inputsource.fvp.ClmManager;
 import org.droidlogic.dtvkit.DtvkitGlueClient;
 import org.json.JSONArray;
@@ -57,11 +61,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.HashMap;
+
 import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
 import droidlogic.dtvkit.tuner.TunerAdapter;
 
-public class DtvkitDvbtSetup extends Activity {
+public class DtvkitDvbtSetup extends DtvkitActivity {
     private static final String TAG = "DtvkitDvbtSetup";
 
     private boolean mIsDvbt = false;
@@ -1611,8 +1615,8 @@ public class DtvkitDvbtSetup extends Activity {
         int found = 0;
         try {
             JSONObject obj = DtvkitGlueClient.getInstance().request("Dvb.getCategoryNumberOfServices", new JSONArray());
-            JSONObject datas = obj.getJSONObject("data");
-            found = datas.getInt("total_num");
+            JSONObject data = obj.getJSONObject("data");
+            found = data.getInt("total_num");
             Log.i(TAG, "getFoundServiceNumberOnSearch found = " + found);
         } catch (Exception ignore) {
             Log.e(TAG, "getFoundServiceNumberOnSearch Exception = " + ignore.getMessage());

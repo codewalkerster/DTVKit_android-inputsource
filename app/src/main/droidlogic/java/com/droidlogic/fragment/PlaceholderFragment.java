@@ -55,7 +55,7 @@ public class PlaceholderFragment extends Fragment {
                 try {
                     Intent intent = getActivity().getIntent();
                     //intent.setClassName("com.android.tv", "com.android.tv.droidlogic.ChannelSearchActivity");
-                    intent.setClassName("com.droidlogic.dtvkit.inputsource", "com.droidlogic.dtvkit.inputsource.DtvkitDvbsSetup");
+                    intent.setClassName("com.droidlogic.dtvkit.inputsource", "com.droidlogic.dtvkit.inputsource.searchguide.DtvkitDvbsSetup");
                     getActivity().startActivityForResult(intent, ScanMainActivity.REQUEST_CODE_START_SETUP_ACTIVITY);
                     Log.d(TAG, "ScanChannelFragment");
                 } catch (ActivityNotFoundException e) {

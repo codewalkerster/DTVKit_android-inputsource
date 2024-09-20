@@ -1,40 +1,27 @@
-package com.droidlogic.dtvkit.inputsource;
+package com.droidlogic.dtvkit.inputsource.searchguide;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.ComponentName;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.VideoView;
-import android.widget.Toast;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.media.MediaPlayer;
-import android.database.Cursor;
-import android.media.tv.TvContract;
-import android.media.tv.TvContract.Channels;
-import android.database.Cursor;
-import org.droidlogic.dtvkit.DtvkitGlueClient;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import java.util.ArrayList;
-import java.util.stream.Stream;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.droidlogic.dtvkit.inputsource.searchguide.DtvKitDVBTCScanPresenter;
+import com.droidlogic.dtvkit.inputsource.R;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
 
 
-public class FvpScanActivity extends Activity implements UpdateScanView {
+public class FvpScanActivity extends Activity implements com.droidlogic.dtvkit.inputsource.searchguide.UpdateScanView {
     private static final String TAG = "FvpScanActivity";
 
     private static final int MSG_UPDATE_CHANNEL_NUMBER = 0;

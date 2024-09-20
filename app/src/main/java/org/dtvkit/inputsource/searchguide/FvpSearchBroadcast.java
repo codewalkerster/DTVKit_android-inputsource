@@ -1,4 +1,4 @@
-package com.droidlogic.dtvkit.inputsource;
+package com.droidlogic.dtvkit.inputsource.searchguide;
 
 import android.content.Intent;
 import android.content.Context;
@@ -13,7 +13,6 @@ import android.media.tv.TvContract.Channels;
 
 import org.droidlogic.dtvkit.DtvkitGlueClient;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.stream.Stream;

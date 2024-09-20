@@ -1,6 +1,5 @@
-package com.droidlogic.dtvkit.inputsource;
+package com.droidlogic.dtvkit.inputsource.searchguide;
 
-import android.content.Intent;
 import android.os.Bundle;
 
 public interface UpdateScanView {

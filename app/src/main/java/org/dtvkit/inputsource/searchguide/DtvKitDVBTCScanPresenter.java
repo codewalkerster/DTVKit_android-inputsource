@@ -1,12 +1,10 @@
-package com.droidlogic.dtvkit.inputsource;
+package com.droidlogic.dtvkit.inputsource.searchguide;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.tv.TvInputInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -16,7 +14,8 @@ import android.util.Log;
 
 import com.droidlogic.dtvkit.companionlibrary.utils.TvContractUtils;
 import com.droidlogic.dtvkit.companionlibrary.EpgSyncJobService;
-import com.droidlogic.settings.ConstantManager;
+import com.droidlogic.dtvkit.inputsource.DataManager;
+import com.droidlogic.dtvkit.inputsource.TargetRegionManager;
 import com.droidlogic.fragment.ParameterManager;
 import com.droidlogic.app.DataProviderManager;
 import com.droidlogic.settings.PropSettingManager;
@@ -475,8 +474,8 @@ public class DtvKitDVBTCScanPresenter {
         int found = 0;
         try {
             JSONObject obj = DtvkitGlueClient.getInstance().request(COMMAND_DVB_GET_SERVICE_NUMBER_ON_SEARCH, new JSONArray());
-            JSONObject datas = obj.getJSONObject("data");
-            found = datas.getInt("total_num");
+            JSONObject data = obj.getJSONObject("data");
+            found = data.getInt("total_num");
             Log.i(TAG, "getFoundServiceNumberOnSearch found = " + found);
         } catch (Exception ignore) {
             Log.e(TAG, "getFoundServiceNumberOnSearch Exception = " + ignore.getMessage());

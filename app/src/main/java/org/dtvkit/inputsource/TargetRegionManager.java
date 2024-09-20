@@ -38,15 +38,15 @@ public class TargetRegionManager {
     /**
      * @param context Need ActivityContext
      */
-    TargetRegionManager(Context context) {
+    public TargetRegionManager(Context context) {
         mContext = context;
     }
 
-    void setRegionCallback(TargetRegionsCallbacks cb) {
+    public void setRegionCallback(TargetRegionsCallbacks cb) {
         mCallback = cb;
     }
 
-    void start(boolean isScreenOn) {
+    public void start(boolean isScreenOn) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
         final AlertDialog alert = builder.create();
         final View dialogView = View.inflate(mContext, R.layout.region_list_spin, null);
