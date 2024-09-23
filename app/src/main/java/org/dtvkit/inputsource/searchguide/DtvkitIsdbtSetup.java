@@ -4,9 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.media.tv.TvContract;
-import android.media.tv.TvInputInfo;
 import android.media.tv.TvInputService;
 import android.media.tv.tuner.Tuner;
 import android.os.Bundle;
@@ -330,13 +328,20 @@ public class DtvkitIsdbtSetup extends DtvkitActivity {
         }
 
         try {
+            int max = 0;
+            int min = Integer.MAX_VALUE;
             for (int i = 0; i < list.length(); i++) {
                 JSONObject channelTable = (JSONObject)list.get(i);
                 int freq = channelTable.optInt("freq", 0);
                 int channelNumber = channelTable.optInt("index", 0);
                 String name = channelTable.optString("name", "ch" + channelNumber);
                 newList.add("NO." + channelNumber + " " + name + " " + freq + "Hz");
+                max = Math.max(max, freq);
+                min = Math.min(min, freq);
             }
+            UI.mMaxFreq = (float) max / 1000000f;
+            UI.mMinFreq = (float) min / 1000000f;
+            Log.d(TAG, "updateChannelNameContainer " + UI.mMinFreq + " ~ " + UI.mMaxFreq);
         } catch (Exception e) {
             Log.d(TAG, "got invalid channel freq table");
         }
@@ -420,8 +425,9 @@ public class DtvkitIsdbtSetup extends DtvkitActivity {
             String value = editable.toString();
             if (!TextUtils.isEmpty(value)/* && TextUtils.isDigitsOnly(value)*/) {
                 //float for frequency
+                Log.i(TAG, "mMinFreq=" + UI.mMinFreq + " mMaxAtvFreq=" + UI.mMaxFreq);
                 float toFloat = Float.parseFloat(value);
-                if (toFloat >= 50.0f && toFloat <= 810.0f) {
+                if (toFloat >= UI.mMinFreq && toFloat <= UI.mMaxFreq) {
                     parameter = (int) (toFloat * 1000.0f);//khz
                 }
             }
@@ -846,6 +852,8 @@ public class DtvkitIsdbtSetup extends DtvkitActivity {
         private int mSearchMethod;
         private int mAntennaType = -1;
         private int mChannelNumberI;
+        private float mMaxFreq = 1000f;
+        private float mMinFreq = 0f;
         private int mManualFrequency;
         private long clickLastTime;
 
@@ -873,12 +881,14 @@ public class DtvkitIsdbtSetup extends DtvkitActivity {
         }
 
         private void setEnabled(boolean enable) {
-            cb_network_search.setEnabled(enable);
-            spinner_search_mode.setEnabled(enable);
-            spinner_antenna_type.setEnabled(enable);
-            spinner_adtv_type.setEnabled(enable);
-            spinner_search_method.setEnabled(enable);
-            btn_option.setEnabled(enable);
+            runOnUiThread(() -> {
+                cb_network_search.setEnabled(enable);
+                spinner_search_mode.setEnabled(enable);
+                spinner_antenna_type.setEnabled(enable);
+                spinner_adtv_type.setEnabled(enable);
+                spinner_search_method.setEnabled(enable);
+                btn_option.setEnabled(enable);
+            });
         }
 
         private void initOrUpdateView() {
@@ -952,8 +962,7 @@ public class DtvkitIsdbtSetup extends DtvkitActivity {
                     }
                     mSearchTvType = SEARCH_TV_TYPE.values()[position];
                     setSearchTvType(mSearchTvType);
-                    if (mSearchMode != DataManager.VALUE_PUBLIC_SEARCH_MODE_AUTO
-                        && mSearchMethod == 1) {
+                    if (mSearchMode == DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL) {
                         updateChannelNameContainer(SEARCH_TV_TYPE.ATV.ordinal() == position);
                     }
                 }
