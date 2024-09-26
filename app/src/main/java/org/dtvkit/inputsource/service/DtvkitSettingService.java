@@ -316,12 +316,13 @@ public class DtvkitSettingService extends Service {
 
         @Override
         public void acquireWakeLock() throws RemoteException {
-            if (mRecordingWakeLock != null && mRecordingWakeLock.isHeld()) {
-                mRecordingWakeLock.release();
+            if (mRecordingWakeLock == null) {
+                PowerManager pm = getSystemService(PowerManager.class);
+                mRecordingWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TIS:Recording");
             }
-            PowerManager pm = getSystemService(PowerManager.class);
-            mRecordingWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TIS:Recording");
-            mRecordingWakeLock.acquire(180 * 60 * 1000L /*180 minutes*/);
+            if (mRecordingWakeLock != null && !mRecordingWakeLock.isHeld()) {
+                mRecordingWakeLock.acquire();
+            }
         }
 
         @Override
