@@ -778,14 +778,21 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     break;
                 }
                 case MSG_ADD_DTVKIT_DISK_PATH: {
-                    if (true == FeatureUtil.getFeatureSupportTunerFramework()) {
-                        if (null != msg.obj) {
-                            String mountPath = (String) msg.obj + "/" + SysSettingManager.PVR_DEFAULT_FOLDER + "/";
-                            recordingAddDiskPath(mountPath);
-                        }
+                    if (null == msg.obj) {
+                        break;
+                    }
+                    String mountPath;
+                    if (FeatureUtil.getFeatureSupportTunerFramework()) {
+                        mountPath = (String) msg.obj + "/" + SysSettingManager.PVR_DEFAULT_FOLDER + "/";
                     } else {
-                        recordingAddDiskPath(SysSettingManager.convertStoragePathToMediaPath((String) msg.obj)
-                            + "/" + SysSettingManager.PVR_DEFAULT_FOLDER);
+                        mountPath = SysSettingManager.convertStoragePathToMediaPath((String) msg.obj)
+                            + "/" + SysSettingManager.PVR_DEFAULT_FOLDER;
+                    }
+                    recordingAddDiskPath(mountPath);
+                    String pvrPath = mDataManager.getStringParameters(DataManager.KEY_PVR_RECORD_PATH);
+                    if (TextUtils.isEmpty(pvrPath) || DataManager.PVR_DEFAULT_PATH.equals(pvrPath)) {
+                        mDataManager.saveStringParameters(DataManager.KEY_PVR_RECORD_PATH, mountPath);
+                        recordingSetDefaultDisk(mountPath);
                     }
                     break;
                 }

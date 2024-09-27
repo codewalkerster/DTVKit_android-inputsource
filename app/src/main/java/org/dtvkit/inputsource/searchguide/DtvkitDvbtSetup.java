@@ -65,7 +65,7 @@ import java.util.Map;
 import com.droidlogic.dtvkit.inputsource.util.FeatureUtil;
 import droidlogic.dtvkit.tuner.TunerAdapter;
 
-public class DtvkitDvbtSetup extends DtvkitActivity {
+public class DtvkitDvbtSetup extends com.droidlogic.dtvkit.inputsource.searchguide.DtvkitActivity {
     private static final String TAG = "DtvkitDvbtSetup";
 
     private boolean mIsDvbt = false;
@@ -109,6 +109,8 @@ public class DtvkitDvbtSetup extends DtvkitActivity {
     private TunerAdapter mTunerAdapter = null;
     // operatorList for dvb-c only
     private JSONArray mOperatorList;
+    // channel search flag
+    private int mKeepChannel = 0;
 
     private final DtvkitGlueClient.SignalHandler mHandler = new DtvkitGlueClient.SignalHandler() {
         @Override
@@ -397,18 +399,30 @@ public class DtvkitDvbtSetup extends DtvkitActivity {
     }
 
     private void onStartSearchClick() {
+        int searchMode = mDataManager.getIntParameters(DataManager.KEY_PUBLIC_SEARCH_MODE);
+        boolean autoSearch = (DataManager.VALUE_PUBLIC_SEARCH_MODE_AUTO == searchMode);
+        int number = 0;
+        if (!mInAutomaticMode && mIsDvbt && autoSearch) {
+            int countryCode = ParameterManager.getCurrentCountryCode();
+            boolean isUK = "gbr".equals(ParameterManager.getIso3NameByCountryCode(countryCode));
+            if (isUK) {
+                number = getFoundServiceNumber();
+            }
+        }
+        int finalNumber = number;
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                int searchMode = mDataManager.getIntParameters(DataManager.KEY_PUBLIC_SEARCH_MODE);
-                boolean autoSearch = (DataManager.VALUE_PUBLIC_SEARCH_MODE_AUTO == searchMode);
+                if (finalNumber > 0) {
+                    showScanSelectDialog();
+                    return;
+                }
                 mPvrStatusConfirmManager.setSearchType(autoSearch ? ConstantManager.KEY_DTVKIT_SEARCH_TYPE_AUTO : ConstantManager.KEY_DTVKIT_SEARCH_TYPE_MANUAL);
                 boolean checkPvr = mPvrStatusConfirmManager.needDeletePvrRecordings();
                 if (checkPvr) {
                     mPvrStatusConfirmManager.showDialogToAppoint(DtvkitDvbtSetup.this, autoSearch);
                 } else {
-                    mPvrStatusConfirmManager.sendDvrCommand(DtvkitDvbtSetup.this);
-                    sendStartSearch();
+                    sendStartSearch(true);
                 }
             }
         });
@@ -1162,13 +1176,30 @@ public class DtvkitDvbtSetup extends DtvkitActivity {
         return index;
     }
 
-    private void sendStartSearch() {
+    private void sendStartSearch(boolean clearRecordings) {
+        if (clearRecordings) {
+            mPvrStatusConfirmManager.sendDvrCommand(DtvkitDvbtSetup.this);
+        }
         if (mThreadHandler != null) {
             mThreadHandler.removeMessages(MSG_START_SEARCH);
             Message mess = mThreadHandler.obtainMessage(MSG_START_SEARCH, 0, 0, null);
             boolean info = mThreadHandler.sendMessageDelayed(mess, 0);
             Log.d(TAG, "sendMessage MSG_START_SEARCH " + info);
         }
+    }
+
+    @Override
+    public void onNegativeSelect() {
+        Log.d(TAG, "sendMessage onNegativeSelect");
+        mKeepChannel = -1;
+        sendStartSearch(false);
+    }
+
+    @Override
+    public void onPositiveSelect() {
+        Log.d(TAG, "sendMessage onPositiveSelect");
+        mKeepChannel = 1;
+        sendStartSearch(true);
     }
 
     private void startSearch() {
@@ -1186,10 +1217,20 @@ public class DtvkitDvbtSetup extends DtvkitActivity {
             setSearchStatus("Failed to finish search", e.getMessage());
             return;
         }
+        if (mKeepChannel >= 0 && mIsDvbt) {
+            try {
+                JSONArray args = new JSONArray();
+                args.put(ParameterManager.SIGNAL_COFDM);
+                DtvkitGlueClient.getInstance().request("Dvb.clearServices", args);
+            } catch (Exception e) {
+                setSearchStatus("Failed to clearServices", e.getMessage());
+                return;
+            }
+        }
 
         try {
             JSONArray args = new JSONArray();
-            args.put(true); // retune
+            args.put(mKeepChannel >= 0); // retune
             args = initSearchParameter(args);
             if (args != null) {
                 String command = null;
@@ -1496,11 +1537,17 @@ public class DtvkitDvbtSetup extends DtvkitActivity {
         }
         int searchMode = mDataManager.getIntParameters(DataManager.KEY_PUBLIC_SEARCH_MODE);
         int isFrequencySearch = mDataManager.getIntParameters(DataManager.KEY_IS_FREQUENCY);
-        if (DataManager.VALUE_PUBLIC_SEARCH_MODE_AUTO != searchMode) {
+        if (DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL == searchMode) {
             String freq = (DataManager.VALUE_FREQUENCY_MODE == isFrequencySearch) ? (getParameter() + "000") : getFreqOfChannelId();
-            parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, Integer.valueOf(freq));
+            parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, Integer.parseInt(freq));
+            parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_MODE, EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL);
+        } else {
+            if (mKeepChannel < 0) {
+                parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_MODE, EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_UPDATE);
+            } else {
+                parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_MODE, EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_AUTO);
+            }
         }
-        parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_MODE, DataManager.VALUE_PUBLIC_SEARCH_MODE_AUTO == searchMode ? EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_AUTO : EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL);
         parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE, mIsDvbt ? "DVB-T" : "DVB-C");
 
         Intent intent = new Intent(this, com.droidlogic.dtvkit.inputsource.DtvkitEpgSync.class);

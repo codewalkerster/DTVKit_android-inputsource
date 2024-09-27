@@ -121,6 +121,7 @@ public class TvContractUtils {
         int hybridTvMode = extras.getInt(EpgSyncJobService.BUNDLE_KEY_SYNC_HYBRID_MODE, 0);
         boolean syncCurrent = !TextUtils.equals("full", syncSignalType);
         if (syncCurrent) {
+            Log.i(TAG, "searchMode:" + searchMode);
             Log.i(TAG, "hybridTvMode:" + hybridTvMode);
             if (hybridTvMode == 2) {
                 sources.add(syncSignalType);
@@ -275,7 +276,8 @@ public class TvContractUtils {
                     }
                 } else {
                     int searchFrequency = extras.getInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, 0);
-                    if ((frequency != 0 && searchFrequency != frequency
+                    if (EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_UPDATE.equals(searchMode)
+                            || (frequency != 0 && searchFrequency != frequency
                             && EpgSyncJobService.BUNDLE_VALUE_SYNC_SEARCHED_MODE_MANUAL.equals(searchMode))) {
                         saveRawUseSettingValuesToMap(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
                     }

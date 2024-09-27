@@ -595,7 +595,6 @@ public class DtvkitDvbSettings extends Activity {
         String devicePath = mParameterManager.getStringParameters(ParameterManager.KEY_PVR_RECORD_PATH);
         if (!mSysSettingManager.isDeviceExist(devicePath)) {
             select = 0;
-            mParameterManager.saveStringParameters(ParameterManager.KEY_PVR_RECORD_PATH, SysSettingManager.PVR_DEFAULT_PATH);
         } else {
             select = getCurrentStoragePosition(devicePath);
         }
