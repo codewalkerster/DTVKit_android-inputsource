@@ -3523,8 +3523,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 Log.e(TAG, "Abort tune because of mSessionState:" + mSessionState);
                 return;
             }
-            initTimeShift();
             mSessionState = SessionState.TUNED;
+            initTimeShift();
             Log.i(TAG, "onTuneByHandlerThreadHandle " + channelUri);
 
             if (mMainHandle != null) {
@@ -7281,6 +7281,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
 
         Log.d(TAG, "resetRecordingPath path : " + path + " |newPath : " + newPath);
+        // isMountedPathAvailable may Time consumption.
         if (!TextUtils.isEmpty(path) && !SysSettingManager.isMountedPathAvailable(path) && !FeatureUtil.getFeatureSupportNewTvApp()) {
             Log.d(TAG, "removable device has been moved and use default path");
             newPath = DataManager.PVR_DEFAULT_PATH;
