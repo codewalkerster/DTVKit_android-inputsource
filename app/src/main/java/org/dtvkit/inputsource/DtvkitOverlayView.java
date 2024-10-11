@@ -22,7 +22,8 @@ import android.util.TypedValue;
 import androidx.annotation.NonNull;
 
 import com.amlogic.hbbtv.HbbTvManager;
-import com.droidlogic.app.CCSubtitleView;
+//import com.droidlogic.app.CCSubtitleView;
+import org.dtvkit.inputsource.caption.CCSubtitleView;
 
 import org.dtvkit.inputsource.EWBSAlarmOverlayView;
 import org.json.JSONArray;
