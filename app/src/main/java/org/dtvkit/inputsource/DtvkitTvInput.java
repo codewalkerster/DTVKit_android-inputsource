@@ -4638,6 +4638,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     used = true;
                 } else if (keyCode == KeyEvent.KEYCODE_ZOOM_OUT) {
                     if (controlTTx(false, 0)) {
+                        mMainHandle.removeMessages(MSG_SET_TELETEXT_MIX_NORMAL);
+                        mMainHandle.sendEmptyMessage(MSG_SET_TELETEXT_MIX_NORMAL);
                         notifyTrackSelected(TvTrackInfo.TYPE_SUBTITLE, null);
                         reloadHbbTvApplication();
                     } else {
