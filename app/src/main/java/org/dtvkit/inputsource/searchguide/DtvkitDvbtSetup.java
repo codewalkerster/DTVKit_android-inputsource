@@ -1217,7 +1217,8 @@ public class DtvkitDvbtSetup extends com.droidlogic.dtvkit.inputsource.searchgui
             setSearchStatus("Failed to finish search", e.getMessage());
             return;
         }
-        if (mKeepChannel >= 0 && mIsDvbt) {
+        int searchMode = mDataManager.getIntParameters(DataManager.KEY_PUBLIC_SEARCH_MODE);
+        if (mKeepChannel >= 0 && mIsDvbt && DataManager.VALUE_PUBLIC_SEARCH_MODE_AUTO == searchMode) {
             try {
                 JSONArray args = new JSONArray();
                 args.put(ParameterManager.SIGNAL_COFDM);
@@ -1234,7 +1235,6 @@ public class DtvkitDvbtSetup extends com.droidlogic.dtvkit.inputsource.searchgui
             args = initSearchParameter(args);
             if (args != null) {
                 String command = null;
-                int searchMode = mDataManager.getIntParameters(DataManager.KEY_PUBLIC_SEARCH_MODE);
                 int isFrequencySearch = mDataManager.getIntParameters(DataManager.KEY_IS_FREQUENCY);
                 if (!(DataManager.VALUE_PUBLIC_SEARCH_MODE_AUTO == searchMode)) {
                     if (isFrequencySearch == DataManager.VALUE_FREQUENCY_MODE) {
