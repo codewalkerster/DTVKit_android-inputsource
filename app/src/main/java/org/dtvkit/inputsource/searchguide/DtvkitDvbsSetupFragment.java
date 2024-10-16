@@ -542,6 +542,7 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
         stopMonitoringSearch();
         DtvkitRequest.getInstance().request(mThreadHandler, () -> {
             Log.d(TAG, "sendFinishSearch over");
+            PropSettingManager.setProp(PropSettingManager.TV_SEARCHING_STATUS, "0");
             if (DataPresenter.getOperateType() == DvbsParameterManager.OPERATOR_M7
                     && !mSearchByManualDiSEqC) {
                 mParameterManager.getDvbsParaManager().getSatelliteWrap().autoDiseqcStop();
@@ -915,7 +916,6 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
         intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_CHANNEL, (mFoundServiceNumber > 0));
         intent.putExtra(EpgSyncJobService.BUNDLE_KEY_SYNC_PARAMETERS, parameters);
         getActivity().startService(intent);
-        PropSettingManager.setProp(PropSettingManager.TV_SEARCHING_STATUS, "0");
     }
 
     private void startMonitoringSearch() {
