@@ -5943,9 +5943,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         test.setAtvChannelVideo(getApplicationContext(), mTunedChannel, msg.arg1);
                     } break;
                     case MSG_ATV_FINE_TUNE_STEP: {
+                        //fine tune need reset MTS
+                        int mMtsOutMode = TvMTSSetting.getInstance().getAtvMTSOutModeValue();
                         TvChannelSetting test = new TvChannelSetting();
                         mTunedChannel = TvContractUtils.getChannel(mContentResolver, TvContract.buildChannelUri(mTunedChannel.getId()));
                         test.setAtvFineTune(getApplicationContext(), mTunedChannel, msg.arg1);
+                        setATVMtsMode(mContext, mMtsOutMode);
                     } break;
                     case MSG_UPDATE_UTC_TIME:
                         PropSettingManager.updateStreamTime(mParameterManager.getDTVRealTime(), mParameterManager.getBroadcastTime(),
