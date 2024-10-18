@@ -2619,6 +2619,14 @@ public class ParameterManager {
         return source;
     }
 
+    public void prepareParametersForLockStatus() {
+        try {
+            JSONArray args = new JSONArray();
+            DtvkitGlueClient.getInstance().request("Dvb.prepareParametersforLockStatus", args);
+        } catch (Exception e) {
+        }
+    }
+
     public void saveChannelIdForSource(long channelId) {
         try {
             JSONArray args = new JSONArray();

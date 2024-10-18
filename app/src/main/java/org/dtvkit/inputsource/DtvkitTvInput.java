@@ -3030,7 +3030,10 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 //    notifyChannelRetuned(channelUri);
                 //}
             }
-
+            if (mTunedChannel == null) {
+                // first play
+                mParameterManager.prepareParametersForLockStatus();
+            }
             boolean mainMuteStatus = !FeatureUtil.getFeatureSupportFcc(); //Except for FCC, the Mute status of other scenes is controlled by LiveTV
             onFinish(Channel.isATV(newChannel), FeatureUtil.getFeatureSupportFcc() && !getFccBufferUri().isEmpty());
             userDataStatus(false);
