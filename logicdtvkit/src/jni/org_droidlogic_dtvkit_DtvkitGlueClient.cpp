@@ -27,6 +27,7 @@
 //#include "amlogic/am_gralloc_ext.h"
 #include <dlfcn.h>
 #include <sys/prctl.h>
+#include <signal.h>
 #include <pthread.h>
 #include <utils/Looper.h>
 #include <memory>
@@ -310,11 +311,32 @@ DTVKitClientJni::~DTVKitClientJni()  {
 }
 
 #ifdef SUPPORT_TUNER_FRAMEWORK
+void signalHandler(int signal) {
+
+    ALOGD("signalHandler signal : %d", signal);
+    if (signal ==  SIGINT) {
+        ALOGD("Caught SIGINT. Performing cleanup operations...");
+    }
+}
+
+void registerSignalHandler() {
+    struct sigaction action;
+    action.sa_handler = &signalHandler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    if (sigaction(SIGINT, &action, NULL) < 0) {
+        ALOGD("Failed to register signal handler for SIGINT");
+    } else {
+        ALOGD("Success to register signal handler for SIGINT");
+    }
+}
+
 DTVKitTunerClientJni::DTVKitTunerClientJni() {
     mGlueClient = Glue_client::getInstance();
     mGlueClient->addInterface();
     mGlueClient->setSignalCallback(signalCallback);
     mGlueClient->setDisPatchDrawCallback((DISPATCHDRAW_CB)postSubtitleData);
+    registerSignalHandler();
 }
 
 DTVKitTunerClientJni::~DTVKitTunerClientJni()  {
