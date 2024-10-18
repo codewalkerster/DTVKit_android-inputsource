@@ -5300,9 +5300,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     playbackBundle.putString("do_pvr_limited", data.optString("do_pvr_limited", ""));
                     playbackBundle.putInt("do_pvr_limited", data.optInt("errcode", 0));
                     sendBundleToAppByTif(ConstantManager.ACTION_CI_PLUS_INFO, playbackBundle);
-                } else if (signal.equals("DvbNetworkChange") || signal.equals("DvbUpdatedService")) {
-                    Log.i(TAG, "DvbNetworkChange or DvbUpdatedService");
-                    //this event has been handled in dtvkit, tis should ignore it
+                } else if (signal.equals("DvbUpdatedService")) {
+                    sendMsgTryStopTimeshift(0);
                 } else if (signal.equals("DvbUpdatedChannelData")) {
                     Log.i(TAG, "DvbUpdatedChannelData");
                     //check trackInfo update
