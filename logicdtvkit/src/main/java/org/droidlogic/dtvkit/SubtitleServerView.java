@@ -210,7 +210,7 @@ public class SubtitleServerView extends FrameLayout {
                 if (SystemProperties.getBoolean("vendor.dtv.subtitle_save", false)) {
                     dumpFile(bitmap, null, getContext());
                 }
-                final boolean teletextStarted = playerIsTeletextStarted();
+                final boolean teletextStarted = (parserType == SUBTITLE_SUB_TYPE_TTX);//playerIsTeletextStarted();
                 mHandler.removeCallbacks(mNormalRunnable);
                 mHandler.post(() -> {
                     mNormalRunnable.setData(parserType, src_width, src_height,
