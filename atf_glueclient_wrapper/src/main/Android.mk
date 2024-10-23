@@ -21,6 +21,7 @@ LOCAL_LICENSE_CONDITIONS := notice
 
 LOCAL_MODULE_CLASS := JAVA_LIBRARIES
 LOCAL_STATIC_JAVA_LIBRARIES := droidlogic.dtvkit.atf.aidl
+LOCAL_JAVA_LIBRARIES := android-support-v4
 LOCAL_SRC_FILES := $(call all-subdir-java-files) \
     ../../../logicdtvkit/src/main/java/org/droidlogic/dtvkit/DtvkitAudioManager.java \
     ../../../logicdtvkit/src/main/java/org/droidlogic/dtvkit/ISdbCcImplement.java \
