@@ -3102,8 +3102,13 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 }
             } else {
                 if (!isPipSession() && Channel.isATV(oldChannel) != Channel.isATV(newChannel)) {
-                    if (false == FeatureUtil.getFeatureSupportTunerFramework()) {
-                        mMainHardware.setSurface(mSurface, Channel.isATV(newChannel) ? mMainStreamConfig[1] : mMainStreamConfig[0]);
+                    if (Channel.isATV(newChannel)) {
+                        Log.d(TAG, "result=" + mMainHardware.setSurface(mSurface, mMainStreamConfig[1]));
+                    } else if (!FeatureUtil.getFeatureSupportTunerFramework()) {
+                        Log.d(TAG, "result=" + mMainHardware.setSurface(mSurface, mMainStreamConfig[0]));
+                    } else {
+                        // ATF dtv play needs release audio_patch created by ATV play
+                        mMainHardware.setSurface(null, null);
                     }
                 }
                 if (!isPipSession() && Channel.isATV(oldChannel) != Channel.isATV(newChannel)) {
@@ -4414,8 +4419,9 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 DataProviderManager.putIntValue(mContext, action, value);
             } else if (TextUtils.equals("tvscan_number_search", action)) {
                 int number = Integer.parseInt(data.getString("number_search_number"));
+                String type = data.getString("type");
                 enterNumberSearch();
-                mHandlerThreadHandle.sendMessage(mHandlerThreadHandle.obtainMessage(MSG_NUMBER_SEARCH, number, 0));
+                mHandlerThreadHandle.sendMessage(mHandlerThreadHandle.obtainMessage(MSG_NUMBER_SEARCH, number, 0, type));
             } else if (TextUtils.equals("action_ewbs_switch_off", action)) {
                 if (mView != null) {
                     mView.hideEWBSAlarmView();
@@ -5576,6 +5582,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             });
                         } else if (TextUtils.equals("dtv_air_searched", status)
                                 || TextUtils.equals("atv_air_searched", status)
+                                || TextUtils.equals("dtv_cable_searched", status)
                                 || TextUtils.equals("atv_cable_searched", status)) {
                             runOnMainThread(this::exitNumberSearch);
                             if (freq != 0) {
@@ -5973,7 +5980,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         onFinish(false, false);
                         // update liveTv mute status.
                         notifyVideoUnavailable(TvInputManager.VIDEO_UNAVAILABLE_REASON_TUNING);
-                        startNumberSearch(msg.arg1);
+                        startNumberSearch((String) msg.obj, msg.arg1);
                         break;
                     case MSG_ATV_FINE_TUNE_AUDIO: {
                         TvChannelSetting test = new TvChannelSetting();
@@ -6007,22 +6014,31 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             mMainHandle = new Handler(Looper.getMainLooper(), new MainCallback(this));
         }
 
-        private void startNumberSearch(int channelNumber) {
-            String dtvType = mDataManager.getStringParameters(DataManager.KEY_TV_DTV_TYPE);
-            String type = "AIR";
-            if (TextUtils.equals(TvContract.Channels.TYPE_ATSC_C, dtvType)) {
-                type = "CABLE";
-            }
-            String command = "Tv.startManualSearchAndPlayByChannelId";
+        private void startNumberSearch(String system, int channelNumber) {
+            String command = null;
             JSONArray args = new JSONArray();
-            args.put(type);
-            args.put(String.valueOf(channelNumber));
-            try {
-                DtvkitGlueClient.getInstance().request(command, args);
-                Log.d(TAG, "command = " + command + ", args = " + args);
-            } catch (Exception e) {
-                Toast.makeText(getApplicationContext(), R.string.number_search_error, Toast.LENGTH_SHORT).show();
-                exitNumberSearch();
+            Log.d(TAG, "startNumberSearch " + system + ", " + channelNumber);
+            if (system == null || system.contains("ISDB")) {
+                String dtvType = mDataManager.getStringParameters(DataManager.KEY_TV_DTV_TYPE);
+                String type = "AIR";
+                if (TextUtils.equals(TvContract.Channels.TYPE_ATSC_C, dtvType)) {
+                    type = "CABLE";
+                }
+                command = "Tv.startManualSearchAndPlayByChannelId";
+                args.put(type);
+                args.put(String.valueOf(channelNumber));
+            } else if (system.contains("ATSC")) {
+                command = "TvScan.startChannelChange";
+                args.put(channelNumber);
+            }
+            if (command != null) {
+                try {
+                    Log.d(TAG, "command = " + command + ", args = " + args);
+                    DtvkitGlueClient.getInstance().request(command, args);
+                } catch (Exception e) {
+                    Toast.makeText(getApplicationContext(), R.string.number_search_error, Toast.LENGTH_SHORT).show();
+                    exitNumberSearch();
+                }
             }
         }
 

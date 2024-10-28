@@ -81,13 +81,10 @@ public class TvContractUtils {
             put(Channel.KEY_IS_FAVOURITE, "0");
             put(Channel.KEY_FAVOURITE_INFO, "");
             put(Channel.KEY_HIDDEN, "false");
-            put(Channel.KEY_SET_DISPLAYNAME, "0");
-            put(Channel.KEY_NEW_DISPLAYNAME, "");
+            put(Channel.KEY_SET_DISPLAYNAME, "");
             put(Channel.KEY_SET_DISPLAYNUMBER, "");
-            put(Channel.KEY_NEW_DISPLAYNUMBER, "0");
             put(Channels.COLUMN_APP_LINK_ICON_URI, "");
             put(Channels.COLUMN_APP_LINK_INTENT_URI, "");
-            put(Channel.KEY_SET_MOVE_DISPLAYNUMBER, "0");
         }
     };
     private static final Map<String, String> ATV_EXTRA_SETTINGS_DEFAULT = new HashMap<String, String>() {
@@ -231,13 +228,13 @@ public class TvContractUtils {
 
                     //frequency = Integer.parseInt((String) internalProviderData.get(Channel.KEY_FREQUENCY));
                     ciNumber = (String) internalProviderData.get(Channel.KEY_CHANNEL_CI_NUMBER);
-                    boolean setRawDisplayNumber = !TextUtils.isEmpty((String) internalProviderData.get(Channel.KEY_SET_DISPLAYNUMBER));
-                    boolean setRawDisplayName = "1".equals(internalProviderData.get(Channel.KEY_SET_DISPLAYNAME));
-                    if (setRawDisplayNumber) {
-                        internalProviderData.put(Channel.KEY_NEW_DISPLAYNUMBER, displayNumber);
+                    String rawDisplayNumber = (String) internalProviderData.get(Channel.KEY_RAW_DISPLAYNUMBER);
+                    String rawDisplayName = (String) internalProviderData.get(Channel.KEY_RAW_DISPLAYNAME);
+                    if (!TextUtils.equals(rawDisplayNumber, displayNumber)) {
+                        internalProviderData.put(Channel.KEY_SET_DISPLAYNUMBER, displayNumber);
                     }
-                    if (setRawDisplayName) {
-                        internalProviderData.put(Channel.KEY_NEW_DISPLAYNAME, displayName);
+                    if (!TextUtils.equals(rawDisplayName, displayName)) {
+                        internalProviderData.put(Channel.KEY_SET_DISPLAYNAME, displayName);
                     }
                     if (!TextUtils.isEmpty(linkIconUri)) {
                         internalProviderData.put(Channels.COLUMN_APP_LINK_ICON_URI, linkIconUri);
@@ -376,10 +373,10 @@ public class TvContractUtils {
                 }
                 restoreRawUseSettingValuesToInternalProviderData(uniqueStr, TextUtils.equals(signalType, "ATV"), channelUseSettingValueMap, internalProviderData);
                 if (!TextUtils.isEmpty(singleUserSettings.get(Channel.KEY_SET_DISPLAYNUMBER))) {
-                    values.put(Channels.COLUMN_DISPLAY_NUMBER, singleUserSettings.get(Channel.KEY_NEW_DISPLAYNUMBER));
+                    values.put(Channels.COLUMN_DISPLAY_NUMBER, singleUserSettings.get(Channel.KEY_SET_DISPLAYNUMBER));
                 }
-                if ("1".equals(singleUserSettings.get(Channel.KEY_SET_DISPLAYNAME))) {
-                    values.put(Channels.COLUMN_DISPLAY_NAME, singleUserSettings.get(Channel.KEY_NEW_DISPLAYNAME));
+                if (!TextUtils.isEmpty(singleUserSettings.get(Channel.KEY_SET_DISPLAYNAME))) {
+                    values.put(Channels.COLUMN_DISPLAY_NAME, singleUserSettings.get(Channel.KEY_SET_DISPLAYNAME));
                 }
                 if ("1".equals(singleUserSettings.get(Channel.KEY_SET_LOCKED))) {
                     values.put(Channels.COLUMN_LOCKED, 1);
