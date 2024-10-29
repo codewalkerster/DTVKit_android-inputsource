@@ -55,6 +55,7 @@ public class ConstantManager {
     //add for pvr delete control
     public static final String ACTION_REMOVE_ALL_DVR_RECORDS = "droidlogic.intent.action.remove_all_dvr_records";
     public static final String ACTION_DVR_RESPONSE = "droidlogic.intent.action.dvr_response";
+    public static final String ACTION_ALARM_SCHEDULE = "droidlogic.intent.action.ALARM_SCHEDULE";
     public static final String KEY_DVR_DELETE_RESULT_LIST = "dvr_delete_result_list";
     public static final String KEY_DTVKIT_SEARCH_TYPE = "dtvkit_search_type";//auto or manual
     public static final String KEY_DTVKIT_SEARCH_TYPE_AUTO = "dtvkit_auto_search";//auto

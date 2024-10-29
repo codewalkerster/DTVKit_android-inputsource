@@ -98,7 +98,7 @@ public class DtvkitDvbSettings extends Activity {
     private int mAlarmCnt          = 0;
     private AlarmManager mAlarmManager;
     private static final int DAILY = 0;
-    private static final int WEEKLY = 0;
+    private static final int WEEKLY = 1;
 
     private Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
@@ -1064,7 +1064,7 @@ public class DtvkitDvbSettings extends Activity {
 
     private void updateAlarmTime() {
         if (mHour.isEmpty() || mMinute.isEmpty()) {
-            Toast.makeText(DtvkitDvbSettings.this, "input time is wrong, Setting cancel", 1).show();
+            Toast.makeText(DtvkitDvbSettings.this, "input time is wrong, Setting cancel", Toast.LENGTH_SHORT).show();
             return;
         }
         String hour = mHour;
@@ -1075,7 +1075,6 @@ public class DtvkitDvbSettings extends Activity {
         Log.d(TAG, "mode:" + mode + " hour:" + hour + " minute = " + minute + " repetition =" + repetition);
         if (mode == 0) {
             Log.d(TAG, "automatic searching function is off");
-            return;
         }
         Intent intent = new Intent(DtvkitBackGroundSearch.AUTOMATIC_SEARCHING_ACTION);
         intent.putExtra("mode", mode+"");
@@ -1092,30 +1091,31 @@ public class DtvkitDvbSettings extends Activity {
         cal.set(Calendar.MINUTE, Integer.parseInt(minute));
 
         long alarmTime = cal.getTimeInMillis();
-        /*
-        if (repetition == DAILY) {//daily
-            mAlarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarmTime, AlarmManager.INTERVAL_DAY, alarmIntent);
-        } else if (repetition == WEEKLY) { //weekly
-            mAlarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarmTime, AlarmManager.INTERVAL_DAY * 7, alarmIntent);
-        }*/
-        Log.d(TAG, "current =" + new Date(current).toString() + "   alarmTime =" + new Date(alarmTime).toString());
         if (mode == 1) { //standby mode
             if (current > alarmTime) {
                 if (repetition == DAILY) {//daily
-                    mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmTime + AlarmManager.INTERVAL_DAY, mAlarmIntent);
-                } else if (repetition == WEEKLY) { //weekly
-                    mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmTime + AlarmManager.INTERVAL_DAY * 7, mAlarmIntent);
+                    alarmTime += AlarmManager.INTERVAL_DAY;
+                } else { //weekly
+                    alarmTime += AlarmManager.INTERVAL_DAY * 7;
                 }
-            } else {
-                mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmTime/*wakeAt*/, mAlarmIntent);
             }
+            Log.d(TAG, "current =" + new Date(current) + " alarmTime =" + new Date(alarmTime));
+            mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmTime, mAlarmIntent);
         } else if (mode == 2) { //operate mode
             if (repetition == DAILY) {//daily
-                mAlarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, alarmTime, AlarmManager.INTERVAL_DAY, mAlarmIntent);
-            } else if (repetition == WEEKLY) { //weekly
-                mAlarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, alarmTime, AlarmManager.INTERVAL_DAY * 7, mAlarmIntent);
+                alarmTime += AlarmManager.INTERVAL_DAY;
+            } else { //weekly
+                alarmTime += AlarmManager.INTERVAL_DAY * 7;
             }
+            Log.d(TAG, "current =" + new Date(current) + " alarmTime =" + new Date(alarmTime));
+            mAlarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, alarmTime, AlarmManager.INTERVAL_DAY, mAlarmIntent);
         }
+        // let live tv know
+        Intent it = new Intent(ConstantManager.ACTION_ALARM_SCHEDULE);
+        it.putExtra(ParameterManager.AUTO_SEARCHING_MODE, mode);
+        it.putExtra(ParameterManager.AUTO_SEARCHING_REPETITION, repetition);
+        it.putExtra("triggerAtMillis", alarmTime);
+        sendBroadcast(it);
     }
 
     private void updatingHbbtvCountryId() {
