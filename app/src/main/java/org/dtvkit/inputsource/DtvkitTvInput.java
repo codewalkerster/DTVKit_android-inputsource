@@ -3065,16 +3065,16 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         mMainHardware.setSurface(mSurface, Channel.isATV(newChannel) ? mMainStreamConfig[1] : mMainStreamConfig[0]);
                     }
                 }
+                if (!isPipSession() && Channel.isATV(oldChannel) != Channel.isATV(newChannel)) {
+                    mSystemControlManager.SetCurrentSourceInfo(
+                            Channel.isATV(newChannel) ? SystemControlManager.SourceInput.TV : SystemControlManager.SourceInput.DTV, 0, 0);
+                }
                 if (Channel.isATV(newChannel)) {
                     playResult = playerPlay_ATV(newChannel);
                     setATVMtsMode(mContext, newChannel.getInternalProviderData().getInt("audio_out_mode"));
                 } else {
                     playResult = playerPlay(INDEX_FOR_MAIN, dvbUri, mAudioADAutoStart,
                             mainMuteStatus, 0, previousUriStr, nextUriStr).equals("ok");
-                }
-                if (!isPipSession() && Channel.isATV(oldChannel) != Channel.isATV(newChannel)) {
-                    mSystemControlManager.SetCurrentSourceInfo(
-                            Channel.isATV(newChannel) ? SystemControlManager.SourceInput.TV : SystemControlManager.SourceInput.DTV, 0, 0);
                 }
             }
             if (playResult) {
