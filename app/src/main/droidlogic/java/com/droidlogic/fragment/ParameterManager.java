@@ -2622,7 +2622,7 @@ public class ParameterManager {
     public void prepareParametersForLockStatus() {
         try {
             JSONArray args = new JSONArray();
-            DtvkitGlueClient.getInstance().request("Dvb.prepareParametersforLockStatus", args);
+            DtvkitGlueClient.getInstance().request("Player.prepareParametersforLockStatus", args);
         } catch (Exception e) {
         }
     }
