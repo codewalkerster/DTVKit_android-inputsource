@@ -938,6 +938,7 @@ void Am_filter_setType(jobject filter, int mainType, int subType) {
     env->CallVoidMethod(localFilter, gFilterFields.setType, mainType, subType);
 
     env->DeleteLocalRef(localFilter);
+    nativeClearException(env);
     ReleaseEnv(attached);
 
     ALOGE("End %s :", __FUNCTION__);
@@ -986,6 +987,7 @@ jint Am_filter_configure(jobject filter, jobject config) {
 
     env->DeleteLocalRef(localFilter);
     env->DeleteLocalRef(localConfig);
+    nativeClearException(env);
     ReleaseEnv(attached);
 
     ALOGE("End %s : result: %d ", __FUNCTION__, result);
@@ -1011,6 +1013,7 @@ jint Am_filter_getId(jobject filter) {
     jint filterId = env->CallIntMethod(localFilter, gFilterFields.getId);
 
     env->DeleteLocalRef(localFilter);
+    nativeClearException(env);
     ReleaseEnv(attached);
 
     ALOGE("%s : filter : %p, filterId: 0x%x ", __FUNCTION__, filter, filterId);
@@ -1037,6 +1040,7 @@ jint Am_filter_setDataSource(jobject filter, jobject source) {
     jint result = env->CallIntMethod(localFilter, gFilterFields.setDataSource, localSource);
 
     env->DeleteLocalRef(localFilter);
+    nativeClearException(env);
     ReleaseEnv(attached);
 
     ALOGE("End %s : result: %d ", __FUNCTION__, result);
@@ -1062,6 +1066,7 @@ jint Am_filter_start(jobject filter) {
     jint result = env->CallIntMethod(localFilter, gFilterFields.start);
 
     env->DeleteLocalRef(localFilter);
+    nativeClearException(env);
     ReleaseEnv(attached);
 
     ALOGE("End %s : result: %d ", __FUNCTION__, result);
@@ -1113,6 +1118,7 @@ jint Am_filter_flush(jobject filter) {
     jint result = env->CallIntMethod(localFilter, gFilterFields.flush);
 
     env->DeleteLocalRef(localFilter);
+    nativeClearException(env);
     ReleaseEnv(attached);
 
     ALOGE("End %s : result: %d ", __FUNCTION__, result);
@@ -1163,6 +1169,7 @@ jint Am_filter_read(jobject filter, char * buffer, long offset, long size) {
 */
     env->DeleteLocalRef(localFilter);
     env->DeleteLocalRef(readBuffer);
+    nativeClearException(env);
     ReleaseEnv(attached);
 
     ALOGE("%s:, filter :%p, offset : %ld, size : %ld", __FUNCTION__, filter, offset, size);
