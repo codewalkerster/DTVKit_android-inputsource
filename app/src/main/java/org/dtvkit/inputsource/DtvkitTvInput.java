@@ -3671,6 +3671,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         @MainThread
         protected void onFinishAsync(final boolean noStopATv, final boolean ignoreFcc) {
             if (mHandlerThreadHandle != null) {
+                mHandlerThreadHandle.removeMessages(MSG_ON_TUNE);
                 mHandlerThreadHandle.postAtFrontOfQueue(() -> onFinish(noStopATv, ignoreFcc));
             }
         }
