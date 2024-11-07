@@ -557,7 +557,7 @@ public class DtvkitAtscSetup extends DtvkitActivity {
         parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_SIGNAL_TYPE,
                 airCableType == 0 ? ATSC_T : ATSC_C);
         if (UI.mSearchMode == DataManager.VALUE_PUBLIC_SEARCH_MODE_MANUAL) {
-            parameters.putString(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, String.valueOf(UI.mManualFrequency));
+            parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_SEARCHED_FREQUENCY, UI.mManualFrequency);
         }
         parameters.putInt(EpgSyncJobService.BUNDLE_KEY_SYNC_HYBRID_MODE, UI.mSearchTvType);
 
