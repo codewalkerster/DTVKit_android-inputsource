@@ -181,6 +181,10 @@ public class DtvkitAtscSetup extends DtvkitActivity {
         } else {
             setResult(RESULT_CANCELED, mSyncFinish ? intent : null);
         }
+        if (null != mTunerAdapter) {
+            mTunerAdapter.release();
+            mTunerAdapter = null;
+        }
         super.finish();
     }
 
@@ -244,9 +248,9 @@ public class DtvkitAtscSetup extends DtvkitActivity {
         releaseHandler();
         stopMonitoringSearch();
         stopMonitoringSync();
-        if (null != mTunerAdapter) {
-            mTunerAdapter.release();
-        }
+        //if (null != mTunerAdapter) {
+        //    mTunerAdapter.release();
+        //}
     }
 
     private void initHandler() {
