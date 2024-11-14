@@ -3040,7 +3040,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             String nextUriStr = getChannelInternalDvbUriForFcc(mFccNextBufferUri);
 
             // MUST double check
-            if (!isSessionAvailable()) {
+            if (!readyToPlay()) {
                 Log.e(TAG, "Abort tune because session is releasing...");
                 return false;
             }
