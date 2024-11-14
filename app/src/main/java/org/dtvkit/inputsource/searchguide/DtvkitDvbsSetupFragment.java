@@ -86,6 +86,7 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
 
     private final static int MSG_FINISH_SEARCH = 1;
     private final static int MSG_ON_SIGNAL = 2;
+    private final static int MSG_FINISH = 3;
     private final StringBuilder mTransponderFrequency = new StringBuilder();
     private long clickLastTime = 0;
     private final String inputId = com.droidlogic.dtvkit.inputsource.service.DtvkitSettingService.DTVKIT_INPUT_ID;;
@@ -450,6 +451,10 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
                     dealOnSignal(msg.arg1);
                     break;
                 }
+                case MSG_FINISH: {
+                    finish();
+                    break;
+                }
                 default:
                     break;
             }
@@ -467,9 +472,9 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
             updateSearchUi(true, true, "Finishing search");
             if (mStartSearch) {
                 sendFinishSearch(false);
-            } else {
-                finish();
             }
+            mThreadHandler.removeMessages(MSG_FINISH);
+            mThreadHandler.sendEmptyMessage(MSG_FINISH);
             return true;
         }
         return false;
@@ -540,7 +545,7 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
     private void sendFinishSearch(boolean sync) {
         mStartSearch = false;
         stopMonitoringSearch();
-        DtvkitRequest.getInstance().request(mThreadHandler, () -> {
+        mThreadHandler.post(()-> {
             Log.d(TAG, "sendFinishSearch over");
             PropSettingManager.setProp(PropSettingManager.TV_SEARCHING_STATUS, "0");
             if (DataPresenter.getOperateType() == DvbsParameterManager.OPERATOR_M7
@@ -559,7 +564,7 @@ public class DtvkitDvbsSetupFragment extends SearchStageFragment {
                 updateSearchUi(true, true, "Finishing search");
                 onSearchFinished();
             }
-        }, null);
+        });
     }
 
     private void setSearchProgress(final int progress) {
