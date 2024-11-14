@@ -2619,9 +2619,10 @@ public class ParameterManager {
         return source;
     }
 
-    public void prepareParametersForLockStatus() {
+    public void prepareParametersForLockStatus(int index) {
         try {
             JSONArray args = new JSONArray();
+            args.put(index);
             DtvkitGlueClient.getInstance().request("Player.prepareParametersforLockStatus", args);
         } catch (Exception e) {
         }

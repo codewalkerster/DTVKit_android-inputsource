@@ -2848,6 +2848,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         @Override
         protected void onFinish(boolean noStopATv, boolean ignoreFcc) {
+            mParameterManager.prepareParametersForLockStatus(1);
             playerPipStop();
         }
     }
@@ -3032,7 +3033,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             }
             if (mTunedChannel == null) {
                 // first play
-                mParameterManager.prepareParametersForLockStatus();
+                mParameterManager.prepareParametersForLockStatus(0);
             }
             boolean mainMuteStatus = !FeatureUtil.getFeatureSupportFcc(); //Except for FCC, the Mute status of other scenes is controlled by LiveTV
             onFinish(Channel.isATV(newChannel), FeatureUtil.getFeatureSupportFcc() && !getFccBufferUri().isEmpty());
