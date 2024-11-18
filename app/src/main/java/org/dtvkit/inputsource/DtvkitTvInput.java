@@ -372,6 +372,14 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         Log.d(TAG, "sendMessage MSG_ADD_DTVKIT_DISK_PATH " + info);
                     }
                 }
+            } else if (action.equals(Intent.ACTION_MEDIA_EJECT)) {
+                Uri uri = intent.getData();
+                if (uri != null) {
+                    String ejectPath = uri.getPath();
+                    Log.d(TAG, "mStorageEventReceiver, Ejecting device at path: " + ejectPath);
+                    Message mess = mInputThreadHandler.obtainMessage(MSG_CHECK_EJECT_DISK_PATH, 0, 0, ejectPath);
+                    boolean info = mInputThreadHandler.sendMessageDelayed(mess, 0);
+                }
             } else {
                 Log.d(TAG, "mStorageEventReceiver other action");
             }
@@ -681,6 +689,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
 
         IntentFilter storage = new IntentFilter();
         storage.addAction(Intent.ACTION_MEDIA_MOUNTED);
+        storage.addAction(Intent.ACTION_MEDIA_EJECT);
         storage.addDataScheme(ContentResolver.SCHEME_FILE);
         registerReceiver(mStorageEventReceiver, storage);
 
@@ -710,6 +719,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     protected static final int MSG_START_MONITOR_SYNCING = 6;
     protected static final int MSG_STOP_MONITOR_SYNCING = 7;
     protected static final int MSG_CHECK_PIN_CODE_CHANGED = 8;
+    protected static final int MSG_CHECK_EJECT_DISK_PATH = 9;
 
     protected static final int PERIOD_RIGHT_NOW = 0;
     protected static final int PERIOD_CHECK_TV_PROVIDER_DELAY = 200;
@@ -805,6 +815,33 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 }
                 case MSG_CHECK_PIN_CODE_CHANGED: {
                     // move to livetv
+                    break;
+                }
+                case MSG_CHECK_EJECT_DISK_PATH: {
+                    if (null == msg.obj) {
+                        break;
+                    }
+                    String ejectPath = (String)msg.obj;
+                    String pvrRecordPath = mDataManager.getStringParameters(DataManager.KEY_PVR_RECORD_PATH);
+                    if (SysSettingManager.isStoragePath(ejectPath)) {
+                        boolean needStopRecordingAndTimeshift = true;
+                        String[] split = ejectPath.split("/");
+                        if (split != null && split.length >= 3) {
+                            for (int i = 2; i < split.length; i++) {
+                                if (!pvrRecordPath.contains(split[i])) {
+                                    needStopRecordingAndTimeshift = false;
+                                }
+                            }
+                        }
+                        if (needStopRecordingAndTimeshift) {
+                            if (mRecordingStarted) {
+                                mRecordingSession.doStopRecording();
+                            }
+                            if (getMainTunerSession() != null) {
+                                getMainTunerSession().sendMsgTryStopTimeshift(0);
+                            }
+                        }
+                    }
                     break;
                 }
                 default:
