@@ -5041,7 +5041,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 /*trigger the playback exit*/
                                 currentPosition = recordedProgram.getRecordingDurationMillis();
                             }
-                            notifySessionEvent(ConstantManager.EVENT_PLAY_STOP, null);
+                            sendBundleToAppByTif(ConstantManager.EVENT_PLAY_STOP, null);
                             break;
                         case "starting":
                             boolean isAv = true;
@@ -5061,7 +5061,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                     if (isDateService) {
                                         mHandlerThreadHandle.postDelayed(() -> sendBundleToAppByTif("signal_data_service", null), 1000);
                                     } else {
-                                        mHandlerThreadHandle.post(() -> sendBundleToAppByTif("signal_is_not_av", null));
+                                        sendBundleToAppByTif("signal_is_not_av", null);
                                     }
                                 }
                             } else {
@@ -5083,15 +5083,15 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             } else {
                                 Log.d(TAG, "mMainHandle is null");
                             }
-                            notifySessionEvent("signal_scrambled_service", null);
+                            sendBundleToAppByTif("signal_scrambled_service", null);
                             break;
                         case "not_running":
                             Log.i(TAG, "** not_running **");
-                            notifySessionEvent("signal_invalid_service", null);
+                            sendBundleToAppByTif("signal_invalid_service", null);
                             break;
                         case "nodata":
                             if (TvContract.Channels.TYPE_ISDB_T.equals(EpgSyncJobService.getChannelTypeFilter())) {
-                                notifySessionEvent("signal_no_data", null);
+                                sendBundleToAppByTif("signal_no_data", null);
                             }
                             break;
                         default:
