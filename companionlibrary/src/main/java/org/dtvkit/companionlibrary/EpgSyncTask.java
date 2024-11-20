@@ -182,7 +182,7 @@ public class EpgSyncTask {
             long currentChannelId = mBundle.getLong(BUNDLE_KEY_SYNC_CURRENT_PLAY_CHANNEL_ID, -1);
             int frequency = mBundle.getInt(BUNDLE_KEY_SYNC_FREQUENCY, -1);
 
-            if (isCancelled()) {
+            if (isCanceled()) {
                 return "ERROR_EPG_SYNC_CANCELED";
             }
             if (syncCurrent) {
@@ -224,8 +224,8 @@ public class EpgSyncTask {
                 }
                 Uri channelUri = TvContract.buildChannelUri(channelList.get(i).getId());
 
-                /* Check whether the job has been cancelled */
-                if (isCancelled()) {
+                /* Check whether the job has been canceled */
+                if (isCanceled()) {
                     return "ERROR_EPG_SYNC_CANCELED";
                 }
                 /* Get the programs */
@@ -241,22 +241,22 @@ public class EpgSyncTask {
                                             .build());
                         }
                     }
-
-                    /* Double check whether the job has been cancelled */
-                    if (isCancelled()) {
-                        return "ERROR_EPG_SYNC_CANCELED";
-                    }
-                    int ret = updatePrograms(channelUri, programs);
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException ignored) {}
                 }
+
+                /* Double check whether the job has been canceled */
+                if (isCanceled()) {
+                    return "ERROR_EPG_SYNC_CANCELED";
+                }
+                int ret = updatePrograms(channelUri, programs);
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException ignored) {}
             }
             Log.i(TAG, "EventTask costTime=" + (System.currentTimeMillis() - startSystemMills) + "ms");
             return "OK";
         }
 
-        private boolean isCancelled() {
+        private boolean isCanceled() {
             return Thread.currentThread().isInterrupted();
         }
 
@@ -273,9 +273,33 @@ public class EpgSyncTask {
          */
         public int updatePrograms(Uri channelUri, List<Program> newPrograms) {
             final int fetchedProgramsCount = newPrograms.size();
+            // If newPrograms is empty, only old program data will be deleted
             if (fetchedProgramsCount == 0) {
+                //Log.d(TAG, "No new programs, deleting old programs for channel: " + channelUri);
+                List<Program> oldPrograms = TvContractUtils.getPrograms(mMainService.getContentResolver(), channelUri);
+                ArrayList<ContentProviderOperation> deleteOps = new ArrayList<>();
+                // Traverse the existing program list and delete it
+                for (Program oldProgram : oldPrograms) {
+                    //Log.d(TAG, "Deleting old program: " + oldProgram);
+                    deleteOps.add(ContentProviderOperation.newDelete(TvContract.buildProgramUri(oldProgram.getId()))
+                    .build());
+                }
+                // Perform deletion operation
+                if (!deleteOps.isEmpty()) {
+                    try {
+                        mMainService.getContentResolver().applyBatch(TvContract.AUTHORITY, deleteOps);
+                        //Log.d(TAG, "Successfully deleted old programs.");
+                    } catch (RemoteException | OperationApplicationException e) {
+                        Log.e(TAG, "Failed to delete old programs.", e);
+                        return ERROR_DATABASE_INSERT;
+                    }
+                }
+                deleteOps.clear();
+                return 0;
+             }
+            /*if (fetchedProgramsCount == 0) {
                 return ERROR_NO_PROGRAMS;
-            }
+            }*/
             List<Program> oldPrograms = TvContractUtils.getPrograms(mMainService.getContentResolver(), channelUri);
             Program firstNewProgram = newPrograms.get(0);
             int oldProgramsIndex = 0;
