@@ -753,7 +753,7 @@ public class CcImplement {
                 return;
             }
             Log.d("TAG","jsonStr"+jsonStr);
-            //caption_screen.updateVideoPosition(ratio, screen_mode, video_status);
+            caption_screen.updateVideoPosition(ratio, screen_mode, video_status);
             caption_screen.updateLayout();
             mWindowJson = jsonStr;
             init_flag = false;

@@ -13,6 +13,7 @@ import android.os.Message;
 import androidx.annotation.NonNull;
 
 import java.util.Locale;
+import com.droidlogic.app.SystemControlManager;
 
 /**
  * CCSubtitleView for caption close display
@@ -25,6 +26,7 @@ public class CCSubtitleView extends ViewGroup {
     private static CcSubtitleFonts mCcSubtilteFont = null;//cf = null;
     private static CcImplement mCcImplement = null; //mCcImplement = null;
     private static CcImplement.CaptionWindow mCaptionWindow = null;
+    private static SystemControlManager mSystemControlManager;
     private static Object lock = new Object();
     private Context mContext;
     private static String mJsonStr;
@@ -36,6 +38,7 @@ public class CCSubtitleView extends ViewGroup {
     private void init(Context context) {
         synchronized (lock) {
             if (mInitCount == 0) {
+                mSystemControlManager = SystemControlManager.getInstance();
                 mCcSubtilteFont = new CcSubtitleFonts(context);
                 mCcImplement    = new CcImplement(context, mCcSubtilteFont);
                 mCaptionWindow  = mCcImplement.new CaptionWindow(context, CCSubtitleView.this);
@@ -138,9 +141,33 @@ public class CCSubtitleView extends ViewGroup {
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
+        String screen_mode;
+        String video_status;
+        String ratio;
+        String video_frame_width;
+        String video_frame_height;
         synchronized(lock) {
             Log.d(TAG, "dispatchDraw mUpdateViewByJson = " + mUpdateViewByJson);
             if (mUpdateViewByJson & !TextUtils.isEmpty(mJsonStr)) {
+                /* For atsc */
+                screen_mode = mSystemControlManager.readSysFs("/sys/class/video/screen_mode");
+                video_status = mSystemControlManager.readSysFs("/sys/class/video/video_state");
+                //ratio = mSystemControlManager.readSysFs("/sys/class/video/frame_aspect_ratio");
+                video_frame_width = mSystemControlManager.readSysFs("/sys/class/video/frame_width");
+                video_frame_height = mSystemControlManager.readSysFs("/sys/class/video/frame_height");
+                if (("NA".equals(video_frame_width) || "NA".equals(video_frame_height))
+                    || video_frame_width.isEmpty() || video_frame_height.isEmpty()) {
+                    ratio = "0x90";
+                } else {
+                    int frame_width = Integer.parseInt(video_frame_width);
+                    int frame_height = Integer.parseInt(video_frame_height);
+                    if (frame_width * 9 >= frame_height * 16) {
+                        ratio = "0x90";
+                    } else {
+                        ratio = "0x01";
+                    }
+                }
+                mCaptionWindow.UpdatePositioning(ratio, screen_mode, video_status);
                 mCcImplement.caption_screen.updateCaptionScreen(canvas.getWidth(), canvas.getHeight());
                 mCaptionWindow.style_use_broadcast = mCcImplement.isStyle_use_broadcast();
                 if (!mCaptionWindow.getViewParent().equals(CCSubtitleView.this)) {
