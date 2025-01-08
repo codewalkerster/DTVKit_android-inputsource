@@ -61,8 +61,7 @@ import androidx.annotation.MainThread;
 
 import com.amlogic.hbbtv.HbbTvManager;
 import com.amlogic.hbbtv.HbbTvManager.HbbTvApplicationStartCallBack;
-import com.droidlogic.app.AudioConfigManager;
-import com.droidlogic.app.AudioSystemCmdManager;
+import com.droidlogic.app.DroidAudioManager;
 import com.droidlogic.app.DataProviderManager;
 import com.droidlogic.app.SystemControlEvent;
 import com.droidlogic.app.SystemControlManager;
@@ -2974,8 +2973,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 return false;
             }
             if (surface != null) {
-                AudioConfigManager.getInstance(getApplication())
-                        .refreshAudioCfgBySrc(AudioConfigManager.AUDIO_OUTPUT_DELAY_SOURCE_DTV);
+                DroidAudioManager.getInstance(getApplication()).setTvSourceType(DroidAudioManager.AUDIO_OUTPUT_DELAY_SOURCE_DTV);
                 acquireTvHardware();
             } else {
                 if (!hasAnotherSession(this)) {
@@ -3201,7 +3199,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         private Uri mPendingTuneUri = null;
 
         private CaptioningManager mCaptioningManager = null;
-        private final AudioSystemCmdManager mAudioSystemCmdManager;
+        private final DroidAudioManager mDroidAudioManager;
         private int mCurrentAudioTrackId = -1;
         private ProviderSync mProviderSync = null;
 
@@ -3275,7 +3273,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             mIsPip = isPip;
             mCurrentSessionIndex = mDtvkitTvInputSessionCount++;
             Log.i(TAG, "created " + this);
-            mAudioSystemCmdManager = AudioSystemCmdManager.getInstance(getApplicationContext());
+            mDroidAudioManager = DroidAudioManager.getInstance(getApplicationContext());
             mCaptioningManager =
                     (CaptioningManager) outService.getSystemService(Context.CAPTIONING_SERVICE);
             initWorkThread();
@@ -3424,7 +3422,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                 mMainHandle.sendMessage(msg);
             } else {
                 if (!mIsPip && !hasAnotherSession(this)) {
-                    mAudioSystemCmdManager.updateAudioPortGain(-1);
                     mSystemControlManager.SetDtvKitSourceEnable(0);
                     mSystemControlManager.SetCurrentSourceInfo(SystemControlManager.SourceInput.XXXX, 0, 0);
                 }
@@ -3645,8 +3642,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
             //writeSysFs("/sys/class/video/video_global_output", "0");
             mAudioADAutoStart = mDataManager.getIntParameters(DataManager.TV_KEY_AD_SWITCH) == 1;
             if (!FeatureUtil.getFeatureSupportTunerFramework()) {
-                mAudioSystemCmdManager.handleAdtvAudioEvent(
-                        AudioSystemCmdManager.AUDIO_SERVICE_CMD_AD_SWITCH_ENABLE, mAudioADAutoStart ? 1 : 0, 0);
+                mDroidAudioManager.setAudioCmdParam(
+                        DroidAudioManager.DROID_AUDIO_CMD_AD_SWITCH_ENABLE, mAudioADAutoStart ? 1 : 0, 0, 0);
             }
             mTuneInfo.isDTv = !Channel.isATV(targetChannel);
             boolean playResult = doTune(mTunedChannel, targetChannel, channelUri, dvbUri, mhegTune);
@@ -5775,10 +5772,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                         break;
                     case MSG_SET_STREAM_VOLUME:
                         if (!mTuneInfo.isDTv) {
-                            if (msg.arg1 == 0) {
-                                mAudioSystemCmdManager.closeTvAudio();
-                            } else {
-                                mAudioSystemCmdManager.openTvAudio(0);
+                            if (msg.arg1 != 0) {
+                                mDroidAudioManager.openTvAudio(DroidAudioManager.SOURCE_TYPE_DTV);
                             }
                         } else {
                             if (msg.arg1 == 1) {
@@ -6150,8 +6145,8 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         private void setBlockMute(boolean mute) {
             Log.d(TAG, "setBlockMute = " + mute);
             if (Channel.isATV(mTunedChannel)) {
-                mAudioSystemCmdManager.handleAdtvAudioEvent(
-                    AudioSystemCmdManager.AUDIO_SERVICE_CMD_SET_MUTE, mute ? 1 : 0, 0);
+                mDroidAudioManager.setAudioCmdParam(
+                    DroidAudioManager.DROID_AUDIO_CMD_SET_MUTE, mute ? 1 : 0, 0, 0);
             } else if (mIsPip) {
                 playerSetPipMute(mute);
             } else {
@@ -6242,7 +6237,6 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                             }
                             // must be called after "setSurface"
                             /* refer this SOURCE_TYPE_DTV(1) in DroidLogicTvUtils.java */
-                            mAudioSystemCmdManager.updateAudioPortGain(1);
                             mSystemControlManager.SetDtvKitSourceEnable(1);
                             mSystemControlManager.SetCurrentSourceInfo(SystemControlManager.SourceInput.DTV, 0, 0);
                         }
