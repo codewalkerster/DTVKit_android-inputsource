@@ -254,6 +254,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
     private DtvKitScheduleManager mDtvKitScheduleManager = null;
     private TunerAdapter mBackgroundTuner = null;
     private TunerAdapter mMainTuner = null;
+    private boolean mSubtitleEnabled = false;
     private final Object mMainTunerResourceLock = new Object();
 
     public DtvkitTvInput() {
@@ -3796,7 +3797,14 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         }
 
         public void onSetCaptionEnabled(boolean enabled) {
-            Log.w(TAG, "caption switch will be controlled by mCaptionManager switch");
+            Log.i(TAG, "onSetCaptionEnabled, oldEnabledState : " + mSubtitleEnabled + ", newEnabledState : " + enabled);
+            if (mSubtitleEnabled != enabled) {
+                mSubtitleEnabled = enabled;
+                if (mHandlerThreadHandle != null) {
+                    Message msg = mHandlerThreadHandle.obtainMessage(MSG_CAPTION_SWITCH_SUBTITLE_ENABLED, enabled ? 1 : 0, 0, null);
+                    mHandlerThreadHandle.sendMessage(msg);
+                }
+            }
         }
 
         @Override
@@ -4948,7 +4956,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                                 }
                                 notifyVideoAvailable();
                             }
-                            if (mTuneInfo.isDTv && retuneSubtitle) {
+                            if (mSubtitleEnabled && mTuneInfo.isDTv && retuneSubtitle) {
                                 playerSetSubtitlesOn(true);
                             }
                             sendUpdateTrackMsg();
@@ -5672,6 +5680,7 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
         protected static final int MSG_CHECK_REC_PATH_DIRECTLY = 34;
         protected static final int MSG_SCHEDULE_TIMESHIFT_RECORDING_TASK = 35;
         protected static final int MSG_TIMESHIFT_PLAY_SET_PLAYBACK_PARAMS = 36;
+        protected static final int MSG_CAPTION_SWITCH_SUBTITLE_ENABLED = 37;
 
         // atv fine tune
         protected static final int MSG_ATV_FINE_TUNE_AUDIO = 60;
@@ -5879,6 +5888,12 @@ public class DtvkitTvInput extends TvInputService implements SystemControlEvent.
                     case MSG_TIMESHIFT_PLAY_SET_PLAYBACK_PARAMS:
                         PlaybackParams params = (PlaybackParams) msg.obj;
                         setTimeShiftSetPlaybackParams(params);
+                        break;
+                    case MSG_CAPTION_SWITCH_SUBTITLE_ENABLED:
+                        boolean enabled = msg.arg1 == 1;
+                        enableSubtitle(enabled);
+                        playerSetSubtitlesOn(enabled);
+                        sendUpdateTrackMsg();
                         break;
                     /*
                     case MSG_START_MHEG5:

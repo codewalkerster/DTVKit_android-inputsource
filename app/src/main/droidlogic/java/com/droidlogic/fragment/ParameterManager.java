@@ -157,10 +157,7 @@ public class ParameterManager {
     public static final String KEY_SET_DAYLIGHT_SAVING_MODE = "key_set_daylight_saving_mode";
     public static final String KEY_SET_TIME_ZONE = "key_set_time_zone";
     public static final String KEY_GET_TIME_ZONE = "key_get_time_zone";
-    public static final String KEY_SET_SUBTITLES_ENABLED = "key_set_subtitles_enabled";
     public static final String KEY_SET_LOCATION_CODE = "key_set_location_code";
-    public static final String KEY_SET_GLOBAL_SUBTITLES_ENABLED = "key_set_global_subtitles_enabled";
-    public static final String KEY_GET_GLOBAL_SUBTITLES_ENABLED = "key_get_global_subtitles_enabled";
     public static final String KEY_SET_DTV_SYSTEM = "key_set_dtv_system";
 
     //default value that is save by index
@@ -2222,20 +2219,6 @@ public class ParameterManager {
             case KEY_GET_TIME_ZONE:
                 result = getTimeZone();
                 break;
-            case KEY_SET_SUBTITLES_ENABLED:
-                if (playerGetSubtitlesOn(0)) {
-                    result = "true";
-                } else {
-                    result = "false";
-                }
-                break;
-            case KEY_GET_GLOBAL_SUBTITLES_ENABLED:
-                if (isSubtitleEnabled()) {
-                    result = "true";
-                } else {
-                    result = "false";
-                }
-                break;
             default:
                 result = defaultJsonValue;
                 break;
@@ -2271,15 +2254,8 @@ public class ParameterManager {
             case KEY_SET_TIME_ZONE:
                 setTimeZone(Integer.parseInt(newJsonValues));
                 break;
-            case KEY_SET_SUBTITLES_ENABLED:
-                Log.i(TAG,"KEY_SET_SUBTITLES_ENABLED");
-                setSubtitlesEnabled(Boolean.valueOf(newJsonValues));
-                break;
             case KEY_SET_LOCATION_CODE:
                 setLocationCode(Integer.parseInt(newJsonValues));
-                break;
-            case KEY_SET_GLOBAL_SUBTITLES_ENABLED:
-                enableGlobalSubtitle(Boolean.valueOf(newJsonValues));
                 break;
             case KEY_SET_DTV_SYSTEM:
                 setDtvSystem(newJsonValues);
