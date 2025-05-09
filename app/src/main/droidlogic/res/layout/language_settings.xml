@@ -334,6 +334,30 @@
                 android:paddingRight="5dp"
                 android:text="@string/strSettingsAutoSearchingSetting" />
         </LinearLayout>
+
+        <LinearLayout
+                android:id="@+id/dummy_frontend_enable"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:orientation="horizontal"
+                android:layout_margin="5dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="@dimen/dvb_language_text_width"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:text="@string/str_dummy_frontend" />
+
+            <CheckBox
+                android:id="@+id/dummy_frontend_enable_checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:text="@string/strSettingsAutoOrdering_enable" />
+        </LinearLayout>
+
         <LinearLayout
             android:id="@+id/factory_settings"
             android:layout_width="wrap_content"

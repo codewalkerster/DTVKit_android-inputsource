@@ -139,6 +139,7 @@
     <string name="strImport">Import</string>
     <string name="strFactorySettings">Factory Settings</string>
     <string name="strRestoreToDefault">DVBS Reset</string>
+    <string name="str_dummy_frontend">Dummy Frontend Enable:</string>
 
     <!-- password dialog-->
     <string name="please_enter_pin">Please enter your PIN</string>

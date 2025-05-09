@@ -284,6 +284,7 @@ public class DtvkitDvbSettings extends Activity {
         CheckBox adSupport = (CheckBox)findViewById(R.id.ad_audio_checkbox);
         Button networkUpdate = (Button)findViewById(R.id.network_update_button);
         CheckBox auto_ordering = (CheckBox)findViewById(R.id.auto_ordering_checkbox);
+        CheckBox dummy_frontend_enable = (CheckBox)findViewById(R.id.dummy_frontend_enable_checkbox);
         Button auto_searching = (Button)findViewById(R.id.auto_searching_button);
         Button factory_settings = (Button)findViewById(R.id.factory_settings_button);
         LinearLayout factorySettings = (LinearLayout)findViewById(R.id.factory_settings);
@@ -493,6 +494,12 @@ public class DtvkitDvbSettings extends Activity {
             }
         });
 
+        dummy_frontend_enable.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                PropSettingManager.setProp(PropSettingManager.TV_DUMMY_TUNER, String.valueOf(dummy_frontend_enable.isChecked()));
+            }
+        });
+
         auto_searching.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -534,6 +541,7 @@ public class DtvkitDvbSettings extends Activity {
         LinearLayout networkUpdateContainer = (LinearLayout)findViewById(R.id.network_update);
         LinearLayout autoOrderingContainer = (LinearLayout)findViewById(R.id.auto_ordering);
         CheckBox auto_ordering = (CheckBox)findViewById(R.id.auto_ordering_checkbox);
+        CheckBox dummy_frontend_enable = (CheckBox)findViewById(R.id.dummy_frontend_enable_checkbox);
         LinearLayout autoSearchingContainer = (LinearLayout)findViewById(R.id.auto_searching);
         List<String> list = null;
         ArrayAdapter<String> adapter = null;
@@ -614,6 +622,7 @@ public class DtvkitDvbSettings extends Activity {
         } else {
             autoOrderingContainer.setVisibility(View.GONE);
         }
+        dummy_frontend_enable.setChecked(PropSettingManager.getBoolean(PropSettingManager.TV_DUMMY_TUNER, false));
     }
 
     private List<String> getHearingImpairedOption() {

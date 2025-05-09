@@ -46,8 +46,10 @@ public class PropSettingManager {
     public static final String EWS_TEST = "vendor.sys.tv.test.ews";
     //TKGS
     public static final String TKGS_DEBUG_ENABLE = "vendor.sys.tkgs.debug.enable";
-    // search
+    //search
     public static final String TV_SEARCHING_STATUS = "vendor.tv.dtv.search.status";
+    //dummy frontend
+    public static final String TV_DUMMY_TUNER = "persist.vendor.tv.dummy_tuner";
 
     public static String getProp(String key) {
         String result = null;
